@@ -1,0 +1,282 @@
+﻿El Pacto BC   —   Brief para desarrollador
+EL PACTO BC
+Brief técnico para desarrollador
+Fan App · Prototipo v1.0 · Mayo 2026
+
+
+1. Descripción general
+El Pacto BC es un club de baloncesto nativo digital creado por Elvis Ude, Herson y Violeta Verano. La fan app es el núcleo de la comunidad: permite a los fans participar en decisiones del club, ganar recompensas, seguir eventos y apoyar proyectos de impacto social.
+La app funciona como una web app progresiva (PWA) con navegación de 5 secciones principales, sistema de créditos y XP, y contenido exclusivo para socios.
+
+
+
+
+2. Navegación principal
+La app tiene una barra de navegación inferior fija con 5 secciones:
+* Inicio — Dashboard personal del fan
+* Comunidad — Feed, chat y votaciones
+* Eventos — MVP’S TOUR 3x3 y charlas
+* Tienda — Suscripción y créditos
+* El Pacto — Club, creadores y proyectos sociales
+
+
+La barra superior muestra nivel (punto de color), XP, créditos, notificaciones, mensajes directos y avatar del usuario.
+
+
+
+
+3. Pantalla de Inicio
+Dashboard personal con las siguientes secciones en orden:
+3.1 Racha + XP
+Muestra la racha de días consecutivos activo con multiplicador de XP. Barra de progreso hacia el siguiente nivel (Rookie → Starter → MVP → Leyenda).
+3.2 Badge de temporada
+Temporada Verano 2026. Meta: 1.000 XP para conseguir el badge exclusivo de temporada. Muestra progreso con barra morada y días restantes.
+3.3 Ruleta de recompensa diaria
+El usuario gira una ruleta animada una vez al día. La ruleta tiene 8 segmentos de colores:
+* +10 créditos
+* 2x XP
+* +20 créditos
+* 1 ticket de sorteo
+* +50 créditos
+* Voto gratis
+* +5 créditos
+* 🎁 Sorpresa (aleatoria)
+La ruleta se bloquea hasta el día siguiente. La recompensa se aplica automáticamente al caer.
+3.4 Próximo evento
+Card compacta que muestra el siguiente evento del club con cuenta atrás en días. Al tocar navega a la sección Eventos.
+3.5 Misión de equipo
+Objetivo colectivo semanal (ej: 500 votos entre todos). Barra de progreso compartida. Al completarse, el club desbloquea contenido exclusivo para toda la comunidad.
+3.6 Mi contribución
+Muestra los votos del usuario esta semana, su porcentaje del total del club y su aportación a la misión de equipo.
+3.7 Sorteo del mes
+Card del sorteo activo con descripción del premio, participantes y fecha de cierre. Al tocar abre un modal con los detalles completos y el botón de participar.
+
+
+
+
+4. Comunidad
+La sección tiene 3 pestañas: Feed, Chat y Votar.
+4.1 Feed
+Timeline de publicaciones de los creadores y fans. Cada post muestra reacciones rápidas (emojis), número de likes y botón de compartir. Los posts de creadores tienen badge CREADOR.
+En la parte superior aparece el contador de fans conectados en tiempo real (· 97 fans conectados ahora).
+4.2 Chat
+Hilos de chat temáticos (General, Noticias, Predicciones, Retos). Cada mensaje en el chat da +1 XP. La interfaz es similar a un chat de grupo estándar con burbujas y campo de texto.
+4.3 Votar
+Sección de participación activa con los siguientes tipos de contenido:
+* Encuesta semanal — GRATIS, da +2 créditos. Pregunta diferente cada lunes (ej: marcas de zapatillas). Al votar se revelan los porcentajes de respuesta de toda la comunidad.
+* Pregunta del día — GRATIS, da +4 créditos. Pregunta rápida.
+* Votaciones del club — Cuestan 5 créditos, dan +5 XP. Decisiones reales del club (celebración, diseño camiseta, contenido de la semana).
+* Apuesta grupal — Cuesta 20 créditos, da +10 XP. Si más del 60% acierta, todos doblan créditos.
+
+
+
+
+5. Eventos
+Listado de eventos del club con filtros (Todos / Partidos / Charlas).
+5.1 MVP’S TOUR 3x3
+Tour de 4 paradas: Vilanova (28 Jun), Girona (11 Jul), El Prat (25 Jul), Málaga (8-9 Ago). Cada parada tiene card con fecha, ciudad y botón para ver detalles en página completa.
+5.2 Página de evento
+Pantalla completa (full-screen) con header, banner, descripción del evento y sección de inscripción.
+5.3 Charlas exclusivas
+Charlas con los creadores. Reservar cuesta 50 créditos y da +25 XP. Muestra plazas disponibles en tiempo real.
+
+
+
+
+6. Sistema económico
+6.1 Créditos (⚡)
+Moneda principal de la app. Se obtienen por suscripción, compra directa o recompensas.
+
+
+Coste de acciones
+	Votación del club
+	5 créditos
+	Apuesta grupal
+	20 créditos
+	Mensaje a creador
+	50 créditos
+	Charla exclusiva
+	50 créditos
+	Participar en sorteo
+	75 créditos por ticket
+	Encuesta semanal
+	GRATIS (+2 créditos de vuelta)
+	Pregunta del día
+	GRATIS (+4 créditos de vuelta)
+	
+
+6.2 XP (Experiencia)
+El XP sube el nivel del fan. No es transferible ni comprable.
+
+
+XP por acción
+	Mensaje en el chat
+	+1 XP
+	Votación del club
+	+5 XP
+	Apuesta grupal
+	+10 XP
+	Charla exclusiva
+	+25 XP
+	Mensaje a creador
+	+30 XP
+	Participar en sorteo
+	+50 XP
+	Donación a proyecto
+	+XP proporcional
+	
+
+6.3 Niveles
+Sistema de niveles
+	Rookie
+	0 XP — punto gris
+	Starter
+	500 XP — punto amarillo
+	MVP
+	2.000 XP — punto azul eléctrico
+	Leyenda
+	5.000 XP — punto dorado
+	
+
+
+
+7. Tienda
+7.1 Suscripción
+El plan Socio cuesta 5€/mes e incluye 200 créditos mensuales, acceso a charlas, participación en sorteos, voto en decisiones y carnet digital de socio. El plan gratuito da 2 créditos/mes.
+Beneficios de socio: 5% descuento en Basketball Emotion, 10% descuento en Hoops.
+7.2 Packs de créditos
+Packs disponibles
+	100 créditos
+	3,50€
+	200 créditos
+	6€ (más popular)
+	7.3 Merch
+Sección en construcción. Los socios tendrán acceso prioritario al lanzamiento.
+
+
+
+
+8. Sistema de mensajes directos (DM)
+Sistema de mensajería privada estilo Instagram con dos tipos:
+8.1 DM entre fans
+Gratuito. Conversaciones privadas entre fans. El usuario accede desde el icono ✉️ de la barra superior o desde el perfil de otro fan en el ranking.
+8.2 DM a creadores
+Cuesta 50 créditos por mensaje. Límite de 100 caracteres. El creador puede responder desde su panel. Los mensajes dan +30 XP al fan.
+La lista de conversaciones muestra avatar, nombre, último mensaje, hora y punto amarillo si hay mensajes no leídos.
+
+
+
+
+9. El Pacto
+Sección informativa del club con las siguientes partes:
+* Descripción del club y valores
+* Creadores: Elvis Ude, Herson, Violeta Verano — con foto, rol y botón de mensaje directo (⚡50)
+* Mapa de fans por países
+* Proyectos de impacto social
+
+
+9.1 Proyectos sociales
+Cada proyecto tiene una card en la sección El Pacto con botón Apoyar 50 ⚡ directo. Al tocar la card se abre una pantalla completa (igual que los eventos) con 3 pestañas:
+* Info — Descripción del proyecto y botón de donación (25/50/100 créditos)
+* Chat — Chat específico del proyecto con la comunidad
+* Votar — Decisiones relacionadas con el proyecto
+Proyectos activos:
+* India · Dribble Academy: Colaboración con Fundación Dribble Academy. Equipo conjunto Dribble Academy El Pacto. Formación de community manager local. Material deportivo. Colaboradores estratégicos.
+* Tecnificar: Becas para jóvenes con talento sin recursos. Material deportivo. Colaboradores estratégicos. Seguimiento y mentoría.
+
+
+
+
+10. Perfil de usuario
+Modal accesible desde el avatar de la barra superior. Contenido:
+* Avatar personalizable + nombre + ciudad + fecha de registro
+* Badges de nivel y estado (Socio, días de racha)
+* Stats: créditos, XP, ranking global, tickets de sorteo
+* Barra de progreso XP hacia siguiente nivel
+* Acceso directo al carnet de socio digital
+* Insignias desbloqueadas y secretas
+* Código de referido (ej: PACTO-HE47) con botón Copiar
+* Historial reciente de créditos
+
+
+
+
+11. Sistema de referidos
+Cada usuario tiene un código personal único (generado al registrarse). Al compartirlo:
+* El amigo se registra y se hace socio usando el código
+* Ambos reciben +50 créditos automáticamente
+El código es visible en el perfil con botón de copiar y botón de compartir nativo del sistema operativo.
+
+
+
+
+12. Sistema de sorteos
+Cada mes hay un sorteo activo patrocinado. El fan compra tickets a 75 créditos cada uno. Puede comprar tantos como quiera mientras tenga créditos. Cada ticket da +50 XP. El ganador se anuncia en el feed de la comunidad.
+
+
+
+
+13. Notificaciones
+Panel de notificaciones accesible desde el icono 🔔 de la barra superior. Tipos de notificaciones:
+* Nueva publicación de un creador
+* Nueva decisión disponible para votar
+* Resultado de apuesta grupal
+* Badge desbloqueado
+* Misión de equipo completada
+En producción se implementarán como push notifications a través del sistema operativo.
+
+
+
+
+14. Sistema de insignias
+Las insignias se muestran en el perfil y algunas son secretas hasta desbloquearlas. Insignias planificadas:
+* Primer Pacto 🗳 — Primer voto registrado
+* Socializador 💬 — 10 mensajes en el chat
+* Llama Viva 🔥 — 7 días consecutivos activo
+* Diamante del Pacto 📎 — 30 días consecutivos activo
+* Fundador 🏅 — Socio desde el primer mes
+* Embajador 📍 — Primero de tu ciudad en unirse
+* En el Bombo 🎟 — Primera participación en sorteo
+* Fan Directo ✉ — Primer mensaje a un creador
+* Dribble Spirit 🇮🇳 — Donación al proyecto India
+* Mentor 🎓 — Donación al proyecto Tecnificar
+* Impacto Global 🌍 — Donación a ambos proyectos
+* Reclutador 🤝 — Invita a 3 amigos que se hacen socios
+* Semana Perfecta 🏅 — Completa todas las misiones de una semana
+* OG · Desde el Día 1 🥇 — Primer fan en entrar (secreto)
+
+
+
+
+15. Misiones de equipo
+Las misiones de equipo son objetivos colectivos semanales. Se muestran en el inicio y en la sección Comunidad. Tipos planificados:
+* 500 votos entre todos esta semana → el club lanza contenido exclusivo del MVP’S TOUR
+* 300 fans completan la recompensa diaria → 2x XP el fin de semana
+* 100 fans apoyan Tecnificar → el club anuncia al primer becado antes que nadie
+* La comunidad recauda 5.000 créditos para India → Elvis publica un vídeo desde allí
+
+
+
+
+16. Flujo de pago y onboarding
+16.1 Landing
+Pantalla de bienvenida con video/animación de fondo, stats del club (fans activos, decisiones, precio), y dos CTAs: Hacerme socio (5€/mes) y Explorar gratis.
+16.2 Onboarding
+3 pantallas de introducción que explican el sistema de créditos, las votaciones y las recompensas. Se muestra solo en el primer acceso.
+16.3 Flujo de pago
+Modal de 4 pasos: Resumen del plan → Datos de tarjeta → Procesando (Stripe) → Bienvenida con +200 créditos. En producción se integra con Stripe.
+
+
+
+18. Notas adicionales para el desarrollador
+* El prototipo actual es un archivo HTML de demo. La lógica de créditos y XP vive en memoria (objeto S) y deberá trasladarse a base de datos.
+* Los códigos de referido son genéricos en el prototipo. En producción cada usuario debe tener un código único generado al registrarse.
+* El sorteo del mes y las apuestas grupales necesitan lógica de servidor para garantizar la aleatoriedad y el bote justo.
+* Las misiones de equipo requieren contadores globales en tiempo real (Redis o Supabase Realtime).
+* Los precios de créditos en moneda real deben pasar por Stripe y nunca calcularse en cliente.
+* El sistema de insignias debe verificarse en servidor al completar cada acción para evitar manipulación.
+* El chat de comunidad y de proyectos necesita moderación (puede empezar con reporte manual).
+
+
+—  Fin del documento  —
+Confidencial · El Pacto BC · 2026

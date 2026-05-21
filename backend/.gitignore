@@ -1,0 +1,21 @@
+# dependencies
+/node_modules
+
+# build output
+/dist
+
+# environment variables (NUNCA commitear)
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# testing
+/coverage
+
+# OS / editor
+.DS_Store
+*.pem

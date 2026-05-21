@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\f\\\\.gemini\\\\antigravity\\\\\")",
+      "Read(//c/Users/f/.gemini/**)",
+      "Bash(npm run *)"
+    ]
+  }
+}
