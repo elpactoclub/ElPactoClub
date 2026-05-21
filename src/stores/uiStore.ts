@@ -1,0 +1,131 @@
+"use client";
+
+import { create } from "zustand";
+
+type ActiveTab = "home" | "comunidad" | "eventos" | "store" | "about" | "notifications" | "messages" | "profile";
+type CommunityTab = "feed" | "chat" | "votar";
+
+interface UIState {
+  activeTab: ActiveTab;
+  communityTab: CommunityTab;
+  isLandingOpen: boolean;
+  isOnboardingOpen: boolean;
+  onboardingStep: number;
+
+  // Modals
+  isProfileOpen: boolean;
+  isCarnetOpen: boolean;
+  isNotifOpen: boolean;
+  isDMOpen: boolean;
+  isPersonalizeOpen: boolean;
+  isPostModalOpen: boolean;
+  isPaymentOpen: boolean;
+  isEventPageOpen: boolean;
+  isFanModalOpen: boolean;
+  fanModalUser: string | null;
+  isShareCarnetOpen: boolean;
+  isProjectPageOpen: boolean;
+  projectId: "india" | "tecnificar" | null;
+
+  // Notifications
+  notifUnreadCount: number;
+
+  // Toast
+  toastMessage: string | null;
+  toastTimer: ReturnType<typeof setTimeout> | null;
+
+  // Actions
+  setNotifUnreadCount: (count: number) => void;
+  setTab: (tab: ActiveTab) => void;
+  setCommunityTab: (tab: CommunityTab) => void;
+  closeLanding: () => void;
+  setOnboardingStep: (step: number) => void;
+  finishOnboarding: () => void;
+  skipOnboarding: () => void;
+  openProfile: () => void;
+  closeProfile: () => void;
+  openCarnet: () => void;
+  closeCarnet: () => void;
+  toggleNotif: () => void;
+  closeNotif: () => void;
+  openDM: () => void;
+  closeDM: () => void;
+  openPersonalize: () => void;
+  closePersonalize: () => void;
+  openPostModal: () => void;
+  closePostModal: () => void;
+  openPayment: () => void;
+  closePayment: () => void;
+  openEventPage: () => void;
+  closeEventPage: () => void;
+  openFanModal: (username: string) => void;
+  closeFanModal: () => void;
+  openShareCarnet: () => void;
+  closeShareCarnet: () => void;
+  openProjectPage: (id: "india" | "tecnificar") => void;
+  closeProjectPage: () => void;
+  showToast: (message: string) => void;
+}
+
+export const useUIStore = create<UIState>((set, get) => ({
+  activeTab: "home",
+  communityTab: "feed",
+  isLandingOpen: false,
+  isOnboardingOpen: false,
+  onboardingStep: 0,
+  isProfileOpen: false,
+  isCarnetOpen: false,
+  isNotifOpen: false,
+  isDMOpen: false,
+  isPersonalizeOpen: false,
+  isPostModalOpen: false,
+  isPaymentOpen: false,
+  isEventPageOpen: false,
+  isFanModalOpen: false,
+  fanModalUser: null,
+  isShareCarnetOpen: false,
+  isProjectPageOpen: false,
+  projectId: null,
+  notifUnreadCount: 0,
+  toastMessage: null,
+  toastTimer: null,
+
+  setNotifUnreadCount: (count) => set({ notifUnreadCount: count }),
+  setTab: (tab) => set({ activeTab: tab, communityTab: "feed" }),
+  setCommunityTab: (tab) => set({ communityTab: tab }),
+
+  closeLanding: () => set({ isLandingOpen: false }),
+  setOnboardingStep: (step) => set({ onboardingStep: step }),
+  finishOnboarding: () => set({ isOnboardingOpen: false }),
+  skipOnboarding: () => set({ isOnboardingOpen: false }),
+
+  openProfile: () => set({ isProfileOpen: true }),
+  closeProfile: () => set({ isProfileOpen: false }),
+  openCarnet: () => set({ isProfileOpen: false, isCarnetOpen: true }),
+  closeCarnet: () => set({ isCarnetOpen: false }),
+  toggleNotif: () => set((s) => ({ isNotifOpen: !s.isNotifOpen })),
+  closeNotif: () => set({ isNotifOpen: false }),
+  openDM: () => set({ isDMOpen: true }),
+  closeDM: () => set({ isDMOpen: false }),
+  openPersonalize: () => set({ isProfileOpen: false, isPersonalizeOpen: true }),
+  closePersonalize: () => set({ isPersonalizeOpen: false }),
+  openPostModal: () => set({ isPostModalOpen: true }),
+  closePostModal: () => set({ isPostModalOpen: false }),
+  openPayment: () => set({ isPaymentOpen: true }),
+  closePayment: () => set({ isPaymentOpen: false }),
+  openEventPage: () => set({ isEventPageOpen: true }),
+  closeEventPage: () => set({ isEventPageOpen: false }),
+  openFanModal: (username) => set({ isFanModalOpen: true, fanModalUser: username }),
+  closeFanModal: () => set({ isFanModalOpen: false, fanModalUser: null }),
+  openShareCarnet: () => set({ isShareCarnetOpen: true }),
+  closeShareCarnet: () => set({ isShareCarnetOpen: false }),
+  openProjectPage: (id) => set({ isProjectPageOpen: true, projectId: id }),
+  closeProjectPage: () => set({ isProjectPageOpen: false, projectId: null }),
+
+  showToast: (message) => {
+    const state = get();
+    if (state.toastTimer) clearTimeout(state.toastTimer);
+    const timer = setTimeout(() => set({ toastMessage: null, toastTimer: null }), 2500);
+    set({ toastMessage: message, toastTimer: timer });
+  },
+}));
