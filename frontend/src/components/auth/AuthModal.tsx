@@ -11,10 +11,10 @@ export default function AuthModal() {
   const { login, registerUser } = useUserStore();
 
   const [isLogin, setIsLogin] = useState(true);
-  const [emailInput, setEmailInput] = useState("");
+  const [emailInput, setEmailInput]       = useState("");
   const [passwordInput, setPasswordInput] = useState("");
-  const [nameInput, setNameInput] = useState("");
-  const [cityInput, setCityInput] = useState("Barcelona");
+  const [nameInput, setNameInput]         = useState("");
+  const [cityInput, setCityInput]         = useState("Barcelona");
   const [referredByInput, setReferredByInput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,146 +35,225 @@ export default function AuthModal() {
     setLoading(false);
   };
 
-  const inputCls = "w-full bg-gray3 border border-border rounded-xl px-4 py-3 text-sm text-white placeholder-muted focus:outline-none focus:border-accent transition-colors";
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[350]"
+        style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+        onClick={closeAuth}
+      />
 
-  const content = (
-    <div className="flex flex-col">
-      {/* Brand header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="font-heading text-accent text-xs tracking-[3px] mb-0.5">EL PACTO BC</div>
-          <div className="font-heading text-2xl tracking-[2px]">
-            {isLogin ? "INICIAR SESIÓN" : "CREAR CUENTA"}
-          </div>
+      {/* Mobile: bottom sheet */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-[351] animate-slide-up">
+        <div style={{ background: "var(--color-gray)", borderRadius: "20px 20px 0 0", padding: "0 20px 40px" }}>
+          <div style={{ width: 36, height: 4, background: "var(--color-gray3)", borderRadius: 2, margin: "14px auto 20px" }} />
+          <FormContent
+            isLogin={isLogin} loading={loading}
+            emailInput={emailInput} setEmailInput={setEmailInput}
+            passwordInput={passwordInput} setPasswordInput={setPasswordInput}
+            nameInput={nameInput} setNameInput={setNameInput}
+            cityInput={cityInput} setCityInput={setCityInput}
+            referredByInput={referredByInput} setReferredByInput={setReferredByInput}
+            onSubmit={handleSubmit} onClose={closeAuth} onToggle={() => setIsLogin(!isLogin)}
+          />
         </div>
-        <button
-          onClick={closeAuth}
-          className="w-9 h-9 rounded-full bg-gray3 flex items-center justify-center text-muted hover:text-white hover:bg-gray2 transition-colors text-sm"
-        >
-          ✕
-        </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {!isLogin && (
-          <>
-            <div>
-              <label className="text-[10px] text-muted uppercase font-bold tracking-[1.5px] block mb-1.5">
-                Nombre de Fan
-              </label>
+      {/* Desktop: centered modal */}
+      <div className="hidden sm:flex fixed inset-0 z-[351] items-center justify-center p-6">
+        <div
+          className="animate-fade-in"
+          style={{
+            background: "var(--color-gray)",
+            borderRadius: 20,
+            padding: "36px 40px 40px",
+            width: "100%",
+            maxWidth: 460,
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+            position: "relative",
+          }}
+        >
+          <FormContent
+            isLogin={isLogin} loading={loading}
+            emailInput={emailInput} setEmailInput={setEmailInput}
+            passwordInput={passwordInput} setPasswordInput={setPasswordInput}
+            nameInput={nameInput} setNameInput={setNameInput}
+            cityInput={cityInput} setCityInput={setCityInput}
+            referredByInput={referredByInput} setReferredByInput={setReferredByInput}
+            onSubmit={handleSubmit} onClose={closeAuth} onToggle={() => setIsLogin(!isLogin)}
+            desktop
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--color-gray2)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 10,
+  padding: "11px 14px",
+  fontSize: 13,
+  color: "var(--color-white)",
+  outline: "none",
+  fontFamily: "var(--font-sans)",
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: 9,
+  fontWeight: 700,
+  letterSpacing: 1.5,
+  textTransform: "uppercase",
+  color: "var(--color-muted)",
+  marginBottom: 6,
+};
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <label style={labelStyle}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function FormContent({
+  isLogin, loading,
+  emailInput, setEmailInput,
+  passwordInput, setPasswordInput,
+  nameInput, setNameInput,
+  cityInput, setCityInput,
+  referredByInput, setReferredByInput,
+  onSubmit, onClose, onToggle,
+  desktop = false,
+}: {
+  isLogin: boolean; loading: boolean;
+  emailInput: string; setEmailInput: (v: string) => void;
+  passwordInput: string; setPasswordInput: (v: string) => void;
+  nameInput: string; setNameInput: (v: string) => void;
+  cityInput: string; setCityInput: (v: string) => void;
+  referredByInput: string; setReferredByInput: (v: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  onClose: () => void;
+  onToggle: () => void;
+  desktop?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: 24, position: "relative" }}>
+        {desktop && (
+          <button
+            onClick={onClose}
+            style={{ position: "absolute", top: -4, right: -4, background: "none", border: "none", color: "var(--color-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: 4 }}
+          >
+            ✕
+          </button>
+        )}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "var(--color-muted)", marginBottom: 4 }}>
+          EL PACTO BC
+        </div>
+        <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, letterSpacing: 1 }}>
+          {isLogin ? "INICIAR SESIÓN" : "CREAR CUENTA"}
+        </div>
+        <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 4 }}>
+          {isLogin ? "Accede a tu perfil de fan" : "Únete al club nativo digital"}
+        </div>
+      </div>
+
+      {/* Form card */}
+      <div
+        style={{
+          background: "var(--color-gray2)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 14,
+          padding: "18px 16px",
+          marginBottom: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
+        <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {!isLogin && (
+            <>
+              <Field label="Nombre de Fan">
+                <input
+                  type="text" required
+                  placeholder="Ej. BasketMaster99"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  style={inputStyle}
+                />
+              </Field>
+              <Field label="Ciudad">
+                <select
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  {["Barcelona","Madrid","Valencia","Sevilla","Bilbao","Zaragoza","Málaga","Otra"].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </Field>
+            </>
+          )}
+
+          <Field label="Email">
+            <input
+              type="email" required
+              placeholder="fan@elpacto.com"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label="Contraseña">
+            <input
+              type="password" required
+              placeholder="••••••••"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              style={inputStyle}
+            />
+          </Field>
+
+          {!isLogin && (
+            <Field label="Código referido (opcional)">
               <input
                 type="text"
-                required
-                placeholder="Ej. BasketMaster99"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                className={inputCls}
+                placeholder="PACTO-XXXX"
+                value={referredByInput}
+                onChange={(e) => setReferredByInput(e.target.value)}
+                style={inputStyle}
               />
-            </div>
-            <div>
-              <label className="text-[10px] text-muted uppercase font-bold tracking-[1.5px] block mb-1.5">
-                Ciudad
-              </label>
-              <select
-                value={cityInput}
-                onChange={(e) => setCityInput(e.target.value)}
-                className={inputCls}
-              >
-                {["Barcelona","Madrid","Valencia","Sevilla","Bilbao","Zaragoza","Málaga","Otra"].map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
+            </Field>
+          )}
 
-        <div>
-          <label className="text-[10px] text-muted uppercase font-bold tracking-[1.5px] block mb-1.5">
-            Email
-          </label>
-          <input
-            type="email"
-            required
-            placeholder="fan@elpacto.com"
-            value={emailInput}
-            onChange={(e) => setEmailInput(e.target.value)}
-            className={inputCls}
-          />
-        </div>
-
-        <div>
-          <label className="text-[10px] text-muted uppercase font-bold tracking-[1.5px] block mb-1.5">
-            Contraseña
-          </label>
-          <input
-            type="password"
-            required
-            placeholder="••••••••"
-            value={passwordInput}
-            onChange={(e) => setPasswordInput(e.target.value)}
-            className={inputCls}
-          />
-        </div>
-
-        {!isLogin && (
-          <div>
-            <label className="text-[10px] text-muted uppercase font-bold tracking-[1.5px] block mb-1.5">
-              Código referido <span className="normal-case font-normal text-muted">(opcional)</span>
-            </label>
-            <input
-              type="text"
-              placeholder="PACTO-XXXX"
-              value={referredByInput}
-              onChange={(e) => setReferredByInput(e.target.value)}
-              className={inputCls}
-            />
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-accent text-black font-heading text-base tracking-[2px] py-3.5 rounded-xl mt-2 disabled:opacity-50 hover:brightness-110 transition-all active:scale-[0.98]"
-        >
-          {loading ? "CARGANDO..." : isLogin ? "ENTRAR 🏀" : "REGISTRARME ⚡"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-y"
+            style={{ fontSize: 13, fontWeight: 800, padding: "14px", opacity: loading ? 0.6 : 1, marginTop: 2 }}
+          >
+            {loading ? "CARGANDO..." : isLogin ? "ENTRAR 🏀" : "REGISTRARME ⚡"}
+          </button>
+        </form>
+      </div>
 
       <button
-        onClick={() => setIsLogin(!isLogin)}
-        className="text-[12px] text-accent underline text-center mt-4"
+        onClick={onToggle}
+        style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "var(--color-accent)", textDecoration: "underline", textAlign: "center", padding: "6px 0" }}
       >
         {isLogin ? "¿No tienes cuenta? Regístrate gratis" : "¿Ya tienes cuenta? Inicia sesión"}
       </button>
     </div>
-  );
-
-  return (
-    <>
-      {/* ── Mobile: bottom sheet ─────────────────────── */}
-      <div className="sm:hidden fixed inset-0 z-[500]">
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeAuth} />
-        <div className="absolute bottom-0 left-0 right-0 bg-gray rounded-t-3xl px-6 pt-6 pb-10 animate-slide-up max-h-[92vh] overflow-y-auto">
-          {content}
-        </div>
-      </div>
-
-      {/* ── Desktop: centered modal ───────────────────── */}
-      <div className="hidden sm:block fixed inset-0 z-[500]">
-        <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={closeAuth} />
-        <div
-          className="absolute bg-gray border border-border rounded-2xl px-8 py-7 animate-dialog-in shadow-2xl"
-          style={{
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "100%",
-            maxWidth: 460,
-          }}
-        >
-          {content}
-        </div>
-      </div>
-    </>
   );
 }
