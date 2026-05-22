@@ -3,7 +3,7 @@ primary_region = 'cdg'
 
 [build]
   [build.args]
-    NEXT_PUBLIC_API_URL = 'https://elpactoclub.fly.dev/api/v1'
+    NEXT_PUBLIC_API_URL = 'https://elpactoclub-backend.fly.dev/api/v1'
 
 [env]
   NODE_ENV = 'production'
@@ -12,9 +12,9 @@ primary_region = 'cdg'
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = false
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
   processes = ['app']
 
 [[vm]]
