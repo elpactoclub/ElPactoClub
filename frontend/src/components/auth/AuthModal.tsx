@@ -49,7 +49,7 @@ export default function AuthModal() {
               placeholder="Ej. BasketMaster99"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
+              className="w-full bg-gray2 border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
             />
           </div>
           <div>
@@ -79,7 +79,7 @@ export default function AuthModal() {
           placeholder="fan@elpacto.com"
           value={emailInput}
           onChange={(e) => setEmailInput(e.target.value)}
-          className="w-full bg-[#1a1a1a] border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
+          className="w-full bg-gray2 border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
         />
       </div>
 
@@ -93,7 +93,7 @@ export default function AuthModal() {
           placeholder="••••••••"
           value={passwordInput}
           onChange={(e) => setPasswordInput(e.target.value)}
-          className="w-full bg-[#1a1a1a] border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
+          className="w-full bg-gray2 border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
         />
       </div>
 
@@ -107,7 +107,7 @@ export default function AuthModal() {
             placeholder="PACTO-XXXX"
             value={referredByInput}
             onChange={(e) => setReferredByInput(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
+            className="w-full bg-gray2 border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-muted focus:outline-none focus:border-accent"
           />
         </div>
       )}

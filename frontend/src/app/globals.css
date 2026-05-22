@@ -481,3 +481,19 @@ body {
 .pb-safe {
   padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
 }
+
+/* ── Fix Chrome/Safari autofill override ─────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #252525 inset !important;
+  -webkit-text-fill-color: #F5F3EE !important;
+  caret-color: #F5F3EE;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+select option {
+  background: #252525;
+  color: #F5F3EE;
+}
