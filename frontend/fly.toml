@@ -1,6 +1,6 @@
 # Rename 'elpacto-web' to your chosen Fly.io app name
 # Run: fly apps create elpacto-web   (once, before first deploy)
-app = 'elpactoclub-web'
+app = 'elpactoclub-frontend'
 primary_region = 'cdg'
 
 [build]
