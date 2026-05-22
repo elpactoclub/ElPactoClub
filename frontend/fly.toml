@@ -1,12 +1,11 @@
 # Rename 'elpacto-web' to your chosen Fly.io app name
 # Run: fly apps create elpacto-web   (once, before first deploy)
-app = 'elpacto-web'
-primary_region = 'mad'
+app = 'elpactoclub-web'
+primary_region = 'cdg'
 
 [build]
-  # Replace with your actual backend URL after deploying the backend
   [build.args]
-    NEXT_PUBLIC_API_URL = 'https://elpacto-api.fly.dev/api/v1'
+    NEXT_PUBLIC_API_URL = 'https://elpactoclub.fly.dev/api/v1'
 
 [env]
   NODE_ENV = 'production'
