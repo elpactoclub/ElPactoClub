@@ -222,4 +222,11 @@ export class UsersService {
       .getCount();
     return count + 1;
   }
+
+  async setUserRole(email: string, role: 'admin' | 'creator' | 'fan'): Promise<{ ok: boolean; message: string }> {
+    const user = await this.findByEmail(email);
+    if (!user) return { ok: false, message: 'User not found' };
+    await this.usersRepo.update(user.id, { role });
+    return { ok: true, message: `User ${email} is now ${role}` };
+  }
 }

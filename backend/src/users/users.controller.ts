@@ -71,6 +71,13 @@ export class UsersController {
     return this.usersService.claimDailyReward(req.user.id);
   }
 
+  // ─── DEV/ADMIN ──────────────────────────────────────────────────────────
+  @Post('set-admin')
+  @ApiOperation({ summary: '[DEV] Set user as admin by email' })
+  async setAdmin(@Body() { email, role }: { email: string; role: 'admin' | 'creator' | 'fan' }) {
+    return this.usersService.setUserRole(email, role);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get public fan profile' })
   getUser(@Param('id') id: string) {
