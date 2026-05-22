@@ -89,7 +89,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         style={{
           width: 256,
           flexShrink: 0,
-          display: "flex",
           flexDirection: "column",
           borderRight: "1px solid rgba(255,255,255,0.08)",
           background: "#111",

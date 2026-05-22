@@ -497,3 +497,49 @@ select option {
   background: #252525;
   color: #F5F3EE;
 }
+
+/* ── Admin/Creator sidebar responsive ───────────────────────── */
+.admin-sidebar {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .admin-sidebar {
+    display: flex !important;
+  }
+
+  .admin-sidebar-open {
+    position: fixed;
+    inset: 0;
+    width: 256px;
+  }
+}
+
+.admin-sidebar-close {
+  display: none !important;
+}
+
+@media (max-width: 767px) {
+  .admin-sidebar-close {
+    display: flex !important;
+  }
+
+  .admin-sidebar-open {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 256px;
+    height: 100vh;
+    border-right: 1px solid rgba(255,255,255,0.08);
+  }
+}
+
+.admin-burger {
+  display: flex !important;
+}
+
+@media (min-width: 768px) {
+  .admin-burger {
+    display: none !important;
+  }
+}

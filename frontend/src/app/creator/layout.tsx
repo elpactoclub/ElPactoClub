@@ -65,7 +65,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
 
       <aside
         className={mobileOpen ? "admin-sidebar admin-sidebar-open" : "admin-sidebar"}
-        style={{ width: 256, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: "1px solid rgba(255,255,255,0.08)", background: "#111", position: "relative", zIndex: 50 }}
+        style={{ width: 256, flexShrink: 0, flexDirection: "column", borderRight: "1px solid rgba(255,255,255,0.08)", background: "#111", position: "relative", zIndex: 50 }}
       >
         {/* Brand */}
         <div style={{ padding: "20px 20px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 10 }}>
