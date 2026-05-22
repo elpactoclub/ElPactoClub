@@ -82,12 +82,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("el_pacto_token");
+    if (!token) {
+      setError("No hay token de autenticación");
+      return;
+    }
     fetch(`${API}/admin/stats`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.text();
+          throw new Error(`${r.status}: ${err}`);
+        }
+        return r.json();
+      })
       .then(setStats)
-      .catch(() => setError("No se pudieron cargar las estadísticas"));
+      .catch((err) => {
+        console.error("Error loading stats:", err);
+        setError(`Error: ${err.message}`);
+      });
   }, []);
 
   if (error) return <p style={{ color: "#ef4444" }}>{error}</p>;
