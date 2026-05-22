@@ -78,6 +78,12 @@ export class UsersController {
     return this.usersService.setUserRole(email, role);
   }
 
+  @Post('delete-by-email')
+  @ApiOperation({ summary: '[DEV] Delete user by email' })
+  async deleteByEmail(@Body() { email }: { email: string }) {
+    return this.usersService.deleteByEmail(email);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get public fan profile' })
   getUser(@Param('id') id: string) {

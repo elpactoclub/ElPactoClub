@@ -229,4 +229,10 @@ export class UsersService {
     await this.usersRepo.update(user.id, { role });
     return { ok: true, message: `User ${email} is now ${role}` };
   }
+
+  async deleteByEmail(email: string): Promise<{ ok: boolean; message: string }> {
+    const result = await this.usersRepo.delete({ email });
+    if (result.affected === 0) return { ok: false, message: 'User not found' };
+    return { ok: true, message: `User ${email} deleted` };
+  }
 }
