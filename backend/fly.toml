@@ -1,7 +1,10 @@
-# Rename 'elpacto-api' to your chosen Fly.io app name
-# Run: fly apps create elpacto-api   (once, before first deploy)
-app = 'elpacto-api'
-primary_region = 'mad'
+# fly.toml app configuration file generated for elpactoclub on 2026-05-22T15:06:51Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'elpactoclub'
+primary_region = 'cdg'
 
 [build]
 
@@ -21,3 +24,4 @@ primary_region = 'mad'
   memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 512
