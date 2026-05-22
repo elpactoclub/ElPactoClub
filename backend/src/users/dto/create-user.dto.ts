@@ -22,6 +22,11 @@ export class CreateUserDto {
   @IsString()
   city?: string;
 
+  @ApiPropertyOptional({ example: 'España' })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
   @ApiPropertyOptional({ example: 'PACTO-HE4701' })
   @IsOptional()
   @IsString()

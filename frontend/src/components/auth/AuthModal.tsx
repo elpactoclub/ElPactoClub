@@ -14,6 +14,7 @@ export default function AuthModal() {
   const [emailInput, setEmailInput]       = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [nameInput, setNameInput]         = useState("");
+  const [countryInput, setCountryInput]   = useState("España");
   const [cityInput, setCityInput]         = useState("Barcelona");
   const [referredByInput, setReferredByInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,7 @@ export default function AuthModal() {
       if (ok) { showToast("¡Sesión iniciada! 🏀"); closeAuth(); }
       else showToast("Credenciales incorrectas ❌");
     } else {
-      const ok = await registerUser(emailInput, passwordInput, nameInput, cityInput, referredByInput);
+      const ok = await registerUser(emailInput, passwordInput, nameInput, countryInput, cityInput, referredByInput);
       if (ok) { showToast("¡Bienvenido a El Pacto! ⚡"); closeAuth(); }
       else showToast("Error al crear cuenta ❌");
     }
@@ -53,6 +54,7 @@ export default function AuthModal() {
             emailInput={emailInput} setEmailInput={setEmailInput}
             passwordInput={passwordInput} setPasswordInput={setPasswordInput}
             nameInput={nameInput} setNameInput={setNameInput}
+            countryInput={countryInput} setCountryInput={setCountryInput}
             cityInput={cityInput} setCityInput={setCityInput}
             referredByInput={referredByInput} setReferredByInput={setReferredByInput}
             onSubmit={handleSubmit} onClose={closeAuth} onToggle={() => setIsLogin(!isLogin)}
@@ -80,6 +82,7 @@ export default function AuthModal() {
             emailInput={emailInput} setEmailInput={setEmailInput}
             passwordInput={passwordInput} setPasswordInput={setPasswordInput}
             nameInput={nameInput} setNameInput={setNameInput}
+            countryInput={countryInput} setCountryInput={setCountryInput}
             cityInput={cityInput} setCityInput={setCityInput}
             referredByInput={referredByInput} setReferredByInput={setReferredByInput}
             onSubmit={handleSubmit} onClose={closeAuth} onToggle={() => setIsLogin(!isLogin)}
@@ -113,6 +116,19 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 
+const citiesByCountry: Record<string, string[]> = {
+  España: ["Barcelona", "Madrid", "Valencia", "Sevilla", "Bilbao", "Zaragoza", "Málaga", "Otra"],
+  Argentina: ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata", "San Miguel de Tucumán", "Mar del Plata", "Otra"],
+  México: ["Ciudad de México", "Guadalajara", "Monterrey", "Cancún", "Playa del Carmen", "Puebla", "Querétaro", "Otra"],
+  Colombia: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga", "Santa Marta", "Otra"],
+  Perú: ["Lima", "Arequipa", "Trujillo", "Chiclayo", "Cusco", "Piura", "Ica", "Otra"],
+  Chile: ["Santiago", "Valparaíso", "Concepción", "La Serena", "Temuco", "Valdivia", "Puerto Montt", "Otra"],
+  Brasil: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Fortaleza", "Belo Horizonte", "Manaus", "Outra"],
+  Uruguay: ["Montevideo", "Salto", "Paysandú", "Las Piedras", "Rivera", "Maldonado", "Tacuarembó", "Outra"],
+  Paraguay: ["Asunción", "Ciudad del Este", "Encarnación", "Caaguazú", "Coronel Oviedo", "Pedro Juan Caballero", "Villarrica", "Outra"],
+  Otro: ["Otra"],
+};
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -127,6 +143,7 @@ function FormContent({
   emailInput, setEmailInput,
   passwordInput, setPasswordInput,
   nameInput, setNameInput,
+  countryInput, setCountryInput,
   cityInput, setCityInput,
   referredByInput, setReferredByInput,
   onSubmit, onClose, onToggle,
@@ -136,6 +153,7 @@ function FormContent({
   emailInput: string; setEmailInput: (v: string) => void;
   passwordInput: string; setPasswordInput: (v: string) => void;
   nameInput: string; setNameInput: (v: string) => void;
+  countryInput: string; setCountryInput: (v: string) => void;
   cityInput: string; setCityInput: (v: string) => void;
   referredByInput: string; setReferredByInput: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -191,13 +209,27 @@ function FormContent({
                   style={inputStyle}
                 />
               </Field>
+              <Field label="País">
+                <select
+                  value={countryInput}
+                  onChange={(e) => {
+                    setCountryInput(e.target.value);
+                    setCityInput(citiesByCountry[e.target.value]?.[0] || "Otra");
+                  }}
+                  style={{ ...inputStyle, cursor: "pointer" }}
+                >
+                  {["España","Argentina","México","Colombia","Perú","Chile","Brasil","Uruguay","Paraguay","Otro"].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </Field>
               <Field label="Ciudad">
                 <select
                   value={cityInput}
                   onChange={(e) => setCityInput(e.target.value)}
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
-                  {["Barcelona","Madrid","Valencia","Sevilla","Bilbao","Zaragoza","Málaga","Otra"].map(c => (
+                  {(citiesByCountry[countryInput] || ["Otra"]).map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>

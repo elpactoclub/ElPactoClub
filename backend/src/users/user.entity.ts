@@ -30,6 +30,9 @@ export class User {
   @Column({ default: 'Madrid' })
   city: string;
 
+  @Column({ default: 'España' })
+  country: string;
+
   @Column({ type: 'enum', enum: ['fan', 'socio', 'creator', 'admin'], default: 'fan' })
   role: UserRole;
 

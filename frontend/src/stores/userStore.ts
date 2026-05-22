@@ -11,6 +11,7 @@ interface UserState {
   email: string | null;
   avatar: string;
   city: string;
+  country: string;
   credits: number;
   xp: number;
   streak: number;
@@ -19,6 +20,7 @@ interface UserState {
   socioSince: string | null;
   referralCode: string;
   rank: number | null;
+  role: 'fan' | 'socio' | 'creator' | 'admin';
   isAuthenticated: boolean;
   token: string | null;
 
@@ -53,7 +55,7 @@ interface UserState {
 
   // API Async Actions
   login: (email: string, password: string) => Promise<boolean>;
-  registerUser: (email: string, password: string, name: string, city: string, referredBy?: string) => Promise<boolean>;
+  registerUser: (email: string, password: string, name: string, country: string, city: string, referredBy?: string) => Promise<boolean>;
   logout: () => void;
   fetchProfile: () => Promise<void>;
   spinRuletaApi: () => Promise<{ prize: string; credits: number; xp: number } | null>;
@@ -89,6 +91,7 @@ const initialUserState = {
   email: null,
   avatar: "🏀",
   city: "",
+  country: "España",
   credits: 0,
   xp: 0,
   streak: 0,
@@ -97,6 +100,7 @@ const initialUserState = {
   socioSince: null,
   referralCode: "",
   rank: null,
+  role: "fan" as const,
   level: "Rookie" as UserLevel,
   nextLevel: "Starter" as UserLevel,
   xpProgress: 0,
@@ -181,12 +185,14 @@ export const useUserStore = create<UserState>((set, get) => ({
         email: user.email,
         avatar: user.avatar,
         city: user.city,
+        country: user.country ?? "España",
         credits: user.credits,
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
         socioSince: user.socioSince ?? null,
         referralCode: user.referralCode ?? "",
+        role: user.role ?? "fan",
         rank: null,
         level: computedLevel,
         nextLevel: getNextLevel(computedLevel),
@@ -204,12 +210,13 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  registerUser: async (email, password, name, city, referredBy) => {
+  registerUser: async (email, password, name, country, city, referredBy) => {
     try {
       const res = await api.post("/auth/register", {
         email,
         password,
         name,
+        country,
         city,
         referredBy: referredBy || undefined,
       });
@@ -224,12 +231,14 @@ export const useUserStore = create<UserState>((set, get) => ({
         email: user.email,
         avatar: user.avatar,
         city: user.city,
+        country: user.country ?? "España",
         credits: user.credits,
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
         socioSince: user.socioSince ?? null,
         referralCode: user.referralCode ?? "",
+        role: user.role ?? "fan",
         rank: null,
         level: computedLevel,
         nextLevel: getNextLevel(computedLevel),
@@ -274,12 +283,14 @@ export const useUserStore = create<UserState>((set, get) => ({
         email: user.email,
         avatar: user.avatar,
         city: user.city,
+        country: user.country ?? "España",
         credits: user.credits,
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
         socioSince: user.socioSince ?? null,
         referralCode: user.referralCode ?? "",
+        role: user.role ?? "fan",
         level: computedLevel,
         nextLevel: getNextLevel(computedLevel),
         xpProgress: getXPProgress(user.xp, computedLevel),
