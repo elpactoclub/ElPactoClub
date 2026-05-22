@@ -9,13 +9,14 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  // CORS — allow frontend dev server
+  // CORS — allow frontend dev server and production
   app.enableCors({
     origin: [
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://elpactoclub-frontend.fly.dev',
       process.env.FRONTEND_URL ?? '',
-    ],
+    ].filter(Boolean),
     credentials: true,
   });
 
