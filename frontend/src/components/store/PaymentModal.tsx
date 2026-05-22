@@ -4,187 +4,223 @@ import { useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
-type Step = "plan" | "card" | "processing" | "welcome";
-
 export default function PaymentModal() {
   const { isPaymentOpen, closePayment, showToast } = useUIStore();
-  const { addCredits, becomeSocio, becomeSocioApi, isAuthenticated, name } = useUserStore();
-  const [step, setStep] = useState<Step>("plan");
-  const [cardNum, setCardNum] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  const { isAuthenticated } = useUserStore();
+  const [loading, setLoading] = useState(false);
 
   if (!isPaymentOpen) return null;
 
-  const handleClose = () => {
-    setStep("plan");
-    setCardNum("");
-    setExpiry("");
-    setCvv("");
-    closePayment();
-  };
-
-  const formatCard = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
-  const formatExpiry = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 4);
-    return d.length > 2 ? d.slice(0, 2) + "/" + d.slice(2) : d;
-  };
-
-  const handlePay = () => {
-    if (cardNum.replace(/\s/g, "").length < 16 || expiry.length < 5 || cvv.length < 3) {
-      showToast("Completa los datos de la tarjeta");
-      return;
-    }
-    setStep("processing");
-    setTimeout(async () => {
-      if (isAuthenticated) {
-        await becomeSocioApi();
+  const handleCheckout = async () => {
+    setLoading(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1/store/checkout`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
+      );
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      if (url) {
+        window.location.href = url;
       } else {
-        addCredits(200);
-        becomeSocio();
+        throw new Error();
       }
-      setStep("welcome");
-    }, 2000);
+    } catch {
+      showToast("Error al conectar con el servidor de pago");
+      setLoading(false);
+    }
   };
+
+  const benefits = [
+    "200 créditos mensuales",
+    "Acceso a charlas exclusivas",
+    "Participación en sorteos",
+    "Voto en todas las decisiones del club",
+    "Carnet digital de socio",
+    "5% dto Basketball Emotion",
+    "10% dto Hoops",
+  ];
 
   return (
-    <div className="fixed inset-0 bg-[#000e] z-[350] flex items-end justify-center" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="bg-gray rounded-t-2xl w-full max-w-[480px] px-5 pb-10 animate-slide-up">
-        <div className="w-9 h-1 bg-gray3 rounded-sm mx-auto mt-4 mb-5" />
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[350]"
+        style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+        onClick={closePayment}
+      />
 
-        {/* STEP: PLAN */}
-        {step === "plan" && (
-          <>
-            <div className="text-center mb-5">
-              <div className="text-[9px] font-bold tracking-[2px] text-muted mb-1">HAZTE SOCIO</div>
-              <div className="font-heading text-[28px] tracking-[1px]">SOCIO EL PACTO</div>
-              <div className="text-[11px] text-muted">Acceso completo · Sin permanencia</div>
-            </div>
-
-            <div className="bg-gray2 border border-accent/30 rounded-xl p-4 mb-4">
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-sm font-bold">Plan Socio</div>
-                <div className="text-right">
-                  <div className="font-heading text-[26px] text-accent leading-none">5€</div>
-                  <div className="text-[9px] text-muted">/mes</div>
-                </div>
-              </div>
-              {[
-                "✅ 200 créditos mensuales",
-                "✅ Acceso a charlas exclusivas",
-                "✅ Participación en sorteos",
-                "✅ Voto en todas las decisiones del club",
-                "✅ Carnet digital de socio",
-                "✅ 5% dto Basketball Emotion",
-                "✅ 10% dto Hoops",
-              ].map((b) => (
-                <div key={b} className="text-[11px] text-[#ccc] mb-1">{b}</div>
-              ))}
-            </div>
-
-            <div className="bg-gray3 rounded-xl p-3 mb-4 text-[10px] text-muted text-center">
-              🔒 Pago seguro con Stripe · Cancela cuando quieras
-            </div>
-
-            <button onClick={() => setStep("card")} className="w-full bg-accent text-black font-heading text-sm py-3 rounded-xl tracking-[1px]">
-              CONTINUAR → DATOS DE PAGO
-            </button>
-            <button onClick={handleClose} className="w-full mt-2 text-muted text-[11px] font-sans bg-transparent border-none cursor-pointer py-2">Cancelar</button>
-          </>
-        )}
-
-        {/* STEP: CARD */}
-        {step === "card" && (
-          <>
-            <div className="flex items-center gap-2 mb-5">
-              <button onClick={() => setStep("plan")} className="text-muted bg-transparent border-none cursor-pointer text-sm">‹</button>
-              <div className="font-heading text-[20px] tracking-[1px]">DATOS DE PAGO</div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#1a1a10] to-[#252515] border border-accent/30 rounded-xl p-4 mb-4">
-              <div className="flex justify-between items-center mb-3">
-                <div className="text-[9px] font-bold tracking-[2px] text-accent">EL PACTO · SOCIO</div>
-                <div className="font-heading text-[17px] text-accent">5€/mes</div>
-              </div>
-              <div className="font-heading text-[18px] tracking-[3px] text-white/70">
-                {cardNum || "•••• •••• •••• ••••"}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 mb-5">
-              <div>
-                <label className="text-[9px] font-bold text-muted uppercase tracking-wider mb-1 block">Número de tarjeta</label>
-                <input
-                  value={cardNum}
-                  onChange={(e) => setCardNum(formatCard(e.target.value))}
-                  placeholder="1234 5678 9012 3456"
-                  className="w-full bg-gray2 border border-border2 rounded-lg px-3 py-[10px] text-[13px] font-sans text-white outline-none focus:border-accent"
-                />
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-[9px] font-bold text-muted uppercase tracking-wider mb-1 block">Caducidad</label>
-                  <input
-                    value={expiry}
-                    onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                    placeholder="MM/AA"
-                    className="w-full bg-gray2 border border-border2 rounded-lg px-3 py-[10px] text-[13px] font-sans text-white outline-none focus:border-accent"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-[9px] font-bold text-muted uppercase tracking-wider mb-1 block">CVV</label>
-                  <input
-                    value={cvv}
-                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                    placeholder="123"
-                    className="w-full bg-gray2 border border-border2 rounded-lg px-3 py-[10px] text-[13px] font-sans text-white outline-none focus:border-accent"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button onClick={handlePay} className="w-full bg-accent text-black font-heading text-sm py-3 rounded-xl tracking-[1px]">
-              🔒 PAGAR 5€/MES
-            </button>
-            <div className="text-center text-[9px] text-muted mt-2">Stripe · Encriptación SSL · Sin permanencia</div>
-          </>
-        )}
-
-        {/* STEP: PROCESSING */}
-        {step === "processing" && (
-          <div className="text-center py-10">
-            <div className="text-[40px] mb-4 animate-pulse">⚡</div>
-            <div className="font-heading text-[22px] tracking-[1px] mb-2">PROCESANDO PAGO</div>
-            <div className="text-[11px] text-muted">Conectando con Stripe...</div>
-            <div className="flex justify-center gap-1 mt-5">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="w-2 h-2 rounded-full bg-accent animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEP: WELCOME */}
-        {step === "welcome" && (
-          <div className="text-center py-6">
-            <div className="text-[50px] mb-3">🏀</div>
-            <div className="font-heading text-[26px] tracking-[1px] mb-1">¡BIENVENIDO AL PACTO!</div>
-            <div className="text-[13px] text-accent font-bold mb-1">{name || "Fan"} · Socio Oficial</div>
-            <div className="text-[11px] text-muted mb-5">Ya eres parte del club. 200 créditos añadidos a tu cuenta.</div>
-
-            <div className="bg-gray2 border border-accent/30 rounded-xl p-4 mb-5">
-              <div className="text-[9px] font-bold text-accent tracking-[2px] mb-2">TUS BENEFICIOS ACTIVOS</div>
-              {["✅ 200 créditos añadidos", "✅ Acceso a charlas desbloqueado", "✅ Participación en sorteos", "✅ Voto en decisiones oficiales"].map((b) => (
-                <div key={b} className="text-[11px] text-[#ccc] mb-1">{b}</div>
-              ))}
-            </div>
-
-            <button onClick={handleClose} className="w-full bg-accent text-black font-heading text-sm py-3 rounded-xl tracking-[1px]">
-              ¡EMPEZAR A DISFRUTAR! →
-            </button>
-          </div>
-        )}
+      {/* Mobile: slide-up sheet */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-[351] animate-slide-up">
+        <div
+          style={{
+            background: "var(--color-gray)",
+            borderRadius: "20px 20px 0 0",
+            padding: "0 20px 40px",
+          }}
+        >
+          <div style={{ width: 36, height: 4, background: "var(--color-gray3)", borderRadius: 2, margin: "14px auto 20px" }} />
+          <ModalContent
+            benefits={benefits}
+            loading={loading}
+            isAuthenticated={isAuthenticated}
+            onCheckout={handleCheckout}
+            onClose={closePayment}
+          />
+        </div>
       </div>
+
+      {/* Desktop: centered dialog */}
+      <div className="hidden sm:flex fixed inset-0 z-[351] items-center justify-center p-6">
+        <div
+          className="animate-fade-in"
+          style={{
+            background: "var(--color-gray)",
+            borderRadius: 20,
+            padding: "36px 40px 40px",
+            width: "100%",
+            maxWidth: 480,
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+          }}
+        >
+          <ModalContent
+            benefits={benefits}
+            loading={loading}
+            isAuthenticated={isAuthenticated}
+            onCheckout={handleCheckout}
+            onClose={closePayment}
+            desktop
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ModalContent({
+  benefits,
+  loading,
+  isAuthenticated,
+  onCheckout,
+  onClose,
+  desktop = false,
+}: {
+  benefits: string[];
+  loading: boolean;
+  isAuthenticated: boolean;
+  onCheckout: () => void;
+  onClose: () => void;
+  desktop?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: 20 }}>
+        {desktop && (
+          <button
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              top: 16, right: 16,
+              background: "none",
+              border: "none",
+              color: "var(--color-muted)",
+              cursor: "pointer",
+              fontSize: 20,
+              lineHeight: 1,
+              padding: 4,
+            }}
+          >
+            ✕
+          </button>
+        )}
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: "var(--color-muted)", marginBottom: 4 }}>
+          HAZTE SOCIO
+        </div>
+        <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, letterSpacing: 1 }}>
+          SOCIO EL PACTO
+        </div>
+        <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 2 }}>
+          Acceso completo · Sin permanencia
+        </div>
+      </div>
+
+      {/* Plan card */}
+      <div
+        style={{
+          background: "var(--color-gray2)",
+          border: "1px solid rgba(240,224,64,0.25)",
+          borderRadius: 14,
+          padding: "16px 18px",
+          marginBottom: 12,
+        }}
+      >
+        {/* Price row */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>Plan Socio</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontSize: 32, color: "var(--color-accent)", lineHeight: 1 }}>
+              5€
+            </span>
+            <span style={{ fontSize: 10, color: "var(--color-muted)" }}>/mes</span>
+          </div>
+        </div>
+
+        {/* Benefits */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {benefits.map((b) => (
+            <div key={b} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#ccc" }}>
+              <span style={{ color: "var(--color-green)", fontSize: 10, flexShrink: 0 }}>✓</span>
+              {b}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Security note */}
+      <div
+        style={{
+          background: "var(--color-gray3)",
+          borderRadius: 10,
+          padding: "10px 14px",
+          marginBottom: 16,
+          fontSize: 10,
+          color: "var(--color-muted)",
+          textAlign: "center",
+        }}
+      >
+        🔒 Pago seguro con Stripe · Cancela cuando quieras
+      </div>
+
+      {/* CTA */}
+      <button
+        onClick={onCheckout}
+        disabled={loading}
+        className="btn-y"
+        style={{ fontSize: 13, fontWeight: 800, padding: "14px", opacity: loading ? 0.6 : 1 }}
+      >
+        {loading ? "Redirigiendo a Stripe…" : "PAGAR CON STRIPE — 5€/mes"}
+      </button>
+      <button
+        onClick={onClose}
+        style={{ marginTop: 8, background: "none", border: "none", cursor: "pointer", fontSize: 11, color: "var(--color-muted)", padding: "8px" }}
+      >
+        Cancelar
+      </button>
+
+      {!isAuthenticated && (
+        <p style={{ textAlign: "center", fontSize: 10, color: "#444", margin: "6px 0 0" }}>
+          Inicia sesión para vincular la suscripción a tu cuenta
+        </p>
+      )}
     </div>
   );
 }

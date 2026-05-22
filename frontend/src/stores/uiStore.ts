@@ -70,7 +70,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set, get) => ({
   activeTab: "home",
   communityTab: "feed",
-  isLandingOpen: false,
+  isLandingOpen: true,
   isOnboardingOpen: false,
   onboardingStep: 0,
   isProfileOpen: false,

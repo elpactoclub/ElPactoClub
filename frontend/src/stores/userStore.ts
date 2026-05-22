@@ -16,7 +16,9 @@ interface UserState {
   streak: number;
   tickets: number;
   isSocio: boolean;
+  socioSince: string | null;
   referralCode: string;
+  rank: number | null;
   isAuthenticated: boolean;
   token: string | null;
 
@@ -86,16 +88,18 @@ const initialUserState = {
   name: "Tu Nombre",
   email: null,
   avatar: "🏀",
-  city: "Barcelona",
-  credits: 340,
-  xp: 1240,
-  streak: 7,
+  city: "",
+  credits: 0,
+  xp: 0,
+  streak: 0,
   tickets: 0,
   isSocio: false,
-  referralCode: "PACTO-HE47",
-  level: "Starter" as UserLevel,
-  nextLevel: "MVP" as UserLevel,
-  xpProgress: 62,
+  socioSince: null,
+  referralCode: "",
+  rank: null,
+  level: "Rookie" as UserLevel,
+  nextLevel: "Starter" as UserLevel,
+  xpProgress: 0,
   voted: {},
   liked: {},
   reactions: {},
@@ -181,13 +185,17 @@ export const useUserStore = create<UserState>((set, get) => ({
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
-        referralCode: user.referralCode,
+        socioSince: user.socioSince ?? null,
+        referralCode: user.referralCode ?? "",
+        rank: null,
         level: computedLevel,
         nextLevel: getNextLevel(computedLevel),
         xpProgress: getXPProgress(user.xp, computedLevel),
         isAuthenticated: true,
         token: access_token,
       });
+
+      api.get("/users/me/rank").then((r) => set({ rank: r.data })).catch(() => {});
 
       return true;
     } catch (err) {
@@ -220,13 +228,17 @@ export const useUserStore = create<UserState>((set, get) => ({
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
-        referralCode: user.referralCode,
+        socioSince: user.socioSince ?? null,
+        referralCode: user.referralCode ?? "",
+        rank: null,
         level: computedLevel,
         nextLevel: getNextLevel(computedLevel),
         xpProgress: getXPProgress(user.xp, computedLevel),
         isAuthenticated: true,
         token: access_token,
       });
+
+      api.get("/users/me/rank").then((r) => set({ rank: r.data })).catch(() => {});
 
       return true;
     } catch (err) {
@@ -266,13 +278,16 @@ export const useUserStore = create<UserState>((set, get) => ({
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
-        referralCode: user.referralCode,
+        socioSince: user.socioSince ?? null,
+        referralCode: user.referralCode ?? "",
         level: computedLevel,
         nextLevel: getNextLevel(computedLevel),
         xpProgress: getXPProgress(user.xp, computedLevel),
         isAuthenticated: true,
         token,
       });
+
+      api.get("/users/me/rank").then((r) => set({ rank: r.data })).catch(() => {});
     } catch (err) {
       console.error("Fetch profile failed, logging out:", err);
       get().logout();

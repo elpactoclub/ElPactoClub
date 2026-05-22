@@ -88,9 +88,9 @@ export class CommunityService {
     const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
     return messages.map((m) => ({
       ...m,
-      userName: userMap[m.userId]?.name ?? 'Fan',
-      userAvatar: userMap[m.userId]?.avatar ?? '🏀',
-      userRole: userMap[m.userId]?.role ?? 'fan',
+      authorName: userMap[m.userId]?.name ?? 'Fan',
+      authorAvatar: userMap[m.userId]?.avatar ?? '🏀',
+      authorRole: userMap[m.userId]?.role ?? 'fan',
     }));
   }
 

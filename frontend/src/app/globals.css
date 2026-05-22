@@ -458,6 +458,11 @@ body {
   to { opacity: 1; }
 }
 
+@keyframes dialogIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
@@ -469,6 +474,7 @@ body {
 .animate-claim-pop { animation: claimPop 0.3s ease; }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 .animate-fade-in { animation: fadeIn 0.3s ease; }
+.animate-dialog-in { animation: dialogIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .animate-float { animation: float 3s ease-in-out infinite; }
 
 /* Safe area padding for bottom nav */

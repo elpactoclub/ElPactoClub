@@ -8,8 +8,8 @@ import Onboarding from "@/components/landing/Onboarding";
 import AppShell from "@/components/layout/AppShell";
 
 export default function Home() {
-  const { isLandingOpen, isOnboardingOpen } = useUIStore();
-  const { isAuthenticated, fetchProfile, token } = useUserStore();
+  const { isLandingOpen, isOnboardingOpen, showToast } = useUIStore();
+  const { isAuthenticated, fetchProfile, token, becomeSocioApi } = useUserStore();
 
   useEffect(() => {
     if (token) {
@@ -19,12 +19,35 @@ export default function Home() {
     }
   }, [token]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("socio") === "success") {
+      window.history.replaceState({}, "", window.location.pathname);
+      if (token) {
+        becomeSocioApi().then(() => {
+          showToast("¡Bienvenido al Pacto! Ya eres socio oficial 🏀");
+        });
+      } else {
+        showToast("¡Pago completado! Inicia sesión para activar tu membresía 🏀");
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (isOnboardingOpen) {
-    return <div className="h-full"><Onboarding /></div>;
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#0A0A0A", display: "flex", flexDirection: "column" }}>
+        <Onboarding />
+      </div>
+    );
   }
 
   if (isLandingOpen && !isAuthenticated) {
-    return <div className="h-full"><Landing /></div>;
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#0A0A0A", display: "flex", flexDirection: "column" }}>
+        <Landing />
+      </div>
+    );
   }
 
   return <AppShell />;
