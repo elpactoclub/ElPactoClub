@@ -104,8 +104,8 @@ export default function ViewPostModal() {
           background: "#141414",
           borderRadius: 16,
           border: "1px solid rgba(255,255,255,0.06)",
-          maxWidth: 600,
-          width: "90%",
+          maxWidth: 850,
+          width: "92%",
           maxHeight: "95vh",
           overflowY: "auto",
         }}
