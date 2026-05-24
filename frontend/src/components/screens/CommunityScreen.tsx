@@ -5,6 +5,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
+import { useShare } from "@/hooks/useShare";
 
 // ==========================================
 // FEED TAB
@@ -62,6 +63,7 @@ function PostAvatar({ name, role, size = 44 }: { name: string; role: string; siz
 function FeedTab() {
   const { showToast, openPostModal } = useUIStore();
   const { avatar, liked, toggleLike, isAuthenticated } = useUserStore();
+  const { sharePost } = useShare();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [pollVoted, setPollVoted] = useState<Record<string, string>>({});
@@ -219,7 +221,16 @@ function FeedTab() {
                 {isLiked ? "❤️" : "🤍"} <span>{post.likesCount + (isLiked ? 1 : 0)}</span>
               </button>
               <button
-                onClick={() => showToast("¡Compartido! 📤")}
+                onClick={async () => {
+                  const result = await sharePost(post.id, post.content.substring(0, 100));
+                  if (result.shared) {
+                    showToast("¡Compartido! 📤");
+                  } else if (result.copied) {
+                    showToast("Link copiado al portapapeles ✓");
+                  } else {
+                    showToast("Error al compartir");
+                  }
+                }}
                 style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}
               >↗ Compartir</button>
             </div>
@@ -438,6 +449,7 @@ function getCategoryStyle(type?: VoteType): { labelColor: string; costDisplay: R
 function VoteTab() {
   const { showToast } = useUIStore();
   const { spendCredits, addXP, voted, setVoted, isAuthenticated } = useUserStore();
+  const { sharePost } = useShare();
   const [votes, setVotes] = useState<VoteDecision[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -540,11 +552,22 @@ function VoteTab() {
               })}
             </div>
 
-            {isApuesta && (
-              <div style={{ padding: "10px 16px 14px", fontSize: 11, color: "var(--color-muted)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                {v.participants ?? 0} fans · {v.closingDate ? `Cierra ${v.closingDate}` : "Activa"}
-              </div>
-            )}
+            <div style={{ padding: "10px 16px 14px", fontSize: 11, color: "var(--color-muted)", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>{isApuesta ? `${v.participants ?? 0} fans · ${v.closingDate ? `Cierra ${v.closingDate}` : "Activa"}` : ""}</span>
+              <button
+                onClick={async () => {
+                  const result = await sharePost(v.id, v.title);
+                  if (result.shared) {
+                    showToast("¡Compartido! 📤");
+                  } else if (result.copied) {
+                    showToast("Link copiado al portapapeles ✓");
+                  } else {
+                    showToast("Error al compartir");
+                  }
+                }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 12, color: "var(--color-muted)", fontFamily: "var(--font-body)", padding: "4px 8px" }}
+              >↗ Compartir</button>
+            </div>
           </div>
         );
       })}
