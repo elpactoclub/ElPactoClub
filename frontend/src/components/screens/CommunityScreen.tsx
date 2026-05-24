@@ -223,12 +223,10 @@ function FeedTab() {
               <button
                 onClick={async () => {
                   const result = await sharePost(post.id, post.content.substring(0, 100));
-                  if (result.shared) {
-                    showToast("¡Compartido! 📤");
-                  } else if (result.copied) {
+                  if (result.copied) {
                     showToast("Link copiado al portapapeles ✓");
                   } else {
-                    showToast("Error al compartir");
+                    showToast("Error al copiar");
                   }
                 }}
                 style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}
@@ -557,12 +555,10 @@ function VoteTab() {
               <button
                 onClick={async () => {
                   const result = await sharePost(v.id, v.title);
-                  if (result.shared) {
-                    showToast("¡Compartido! 📤");
-                  } else if (result.copied) {
+                  if (result.copied) {
                     showToast("Link copiado al portapapeles ✓");
                   } else {
-                    showToast("Error al compartir");
+                    showToast("Error al copiar");
                   }
                 }}
                 style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 12, color: "var(--color-muted)", fontFamily: "var(--font-body)", padding: "4px 8px" }}
