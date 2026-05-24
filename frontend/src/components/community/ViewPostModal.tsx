@@ -29,8 +29,8 @@ function timeAgo(iso: string) {
 }
 
 export default function ViewPostModal() {
-  const { viewPostId, closeViewPost } = useUIStore();
-  const { liked, toggleLike, isAuthenticated, showToast } = useUserStore();
+  const { viewPostId, closeViewPost, showToast } = useUIStore();
+  const { liked, toggleLike, isAuthenticated } = useUserStore();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(false);
   const [pollVoted, setPollVoted] = useState<string>("");
