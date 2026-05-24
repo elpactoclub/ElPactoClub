@@ -22,11 +22,11 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    // Handle shared post
+    // Handle shared post — go to community feed
     const postId = params.get("post");
     if (postId) {
       window.history.replaceState({}, "", window.location.pathname);
-      useUIStore.setState({ viewPostId: postId });
+      useUIStore.setState({ activeTab: "comunidad", communityTab: "feed" });
     }
 
     // Handle socio payment
