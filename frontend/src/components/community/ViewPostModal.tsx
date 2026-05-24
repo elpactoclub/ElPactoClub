@@ -93,9 +93,10 @@ export default function ViewPostModal() {
         background: "rgba(0,0,0,0.7)",
         zIndex: 200,
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         justifyContent: "center",
         padding: "20px",
+        paddingTop: "40px",
       }}
     >
       <div
@@ -104,9 +105,9 @@ export default function ViewPostModal() {
           background: "#141414",
           borderRadius: 16,
           border: "1px solid rgba(255,255,255,0.06)",
-          maxWidth: 850,
+          maxWidth: 700,
           width: "92%",
-          maxHeight: "95vh",
+          maxHeight: "92vh",
           overflowY: "auto",
         }}
       >
