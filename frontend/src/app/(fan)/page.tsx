@@ -21,6 +21,15 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Handle shared post
+    const postId = params.get("post");
+    if (postId) {
+      window.history.replaceState({}, "", window.location.pathname);
+      useUIStore.setState({ viewPostId: postId });
+    }
+
+    // Handle socio payment
     if (params.get("socio") === "success") {
       window.history.replaceState({}, "", window.location.pathname);
       if (token) {

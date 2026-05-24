@@ -22,6 +22,7 @@ import PaymentModal from "@/components/store/PaymentModal";
 import EventPageModal from "@/components/events/EventPageModal";
 import FanModal from "@/components/community/FanModal";
 import PostModal from "@/components/community/PostModal";
+import ViewPostModal from "@/components/community/ViewPostModal";
 import ShareCarnetModal from "@/components/profile/ShareCarnetModal";
 import PersonalizeModal from "@/components/profile/PersonalizeModal";
 import ProjectPageModal from "@/components/projects/ProjectPageModal";
@@ -75,6 +76,7 @@ export default function AppShell() {
       <EventPageModal />
       <FanModal />
       <PostModal />
+      <ViewPostModal />
       <ShareCarnetModal />
       <PersonalizeModal />
       <ProjectPageModal />

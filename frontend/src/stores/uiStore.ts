@@ -26,6 +26,7 @@ interface UIState {
   isShareCarnetOpen: boolean;
   isProjectPageOpen: boolean;
   projectId: "india" | "tecnificar" | null;
+  viewPostId: string | null;
 
   // Notifications
   notifUnreadCount: number;
@@ -64,6 +65,8 @@ interface UIState {
   closeShareCarnet: () => void;
   openProjectPage: (id: "india" | "tecnificar") => void;
   closeProjectPage: () => void;
+  openViewPost: (postId: string) => void;
+  closeViewPost: () => void;
   showToast: (message: string) => void;
 }
 
@@ -86,6 +89,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isShareCarnetOpen: false,
   isProjectPageOpen: false,
   projectId: null,
+  viewPostId: null,
   notifUnreadCount: 0,
   toastMessage: null,
   toastTimer: null,
@@ -121,6 +125,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   closeShareCarnet: () => set({ isShareCarnetOpen: false }),
   openProjectPage: (id) => set({ isProjectPageOpen: true, projectId: id }),
   closeProjectPage: () => set({ isProjectPageOpen: false, projectId: null }),
+  openViewPost: (postId) => set({ viewPostId: postId }),
+  closeViewPost: () => set({ viewPostId: null }),
 
   showToast: (message) => {
     const state = get();
