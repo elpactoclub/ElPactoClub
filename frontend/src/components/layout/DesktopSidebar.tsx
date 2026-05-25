@@ -14,7 +14,7 @@ const tabs = [
 ];
 
 export default function DesktopSidebar() {
-  const { xp, credits, isAuthenticated } = useUserStore();
+  const { xp, credits, isAuthenticated, name, avatar, city, level } = useUserStore();
   const [dmUnread, setDmUnread] = useState(0);
 
   useEffect(() => {
@@ -171,13 +171,22 @@ export default function DesktopSidebar() {
           textAlign: "left",
         }}
       >
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--color-gray3)", overflow: "hidden", flexShrink: 0 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/imagenes/violeta.jpg" alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--color-gray3)", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+          {avatar && avatar.length <= 2
+            ? <span>{avatar}</span>
+            : /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={avatar || "/imagenes/violeta.jpg"} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+          }
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 2 }}>Mi perfil</div>
-          <div style={{ fontSize: 10, color: "var(--color-muted)" }}>Ver carnet y stats</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {name || "Mi perfil"}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            {city && <span style={{ fontSize: 10, color: "var(--color-muted)" }}>📍 {city}</span>}
+            <span style={{ fontSize: 9, fontWeight: 800, color: "#000", background: "var(--color-accent)", borderRadius: 4, padding: "1px 5px" }}>{level}</span>
+            <span style={{ fontSize: 10, color: "var(--color-accent)", fontWeight: 700 }}>⚡{xp}</span>
+          </div>
         </div>
       </button>
     </aside>
