@@ -109,7 +109,9 @@ const initialUserState = {
   reactions: {},
   polls: {},
   dailyClaimed: false,
-  ruletaSpun: false,
+  ruletaSpun: typeof window !== "undefined"
+    ? localStorage.getItem("el_pacto_ruleta_date") === new Date().toDateString()
+    : false,
   isAuthenticated: false,
   token: typeof window !== "undefined" ? localStorage.getItem("el_pacto_token") : null,
 };
@@ -162,7 +164,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     set((state) => ({ polls: { ...state.polls, [id]: option } })),
 
   claimDaily: () => set({ dailyClaimed: true }),
-  spinRuleta: () => set({ ruletaSpun: true }),
+  spinRuleta: () => {
+    if (typeof window !== "undefined") localStorage.setItem("el_pacto_ruleta_date", new Date().toDateString());
+    set({ ruletaSpun: true });
+  },
 
   becomeSocio: () =>
     set((state) => ({
@@ -311,6 +316,7 @@ export const useUserStore = create<UserState>((set, get) => ({
       const prize = res.data; // { prize, credits, xp }
 
       // Update local state
+      if (typeof window !== "undefined") localStorage.setItem("el_pacto_ruleta_date", new Date().toDateString());
       set((state) => {
         const newXP = state.xp + prize.xp;
         const computedLevel = getLevel(newXP);

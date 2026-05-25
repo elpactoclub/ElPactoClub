@@ -470,7 +470,7 @@ body {
 
 .animate-blink { animation: blink 1.5s ease-in-out infinite; }
 .animate-badge-pop { animation: badgePop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.animate-spin-slow { animation: spin 3s linear infinite; }
+.animate-spin-slow { animation: spin 0.5s linear infinite; }
 .animate-claim-pop { animation: claimPop 0.3s ease; }
 .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 .animate-fade-in { animation: fadeIn 0.3s ease; }
