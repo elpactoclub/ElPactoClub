@@ -57,6 +57,32 @@ const STATIC_EVENTS: EventItem[] = [
 export default function EventsScreen() {
   const { showToast, openEventPage } = useUIStore();
   const { isAuthenticated, addXP, spendCredits } = useUserStore();
+  const [notifState, setNotifState] = useState<"idle" | "granted" | "denied">(
+    () => (typeof Notification !== "undefined" && Notification.permission === "granted" ? "granted" : "idle")
+  );
+
+  const handleActivateNotifications = async () => {
+    if (!("Notification" in window)) {
+      showToast("Tu navegador no soporta notificaciones");
+      return;
+    }
+    if (notifState === "granted") {
+      showToast("Ya tienes las notificaciones activadas 🔔");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotifState("granted");
+      new Notification("El Pacto BC 🏀", {
+        body: "Recibirás alertas de nuevos eventos antes que nadie.",
+        icon: "/favicon.ico",
+      });
+      showToast("Notificaciones activadas 🔔");
+    } else {
+      setNotifState("denied");
+      showToast("Notificaciones bloqueadas — actívalas en ajustes del navegador");
+    }
+  };
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"todos" | "partidos" | "charlas">("todos");
@@ -251,10 +277,17 @@ export default function EventsScreen() {
         <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Más eventos en camino</div>
         <div style={{ fontSize: 13, color: "var(--color-muted)", marginBottom: 20, lineHeight: 1.5 }}>Activa las notificaciones para ser el primero en enterarte</div>
         <button
-          onClick={() => showToast("Notificaciones activadas 🔔")}
-          style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "11px 24px", borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-body)" }}
+          onClick={handleActivateNotifications}
+          style={{
+            background: notifState === "granted" ? "rgba(34,197,94,0.15)" : "transparent",
+            border: `1px solid ${notifState === "granted" ? "#22C55E" : notifState === "denied" ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.2)"}`,
+            color: notifState === "granted" ? "#22C55E" : notifState === "denied" ? "var(--color-muted)" : "#fff",
+            padding: "11px 24px", borderRadius: 20, fontSize: 13, fontWeight: 600,
+            cursor: notifState === "denied" ? "default" : "pointer",
+            fontFamily: "var(--font-body)",
+          }}
         >
-          Activar notificaciones
+          {notifState === "granted" ? "Notificaciones activadas 🔔" : notifState === "denied" ? "Notificaciones bloqueadas" : "Activar notificaciones"}
         </button>
       </div>
     </div>
