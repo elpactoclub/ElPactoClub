@@ -75,7 +75,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set, get) => ({
   activeTab: "home",
   communityTab: "feed",
-  isLandingOpen: true,
+  isLandingOpen: typeof window !== "undefined" ? !localStorage.getItem("el_pacto_token") : true,
   isOnboardingOpen: false,
   onboardingStep: 0,
   isProfileOpen: false,
