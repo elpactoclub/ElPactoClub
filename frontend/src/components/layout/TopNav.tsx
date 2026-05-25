@@ -6,7 +6,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { api } from "@/services/api";
 
 export default function TopNav() {
-  const { xp, credits, isAuthenticated } = useUserStore();
+  const { xp, credits, isAuthenticated, avatar } = useUserStore();
   const { openProfile, toggleNotif, openDM, notifUnreadCount } = useUIStore();
   const [dmUnread, setDmUnread] = useState(0);
 
@@ -89,10 +89,13 @@ export default function TopNav() {
         {/* Avatar */}
         <button
           onClick={openProfile}
-          style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--color-gray3)", border: "2px solid rgba(255,255,255,0.20)", cursor: "pointer", overflow: "hidden", padding: 0, flexShrink: 0 }}
+          style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--color-gray3)", border: "2px solid rgba(255,255,255,0.20)", cursor: "pointer", overflow: "hidden", padding: 0, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/imagenes/violeta.jpg" alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+          {avatar && avatar.length <= 2
+            ? avatar
+            : /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={avatar || "/imagenes/violeta.jpg"} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+          }
         </button>
       </div>
     </nav>
