@@ -47,7 +47,7 @@ function timeAgo(iso?: string) {
 }
 
 export default function DMModal() {
-  const { isDMOpen, closeDM, showToast } = useUIStore();
+  const { isDMOpen, closeDM, showToast, dmOpenWithCreator } = useUIStore();
   const { isAuthenticated, credits } = useUserStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -65,20 +65,30 @@ export default function DMModal() {
       ]);
       const convs: Conversation[] = convRes.data ?? [];
       const creators: Conversation[] = creatorsRes.data ?? [];
-      // Merge: creadores sin conversación previa aparecen como "iniciar chat"
       const existingIds = new Set(convs.map((c) => c.partnerId));
       const extraCreators = creators.filter((c) => !existingIds.has(c.partnerId));
-      setConversations([...convs, ...extraCreators]);
+      const merged = [...convs, ...extraCreators];
+      setConversations(merged);
+      return merged;
     } catch {
       setConversations([]);
+      return [];
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (isDMOpen && isAuthenticated) loadConversations();
-  }, [isDMOpen, isAuthenticated, loadConversations]);
+    if (!isDMOpen || !isAuthenticated) return;
+    loadConversations().then((convs) => {
+      if (dmOpenWithCreator) {
+        const target = convs.find((c) => c.name.toLowerCase() === dmOpenWithCreator.toLowerCase());
+        if (target) openThread(target);
+        useUIStore.setState({ dmOpenWithCreator: null });
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDMOpen, isAuthenticated]);
 
   const openThread = async (conv: Conversation) => {
     setActiveId(conv.partnerId);

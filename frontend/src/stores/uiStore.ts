@@ -17,6 +17,7 @@ interface UIState {
   isCarnetOpen: boolean;
   isNotifOpen: boolean;
   isDMOpen: boolean;
+  dmOpenWithCreator: string | null;
   isPersonalizeOpen: boolean;
   isPostModalOpen: boolean;
   isPaymentOpen: boolean;
@@ -50,6 +51,7 @@ interface UIState {
   toggleNotif: () => void;
   closeNotif: () => void;
   openDM: () => void;
+  openDMWithCreator: (creatorName: string) => void;
   closeDM: () => void;
   openPersonalize: () => void;
   closePersonalize: () => void;
@@ -80,6 +82,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isCarnetOpen: false,
   isNotifOpen: false,
   isDMOpen: false,
+  dmOpenWithCreator: null,
   isPersonalizeOpen: false,
   isPostModalOpen: false,
   isPaymentOpen: false,
@@ -109,8 +112,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   closeCarnet: () => set({ isCarnetOpen: false }),
   toggleNotif: () => set((s) => ({ isNotifOpen: !s.isNotifOpen })),
   closeNotif: () => set({ isNotifOpen: false }),
-  openDM: () => set({ isDMOpen: true }),
-  closeDM: () => set({ isDMOpen: false }),
+  openDM: () => set({ isDMOpen: true, dmOpenWithCreator: null }),
+  openDMWithCreator: (creatorName) => set({ isDMOpen: true, dmOpenWithCreator: creatorName }),
+  closeDM: () => set({ isDMOpen: false, dmOpenWithCreator: null }),
   openPersonalize: () => set({ isProfileOpen: false, isPersonalizeOpen: true }),
   closePersonalize: () => set({ isPersonalizeOpen: false }),
   openPostModal: () => set({ isPostModalOpen: true }),

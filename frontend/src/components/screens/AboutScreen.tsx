@@ -25,8 +25,8 @@ const STATIC_RANKING = [
 ];
 
 export default function AboutScreen() {
-  const { showToast, openFanModal, openProjectPage } = useUIStore();
-  const { spendCredits, addXP, name: myName, xp: myXP } = useUserStore();
+  const { showToast, openFanModal, openProjectPage, openDMWithCreator } = useUIStore();
+  const { spendCredits, addXP, name: myName, xp: myXP, isAuthenticated } = useUserStore();
   const [rankTab, setRankTab] = useState<"global" | "ciudades">("global");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
@@ -78,7 +78,10 @@ export default function AboutScreen() {
                 <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{c.name}</div>
                 <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 10 }}>{c.role}</div>
                 <button
-                  onClick={() => showToast(`Mensaje a ${c.name} · −50 ⚡`)}
+                  onClick={() => {
+                    if (!isAuthenticated) { showToast("Inicia sesión para enviar mensajes ⚡"); return; }
+                    openDMWithCreator(c.name);
+                  }}
                   style={{ width: "100%", background: "#252525", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", borderRadius: 8, padding: "8px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}
                 >
                   ✉ Mensaje ⚡ 50
