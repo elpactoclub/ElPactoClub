@@ -72,9 +72,9 @@ export default function PostModal() {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#000c] z-[350] flex items-end justify-center" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="bg-gray rounded-t-2xl w-full max-w-[480px] pb-8 animate-slide-up">
-        <div className="w-9 h-1 bg-gray3 rounded-sm mx-auto mt-4 mb-4" />
+    <div className="fixed inset-0 bg-[#000c] z-[350] flex items-end lg:items-center justify-center" onClick={(e) => e.target === e.currentTarget && handleClose()}>
+      <div className="bg-gray rounded-t-2xl lg:rounded-2xl w-full max-w-[480px] lg:max-w-[560px] pb-8 lg:pb-0 animate-slide-up">
+        <div className="w-9 h-1 bg-gray3 rounded-sm mx-auto mt-4 mb-4 lg:hidden" />
 
         {/* Header */}
         <div className="flex items-center gap-3 px-4 pb-4 border-b border-border">
@@ -105,8 +105,9 @@ export default function PostModal() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={PLACEHOLDERS[type]}
-            rows={4}
-            className="w-full bg-transparent text-[13px] text-white placeholder:text-muted resize-none outline-none leading-relaxed font-sans"
+            rows={5}
+            className="w-full bg-transparent text-[13px] text-white placeholder:text-muted resize-none outline-none leading-relaxed font-sans lg:rows-7"
+            style={{ minHeight: 100 }}
           />
 
           {/* Poll options */}
@@ -142,7 +143,7 @@ export default function PostModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-4 pt-3 border-t border-border flex items-center gap-2">
+        <div className="px-4 pt-3 pb-4 border-t border-border flex items-center gap-2">
           <div className="text-[10px] text-muted flex-1">{content.length}/280</div>
           <button
             onClick={handleSubmit}
