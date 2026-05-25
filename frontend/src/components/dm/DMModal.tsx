@@ -224,7 +224,7 @@ export default function DMModal() {
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px 32px", borderTop: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
+            <div className="dm-input-wrap" style={{ display: "flex", flexDirection: "column", gap: 4, padding: "12px 16px 32px", borderTop: "1px solid rgba(255,255,255,0.07)", flexShrink: 0 }}>
               {isCreatorChat && (
                 <div style={{ fontSize: 10, color: input.length >= 100 ? "#ef4444" : "var(--color-muted)", textAlign: "right" }}>{input.length}/100</div>
               )}

@@ -546,3 +546,24 @@ select option {
 .admin-burger {
   display: flex !important;
 }
+
+/* ── DM Modal desktop layout ────────────────────────────────── */
+@media (min-width: 1024px) {
+  .dm-overlay {
+    align-items: center !important;
+  }
+
+  .dm-panel {
+    border-radius: 16px !important;
+    max-width: 560px !important;
+    max-height: 80vh !important;
+  }
+
+  .dm-handle {
+    display: none !important;
+  }
+
+  .dm-input-wrap {
+    padding-bottom: 16px !important;
+  }
+}
