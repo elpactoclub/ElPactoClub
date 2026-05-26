@@ -80,8 +80,7 @@ export default function PostModal() {
         style={{
           maxWidth: 560,
           background: "#1c1c1c",
-          maxHeight: "90vh",
-          /* Mobile: fill bottom, capped at 90vh. Desktop: centered with fixed height */
+          height: "min(90vh, 600px)",
         }}
       >
         {/* Handle — mobile only */}

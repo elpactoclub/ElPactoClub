@@ -70,6 +70,19 @@ function FeedTab() {
   const [pollVoted, setPollVoted] = useState<Record<string, string>>({});
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [storyName, setStoryName] = useState<string | null>(null);
+  const [viewedStories, setViewedStories] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem("ep_viewed_stories");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  const openStory = (name: string) => {
+    setStoryName(name);
+    const updated = new Set(viewedStories).add(name);
+    setViewedStories(updated);
+    localStorage.setItem("ep_viewed_stories", JSON.stringify([...updated]));
+  };
 
   useEffect(() => {
     api.get("/community/posts")
@@ -131,20 +144,24 @@ function FeedTab() {
           { name: "Herson",  photo: "/imagenes/herson.jpg",  hasNew: true  },
           { name: "Violeta", photo: "/imagenes/violeta.jpg", hasNew: true  },
           { name: "Elvis",   photo: "/imagenes/elvis.jpg",   hasNew: false },
-        ].map((s) => (
-          <div
-            key={s.name}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer", position: "relative" }}
-            onClick={() => setStoryName(s.name)}
-          >
-            <div style={{ padding: 3, borderRadius: "50%", background: s.hasNew ? "linear-gradient(135deg,#F0E040,#FF6B1A)" : "rgba(255,255,255,0.1)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.photo} alt={s.name} style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", objectPosition: "top", border: "2px solid #111" }} />
+        ].map((s) => {
+          const viewed = viewedStories.has(s.name);
+          const showRing = s.hasNew && !viewed;
+          return (
+            <div
+              key={s.name}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer", position: "relative" }}
+              onClick={() => openStory(s.name)}
+            >
+              <div style={{ padding: 3, borderRadius: "50%", background: showRing ? "linear-gradient(135deg,#F0E040,#FF6B1A)" : "rgba(255,255,255,0.1)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.photo} alt={s.name} style={{ width: 54, height: 54, borderRadius: "50%", objectFit: "cover", objectPosition: "top", border: "2px solid #111" }} />
+              </div>
+              {showRing && <div style={{ position: "absolute", top: 0, right: -2, background: "#F0E040", color: "#000", fontSize: 7, fontWeight: 900, padding: "2px 4px", borderRadius: 4, border: "2px solid #111" }}>NEW</div>}
+              <span style={{ fontSize: 10, color: viewed ? "#555" : "var(--color-muted)", fontWeight: 500 }}>{s.name}</span>
             </div>
-            {s.hasNew && <div style={{ position: "absolute", top: 0, right: -2, background: "#F0E040", color: "#000", fontSize: 7, fontWeight: 900, padding: "2px 4px", borderRadius: 4, border: "2px solid #111" }}>NEW</div>}
-            <span style={{ fontSize: 10, color: "var(--color-muted)", fontWeight: 500 }}>{s.name}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Post input */}
