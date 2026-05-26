@@ -27,6 +27,22 @@ const STATIC_RANKING = [
 export default function AboutScreen() {
   const { showToast, openFanModal, openProjectPage, openDMWithCreator } = useUIStore();
   const { spendCredits, addXP, name: myName, xp: myXP, isAuthenticated } = useUserStore();
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMsg, setContactMsg] = useState("");
+
+  const handleContactSend = () => {
+    if (!contactName.trim() || !contactEmail.trim() || !contactMsg.trim()) {
+      showToast("Rellena todos los campos"); return;
+    }
+    const subject = encodeURIComponent(`Colaboración El Pacto BC — ${contactName}`);
+    const body = encodeURIComponent(`Nombre: ${contactName}\nEmail: ${contactEmail}\n\n${contactMsg}`);
+    window.open(`mailto:hola@elpactoclub.com?subject=${subject}&body=${body}`, "_blank");
+    setContactOpen(false);
+    setContactName(""); setContactEmail(""); setContactMsg("");
+    showToast("Abriendo tu cliente de correo 📩");
+  };
   const [rankTab, setRankTab] = useState<"global" | "ciudades">("global");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
@@ -275,12 +291,82 @@ export default function AboutScreen() {
           Llegamos a más de 1,200 fans <strong style={{ color: "#1d4ed8" }}>comprometidos</strong> con el basket. Si tu marca quiere estar donde está la comunidad, hablemos.
         </div>
         <button
-          onClick={() => showToast("📩 hola@elpactoclub.com — te respondemos en 24h")}
+          onClick={() => setContactOpen(true)}
           style={{ background: "#111", color: "#fff", border: "none", padding: "13px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}
         >
           Escribirnos →
         </button>
       </div>
+
+      {/* Contact modal */}
+      {contactOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={(e) => e.target === e.currentTarget && setContactOpen(false)}
+        >
+          <div style={{ background: "#1c1c1c", borderRadius: 16, width: "100%", maxWidth: 480, border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Escríbenos</div>
+                <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 2 }}>hola@elpactoclub.com · respondemos en 24h</div>
+              </div>
+              <button onClick={() => setContactOpen(false)} style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#aaa", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            </div>
+
+            {/* Form */}
+            <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Nombre</div>
+                  <input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Tu nombre o empresa"
+                    style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fff", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Email</div>
+                  <input
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    type="email"
+                    style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fff", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+                  />
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--color-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Mensaje</div>
+                <textarea
+                  value={contactMsg}
+                  onChange={(e) => setContactMsg(e.target.value)}
+                  placeholder="Cuéntanos sobre tu marca y cómo quieres colaborar..."
+                  rows={4}
+                  style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fff", fontFamily: "inherit", outline: "none", resize: "none", boxSizing: "border-box" }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleContactSend}
+                style={{ background: "var(--color-accent)", color: "#000", border: "none", padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-heading)", letterSpacing: 1 }}
+              >
+                ENVIAR →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
