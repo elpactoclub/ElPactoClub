@@ -374,14 +374,14 @@ body {
 .card {
   background: var(--color-gray);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .card2 {
   background: var(--color-gray2);
-  border-radius: 8px;
-  padding: 10px;
+  border-radius: 10px;
+  padding: 14px;
 }
 
 .sec {
@@ -397,9 +397,9 @@ body {
   background: var(--color-accent);
   color: var(--color-black);
   border: none;
-  padding: 11px;
-  border-radius: 9px;
-  font-size: 12px;
+  padding: 13px 20px;
+  border-radius: 10px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
   width: 100%;
@@ -410,9 +410,9 @@ body {
   background: transparent;
   color: var(--color-white);
   border: 1px solid rgba(255,255,255,0.16);
-  padding: 11px;
-  border-radius: 9px;
-  font-size: 11px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   width: 100%;
@@ -423,7 +423,7 @@ body {
   background: var(--color-gray);
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 14px 16px;
 }
 
 /* Animations */

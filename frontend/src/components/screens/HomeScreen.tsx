@@ -33,7 +33,7 @@ function StreakXPCard() {
   }));
 
   return (
-    <div className="card" style={{ padding: "12px 16px" }}>
+    <div className="card" style={{ padding: "16px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         {/* Flame + streak */}
         <div style={{ display: "flex", alignItems: "center", gap: "7px", flexShrink: 0 }}>
@@ -79,7 +79,7 @@ function StreakXPCard() {
 // ==========================================
 function SeasonCard() {
   return (
-    <div className="card" style={{ padding: "12px 14px" }}>
+    <div className="card" style={{ padding: "16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "1.5px", color: "var(--color-muted)" }}>TEMPORADA VERANO 2026</div>
         <div style={{ fontSize: "9px", fontWeight: 700, color: "var(--color-purple)" }}>89 DÍAS RESTANTES</div>
@@ -256,7 +256,7 @@ function NextEvent() {
         background: "linear-gradient(135deg,#0a0a0a,#1a1a10)",
         border: "1px solid #F0E04030",
         borderRadius: "10px",
-        padding: "12px 14px",
+        padding: "16px",
         cursor: "pointer",
         display: "flex",
         alignItems: "center",
@@ -349,7 +349,7 @@ function MyContribution() {
   return (
     <div>
       <Sec left="Mi contribución al equipo" />
-      <div className="card" style={{ padding: "10px 14px" }}>
+      <div className="card" style={{ padding: "16px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "10px" }}>
           <div className="card2" style={{ textAlign: "center" }}>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "22px", color: "var(--color-blue)" }}>3</div>
@@ -431,7 +431,7 @@ function MonthlyRaffle() {
 // ==========================================
 export default function HomeScreen() {
   return (
-    <div className="home-screen" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", paddingBottom: "16px" }}>
+    <div className="home-screen" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px", paddingBottom: "20px" }}>
       <div className="home-full"><StreakXPCard /></div>
       <div className="home-full"><SeasonCard /></div>
       <div className="home-full"><DailyReward /></div>

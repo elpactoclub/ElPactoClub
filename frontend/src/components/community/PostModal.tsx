@@ -124,7 +124,7 @@ export default function PostModal() {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0, padding: "4px 20px 12px" }}>
+        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0, padding: "12px 20px 16px" }}>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -133,7 +133,7 @@ export default function PostModal() {
             style={{
               width: "100%", background: "transparent", border: "none", outline: "none",
               fontSize: 15, color: "#fff", lineHeight: 1.65, resize: "none",
-              fontFamily: "inherit", minHeight: 120, padding: "8px 0",
+              fontFamily: "inherit", minHeight: 120,
             }}
           />
 
