@@ -93,7 +93,11 @@ function FeedTab() {
 
   const handleLike = async (postId: string) => {
     if (!isAuthenticated) { showToast("Inicia sesión para reaccionar ⚡"); return; }
+    const wasLiked = !!liked[postId];
     toggleLike(postId);
+    setPosts((prev) => prev.map((p) => p.id !== postId ? p : {
+      ...p, likesCount: Math.max(0, p.likesCount + (wasLiked ? -1 : 1)),
+    }));
     try { await api.post(`/community/posts/${postId}/like`); } catch {}
   };
 
@@ -282,7 +286,7 @@ function FeedTab() {
                 onClick={() => handleLike(post.id)}
                 style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}
               >
-                {isLiked ? "❤️" : "🤍"} <span>{post.likesCount + (isLiked ? 1 : 0)}</span>
+                {isLiked ? "❤️" : "🤍"} <span>{post.likesCount}</span>
               </button>
             </div>
           </div>
