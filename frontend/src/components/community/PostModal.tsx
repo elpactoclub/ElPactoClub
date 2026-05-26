@@ -27,10 +27,8 @@ export default function PostModal() {
   const handleSubmit = async () => {
     if (!content.trim()) { showToast("Escribe algo primero"); return; }
     if (type === "poll" && pollOptions.filter((o) => o.trim()).length < 2) {
-      showToast("Añade al menos 2 opciones");
-      return;
+      showToast("Añade al menos 2 opciones"); return;
     }
-
     setSubmitting(true);
     try {
       if (isAuthenticated) {
@@ -60,73 +58,109 @@ export default function PostModal() {
   };
 
   const TYPE_TABS: { id: PostType; label: string }[] = [
-    { id: "text", label: "📝 Texto" },
-    { id: "poll", label: "📊 Encuesta" },
-    { id: "challenge", label: "🔥 Reto" },
+    { id: "text",      label: "📝 Texto"    },
+    { id: "poll",      label: "📊 Encuesta" },
+    { id: "challenge", label: "🔥 Reto"     },
   ];
 
   const PLACEHOLDERS: Record<PostType, string> = {
-    text: "¿Qué está pasando en El Pacto?",
-    poll: "Escribe tu pregunta para la comunidad...",
+    text:      "¿Qué está pasando en El Pacto?",
+    poll:      "Escribe tu pregunta para la comunidad...",
     challenge: "Describe el reto semanal...",
   };
 
   return (
-    <div className="fixed inset-0 bg-[#000c] z-[350] flex items-end lg:items-center justify-center" onClick={(e) => e.target === e.currentTarget && handleClose()}>
-      <div className="bg-gray rounded-t-2xl lg:rounded-2xl w-full max-w-[480px] lg:max-w-[560px] pb-8 lg:pb-0 animate-slide-up">
-        <div className="w-9 h-1 bg-gray3 rounded-sm mx-auto mt-4 mb-4 lg:hidden" />
+    <div
+      className="fixed inset-0 z-[350] flex items-end lg:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.75)" }}
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
+    >
+      <div
+        className="w-full lg:rounded-2xl rounded-t-2xl animate-slide-up flex flex-col"
+        style={{
+          maxWidth: 560,
+          background: "#1c1c1c",
+          maxHeight: "90vh",
+          /* Mobile: fill bottom, capped at 90vh. Desktop: centered with fixed height */
+        }}
+      >
+        {/* Handle — mobile only */}
+        <div className="lg:hidden w-9 h-1 rounded-sm mx-auto mt-3 mb-1 flex-shrink-0" style={{ background: "#333" }} />
 
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 pb-4 border-b border-border">
-          <div className="w-9 h-9 rounded-full bg-gray3 flex items-center justify-center text-[15px]">{avatar}</div>
-          <div className="flex-1">
-            <div className="text-[12px] font-bold">{name}</div>
-            <div className="text-[9px] text-muted">Publicando en El Pacto</div>
+        {/* Header — fixed */}
+        <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[18px] flex-shrink-0"
+            style={{ background: "#252525", border: "2px solid rgba(240,224,64,0.3)" }}
+          >
+            {avatar}
           </div>
-          <button onClick={handleClose} className="bg-gray2 border-none text-muted w-7 h-7 rounded-full cursor-pointer text-sm flex items-center justify-center">✕</button>
+          <div className="flex-1 min-w-0">
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{name || "elpactoclub"}</div>
+            <div style={{ fontSize: 10, color: "var(--color-muted)" }}>Publicando en El Pacto</div>
+          </div>
+          <button
+            onClick={handleClose}
+            style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#aaa", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+          >✕</button>
         </div>
 
-        {/* Type tabs */}
-        <div className="flex gap-[5px] px-4 pt-3 pb-2">
+        {/* Type tabs — fixed */}
+        <div className="flex gap-2 px-4 pt-3 pb-2 flex-shrink-0">
           {TYPE_TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setType(t.id)}
-              className={`flex-1 py-[6px] rounded-[20px] text-[10px] font-bold cursor-pointer ${type === t.id ? "bg-accent text-black" : "bg-gray2 text-muted border border-border2"}`}
+              style={{
+                flex: 1, padding: "7px 0", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                cursor: "pointer", fontFamily: "inherit",
+                background: type === t.id ? "var(--color-accent)" : "rgba(255,255,255,0.06)",
+                color: type === t.id ? "#000" : "var(--color-muted)",
+                border: type === t.id ? "none" : "1px solid rgba(255,255,255,0.1)",
+              }}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="px-4 py-2">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 py-2" style={{ minHeight: 0 }}>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={PLACEHOLDERS[type]}
-            rows={5}
-            className="w-full bg-transparent text-[13px] text-white placeholder:text-muted resize-none outline-none leading-relaxed font-sans lg:rows-7"
-            style={{ minHeight: 100 }}
+            maxLength={280}
+            style={{
+              width: "100%", background: "transparent", border: "none", outline: "none",
+              fontSize: 14, color: "#fff", lineHeight: 1.6, resize: "none",
+              fontFamily: "inherit", minHeight: 120,
+            }}
           />
 
           {/* Poll options */}
           {type === "poll" && (
-            <div className="flex flex-col gap-2 mt-1">
-              <div className="text-[9px] font-bold tracking-[1.5px] text-muted uppercase">Opciones</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+              <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", color: "var(--color-muted)", textTransform: "uppercase" }}>Opciones</div>
               {pollOptions.map((opt, i) => (
                 <input
                   key={i}
                   value={opt}
                   onChange={(e) => updateOption(i, e.target.value)}
                   placeholder={`Opción ${i + 1}`}
-                  className="w-full bg-gray2 border border-border2 rounded-lg px-3 py-2 text-[12px] text-white font-sans outline-none focus:border-accent"
+                  style={{
+                    width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fff",
+                    fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
                 />
               ))}
               {pollOptions.length < 4 && (
                 <button
                   onClick={() => setPollOptions([...pollOptions, ""])}
-                  className="text-[10px] text-accent bg-transparent border-none cursor-pointer text-left"
+                  style={{ fontSize: 11, color: "var(--color-accent)", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit", padding: 0 }}
                 >
                   + Añadir opción
                 </button>
@@ -136,19 +170,30 @@ export default function PostModal() {
 
           {/* Challenge hint */}
           {type === "challenge" && (
-            <div className="mt-2 bg-gray2 border border-accent/20 rounded-lg px-3 py-2 text-[10px] text-muted">
-              💡 El mejor reto de la semana gana <strong className="text-accent">200 créditos ⚡</strong>
+            <div style={{ marginTop: 10, background: "rgba(240,224,64,0.06)", border: "1px solid rgba(240,224,64,0.2)", borderRadius: 10, padding: "10px 14px", fontSize: 11, color: "var(--color-muted)" }}>
+              💡 El mejor reto de la semana gana <strong style={{ color: "var(--color-accent)" }}>200 créditos ⚡</strong>
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-4 pt-3 pb-4 border-t border-border flex items-center gap-2">
-          <div className="text-[10px] text-muted flex-1">{content.length}/280</div>
+        {/* Footer — fixed */}
+        <div
+          className="flex-shrink-0 flex items-center gap-3 px-4 py-3"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <span style={{ fontSize: 11, color: content.length > 250 ? "#ef4444" : "var(--color-muted)", flex: 1 }}>
+            {content.length}/280
+          </span>
           <button
             onClick={handleSubmit}
             disabled={submitting || !content.trim()}
-            className="bg-accent text-black font-heading text-[12px] px-5 py-[9px] rounded-xl tracking-[1px] disabled:opacity-50 cursor-pointer"
+            style={{
+              background: "var(--color-accent)", color: "#000", border: "none",
+              padding: "10px 24px", borderRadius: 12, fontSize: 12, fontWeight: 800,
+              cursor: submitting || !content.trim() ? "default" : "pointer",
+              fontFamily: "var(--font-heading)", letterSpacing: 1,
+              opacity: submitting || !content.trim() ? 0.5 : 1,
+            }}
           >
             {submitting ? "Publicando..." : "PUBLICAR →"}
           </button>
