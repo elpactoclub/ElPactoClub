@@ -41,21 +41,25 @@ function timeAgo(iso: string) {
 export default function NotificationsScreen() {
   const { showToast, setNotifUnreadCount } = useUIStore();
   const { isAuthenticated } = useUserStore();
-  const [notifications, setNotifications] = useState<Notification[]>(STATIC_NOTIFS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setNotifications(STATIC_NOTIFS);
       setNotifUnreadCount(STATIC_NOTIFS.filter((n) => !n.readAt).length);
+      setLoading(false);
       return;
     }
+    setLoading(true);
     api.get("/notifications/me")
       .then((r) => {
-        const data = r.data.length > 0 ? r.data : STATIC_NOTIFS;
+        const data: Notification[] = r.data ?? [];
         setNotifications(data);
-        setNotifUnreadCount(data.filter((n: Notification) => !n.readAt).length);
+        setNotifUnreadCount(data.filter((n) => !n.readAt).length);
       })
-      .catch(() => { setNotifications(STATIC_NOTIFS); });
+      .catch(() => setNotifications([]))
+      .finally(() => setLoading(false));
   }, [isAuthenticated, setNotifUnreadCount]);
 
   const markRead = async (id: string) => {
@@ -83,7 +87,10 @@ export default function NotificationsScreen() {
         </button>
       </div>
 
-      {notifications.length === 0 && (
+      {loading && (
+        <div style={{ padding: "32px 16px", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>Cargando...</div>
+      )}
+      {!loading && notifications.length === 0 && (
         <div style={{ padding: "32px 16px", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>No hay notificaciones</div>
       )}
 
