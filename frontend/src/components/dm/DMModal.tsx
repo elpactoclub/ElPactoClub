@@ -65,9 +65,14 @@ export default function DMModal() {
       ]);
       const convs: Conversation[] = convRes.data ?? [];
       const creators: Conversation[] = creatorsRes.data ?? [];
+      // Solo añadir creadores que ya tienen conversación iniciada
       const existingIds = new Set(convs.map((c) => c.partnerId));
-      const extraCreators = creators.filter((c) => !existingIds.has(c.partnerId));
-      const merged = [...convs, ...extraCreators];
+      const creatorsWithConv = creators.filter((c) => existingIds.has(c.partnerId));
+      // Enriquecer las conversaciones con datos de creador si aplica
+      const merged = convs.map((conv) => {
+        const creator = creatorsWithConv.find((c) => c.partnerId === conv.partnerId);
+        return creator ? { ...conv, isCreator: true, costPerMsg: creator.costPerMsg } : conv;
+      });
       setConversations(merged);
       return merged;
     } catch {
@@ -80,13 +85,27 @@ export default function DMModal() {
 
   useEffect(() => {
     if (!isDMOpen || !isAuthenticated) return;
-    loadConversations().then((convs) => {
+
+    const init = async () => {
+      const convs = await loadConversations();
+
       if (dmOpenWithCreator) {
-        const target = convs.find((c) => c.name.toLowerCase() === dmOpenWithCreator.toLowerCase());
-        if (target) openThread(target);
         useUIStore.setState({ dmOpenWithCreator: null });
+        // Buscar en conversaciones existentes primero
+        let target = convs.find((c) => c.name.toLowerCase() === dmOpenWithCreator.toLowerCase());
+        if (!target) {
+          // Si no hay conversación previa, buscar en lista de creadores
+          try {
+            const r = await api.get("/dm/creators");
+            const creators: Conversation[] = r.data ?? [];
+            target = creators.find((c) => c.name.toLowerCase() === dmOpenWithCreator.toLowerCase());
+          } catch {}
+        }
+        if (target) openThread(target);
       }
-    });
+    };
+
+    init();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDMOpen, isAuthenticated]);
 
@@ -170,7 +189,11 @@ export default function DMModal() {
           <div style={{ flex: 1, overflowY: "auto" }}>
             {loading && <div style={{ padding: 24, textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>Cargando...</div>}
             {!loading && conversations.length === 0 && (
-              <div style={{ padding: 32, textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>No tienes conversaciones todavía.</div>
+              <div style={{ padding: 40, textAlign: "center", fontSize: 13, color: "var(--color-muted)", lineHeight: 1.6 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
+                <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>Sin mensajes aún</div>
+                <div>Ve a <strong>El Pacto</strong> y toca el botón Mensaje en la tarjeta de un creador para empezar</div>
+              </div>
             )}
             {conversations.map((c) => (
               <button
