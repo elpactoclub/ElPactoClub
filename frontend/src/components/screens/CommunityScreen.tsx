@@ -62,11 +62,12 @@ function PostAvatar({ name, role, size = 44 }: { name: string; role: string; siz
 
 function FeedTab() {
   const { showToast, openPostModal } = useUIStore();
-  const { avatar, liked, toggleLike, isAuthenticated } = useUserStore();
+  const { avatar, liked, toggleLike, isAuthenticated, role, name: myName } = useUserStore();
   const { sharePost } = useShare();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [pollVoted, setPollVoted] = useState<Record<string, string>>({});
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     api.get("/community/posts")
@@ -90,6 +91,25 @@ function FeedTab() {
     }));
     try { await api.post(`/community/posts/${postId}/vote`, { option }); } catch {}
     showToast(`Votaste: ${option} ✓`);
+  };
+
+  const handleDelete = async (postId: string) => {
+    setMenuOpenId(null);
+    try {
+      await api.delete(`/community/posts/${postId}`);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      showToast("Post eliminado ✓");
+    } catch {
+      showToast("No se pudo eliminar ❌");
+    }
+  };
+
+  const canDelete = (post: ApiPost) => {
+    if (!isAuthenticated) return false;
+    if (role === "admin") return true;
+    if (role === "creator" && post.authorRole !== "admin") return true;
+    if (post.authorName === myName) return true;
+    return false;
   };
 
   return (
@@ -177,10 +197,33 @@ function FeedTab() {
                   {post.type === "challenge" && <span> · 🏆 Reto</span>}
                 </div>
               </div>
-              <button
-                onClick={() => showToast("Opciones")}
-                style={{ background: "transparent", border: "none", color: "var(--color-muted)", cursor: "pointer", fontSize: 18, padding: "0 4px", lineHeight: 1 }}
-              >···</button>
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setMenuOpenId(menuOpenId === post.id ? null : post.id)}
+                  style={{ background: "transparent", border: "none", color: "var(--color-muted)", cursor: "pointer", fontSize: 18, padding: "0 8px", lineHeight: 1 }}
+                >···</button>
+                {menuOpenId === post.id && (
+                  <>
+                    <div style={{ position: "fixed", inset: 0, zIndex: 9 }} onClick={() => setMenuOpenId(null)} />
+                    <div style={{ position: "absolute", right: 0, top: "100%", zIndex: 10, background: "#252525", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, minWidth: 160, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+                      <button
+                        onClick={async () => {
+                          setMenuOpenId(null);
+                          const result = await sharePost(post.id, post.content.substring(0, 100));
+                          showToast(result.copied ? "Link copiado ✓" : "Error al copiar");
+                        }}
+                        style={{ width: "100%", padding: "12px 16px", background: "transparent", border: "none", color: "#fff", fontSize: 13, textAlign: "left", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}
+                      >↗ Compartir</button>
+                      {canDelete(post) && (
+                        <button
+                          onClick={() => handleDelete(post.id)}
+                          style={{ width: "100%", padding: "12px 16px", background: "transparent", border: "none", borderTop: "1px solid rgba(255,255,255,0.07)", color: "#ef4444", fontSize: 13, textAlign: "left", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}
+                        >🗑 Eliminar post</button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Content */}
@@ -220,17 +263,6 @@ function FeedTab() {
               >
                 {isLiked ? "❤️" : "🤍"} <span>{post.likesCount + (isLiked ? 1 : 0)}</span>
               </button>
-              <button
-                onClick={async () => {
-                  const result = await sharePost(post.id, post.content.substring(0, 100));
-                  if (result.copied) {
-                    showToast("Link copiado al portapapeles ✓");
-                  } else {
-                    showToast("Error al copiar");
-                  }
-                }}
-                style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 13, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}
-              >↗ Compartir</button>
             </div>
           </div>
         );
