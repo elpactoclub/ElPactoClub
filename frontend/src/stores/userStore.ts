@@ -105,7 +105,9 @@ const initialUserState = {
   nextLevel: "Starter" as UserLevel,
   xpProgress: 0,
   voted: {},
-  liked: {},
+  liked: typeof window !== "undefined"
+    ? (() => { try { return JSON.parse(localStorage.getItem("ep_liked") ?? "{}"); } catch { return {}; } })()
+    : {},
   reactions: {},
   polls: {},
   dailyClaimed: false,
@@ -151,9 +153,11 @@ export const useUserStore = create<UserState>((set, get) => ({
     set((state) => ({ voted: { ...state.voted, [id]: option } })),
 
   toggleLike: (id) =>
-    set((state) => ({
-      liked: { ...state.liked, [id]: !state.liked[id] },
-    })),
+    set((state) => {
+      const newLiked = { ...state.liked, [id]: !state.liked[id] };
+      if (typeof window !== "undefined") localStorage.setItem("ep_liked", JSON.stringify(newLiked));
+      return { liked: newLiked };
+    }),
 
   toggleReaction: (id) =>
     set((state) => ({

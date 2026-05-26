@@ -70,6 +70,7 @@ function FeedTab() {
   const [pollVoted, setPollVoted] = useState<Record<string, string>>({});
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [storyName, setStoryName] = useState<string | null>(null);
+  const [detailPost, setDetailPost] = useState<ApiPost | null>(null);
   const [viewedStories, setViewedStories] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem("ep_viewed_stories");
@@ -94,10 +95,12 @@ function FeedTab() {
   const handleLike = async (postId: string) => {
     if (!isAuthenticated) { showToast("Inicia sesión para reaccionar ⚡"); return; }
     const wasLiked = !!liked[postId];
+    const delta = wasLiked ? -1 : 1;
     toggleLike(postId);
     setPosts((prev) => prev.map((p) => p.id !== postId ? p : {
-      ...p, likesCount: Math.max(0, p.likesCount + (wasLiked ? -1 : 1)),
+      ...p, likesCount: Math.max(0, p.likesCount + delta),
     }));
+    setDetailPost((prev) => prev?.id === postId ? { ...prev, likesCount: Math.max(0, prev.likesCount + delta) } : prev);
     try { await api.post(`/community/posts/${postId}/like`); } catch {}
   };
 
@@ -134,6 +137,62 @@ function FeedTab() {
   return (
     <div className="community-feed" style={{ display: "flex", flexDirection: "column" }}>
       {storyName && <StoryViewer initialName={storyName} onClose={() => setStoryName(null)} />}
+
+      {/* Post detail modal */}
+      {detailPost && (() => {
+        const p = detailPost;
+        const pollTotal = p.pollVotes ? Object.values(p.pollVotes).reduce((a, b) => a + b, 0) : 0;
+        const isLiked = liked[p.id];
+        const isCreator = p.authorRole === "creator";
+        return (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
+            onClick={(e) => e.target === e.currentTarget && setDetailPost(null)}
+          >
+            <div style={{ background: "#1c1c1c", borderRadius: 16, width: "100%", maxWidth: 560, maxHeight: "85vh", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+              {/* Header */}
+              <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "16px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.07)", position: "sticky", top: 0, background: "#1c1c1c", zIndex: 1 }}>
+                <PostAvatar name={p.authorName} role={p.authorRole} size={44} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{p.authorName}</span>
+                    {isCreator && <span style={{ fontSize: 8, fontWeight: 900, background: "#F0E040", color: "#000", padding: "2px 6px", borderRadius: 4 }}>CREADOR</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{timeAgo(p.createdAt)}</div>
+                </div>
+                <button onClick={() => setDetailPost(null)} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#aaa", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+              </div>
+              {/* Content */}
+              <div style={{ padding: "16px", fontSize: 16, lineHeight: 1.6, color: "#fff" }}>{p.content}</div>
+              {/* Poll */}
+              {p.type === "poll" && p.pollOptions && (
+                <div style={{ margin: "0 16px 12px", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  {p.pollOptions.map((opt) => {
+                    const votes = p.pollVotes?.[opt] ?? 0;
+                    const pct = pollTotal > 0 ? Math.round((votes / pollTotal) * 100) : 0;
+                    const isVoted = pollVoted[p.id] === opt;
+                    const showPct = !!pollVoted[p.id];
+                    return (
+                      <button key={opt} onClick={() => handlePollVote(p.id, opt)} style={{ width: "100%", padding: "13px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "transparent", border: "none", borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer", position: "relative", overflow: "hidden", textAlign: "left" }}>
+                        {showPct && <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, background: isVoted ? "rgba(240,224,64,0.12)" : "rgba(255,255,255,0.04)", width: `${pct}%`, transition: "width 0.4s ease" }} />}
+                        <span style={{ fontSize: 13, fontWeight: isVoted ? 700 : 400, color: isVoted ? "var(--color-accent)" : "#ddd", position: "relative", zIndex: 1 }}>{isVoted ? "✓ " : ""}{opt}</span>
+                        {showPct && <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-muted)", position: "relative", zIndex: 1 }}>{pct}%</span>}
+                      </button>
+                    );
+                  })}
+                  <div style={{ padding: "10px 16px", fontSize: 11, color: "var(--color-muted)" }}>📊 {pollTotal.toLocaleString("es")} votos</div>
+                </div>
+              )}
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 18, padding: "8px 16px 20px", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <button onClick={() => handleLike(p.id)} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontSize: 14, color: "var(--color-muted)", fontFamily: "var(--font-body)" }}>
+                  {isLiked ? "❤️" : "🤍"} <span>{p.likesCount}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Stories — solo creadores reales */}
       <div style={{ display: "flex", gap: 16, overflowX: "auto", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }} className="hide-scrollbar">
@@ -251,8 +310,11 @@ function FeedTab() {
               </div>
             </div>
 
-            {/* Content */}
-            <div style={{ padding: "0 16px 12px", fontSize: 14, lineHeight: 1.55 }}>{post.content}</div>
+            {/* Content — clickable to open detail */}
+            <div
+              onClick={() => setDetailPost(post)}
+              style={{ padding: "0 16px 12px", fontSize: 14, lineHeight: 1.55, cursor: "pointer" }}
+            >{post.content}</div>
 
             {/* Poll */}
             {post.type === "poll" && post.pollOptions && (
