@@ -87,7 +87,7 @@ export default function PostModal() {
         <div className="lg:hidden w-9 h-1 rounded-sm mx-auto mt-3 mb-1 flex-shrink-0" style={{ background: "#333" }} />
 
         {/* Header — fixed */}
-        <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center gap-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "14px 20px" }}>
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-[18px] flex-shrink-0"
             style={{ background: "#252525", border: "2px solid rgba(240,224,64,0.3)" }}
@@ -105,13 +105,13 @@ export default function PostModal() {
         </div>
 
         {/* Type tabs — fixed */}
-        <div className="flex gap-2 px-4 pt-3 pb-2 flex-shrink-0">
+        <div className="flex gap-2 flex-shrink-0" style={{ padding: "12px 20px 10px" }}>
           {TYPE_TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setType(t.id)}
               style={{
-                flex: 1, padding: "7px 0", borderRadius: 20, fontSize: 11, fontWeight: 700,
+                flex: 1, padding: "9px 0", borderRadius: 20, fontSize: 11, fontWeight: 700,
                 cursor: "pointer", fontFamily: "inherit",
                 background: type === t.id ? "var(--color-accent)" : "rgba(255,255,255,0.06)",
                 color: type === t.id ? "#000" : "var(--color-muted)",
@@ -124,7 +124,7 @@ export default function PostModal() {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-4 py-2" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-y-auto" style={{ minHeight: 0, padding: "4px 20px 12px" }}>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -132,8 +132,8 @@ export default function PostModal() {
             maxLength={280}
             style={{
               width: "100%", background: "transparent", border: "none", outline: "none",
-              fontSize: 14, color: "#fff", lineHeight: 1.6, resize: "none",
-              fontFamily: "inherit", minHeight: 120,
+              fontSize: 15, color: "#fff", lineHeight: 1.65, resize: "none",
+              fontFamily: "inherit", minHeight: 120, padding: "8px 0",
             }}
           />
 
@@ -177,8 +177,8 @@ export default function PostModal() {
 
         {/* Footer — fixed */}
         <div
-          className="flex-shrink-0 flex items-center gap-3 px-4 py-3"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+          className="flex-shrink-0 flex items-center gap-3"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "14px 20px" }}
         >
           <span style={{ fontSize: 11, color: content.length > 250 ? "#ef4444" : "var(--color-muted)", flex: 1 }}>
             {content.length}/280
