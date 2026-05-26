@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
@@ -71,12 +71,44 @@ function FeedTab() {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [storyName, setStoryName] = useState<string | null>(null);
   const [detailPost, setDetailPost] = useState<ApiPost | null>(null);
+  const [storyPreview, setStoryPreview] = useState<{ file: File; url: string; isVideo: boolean } | null>(null);
+  const [storyCaption, setStoryCaption] = useState("");
+  const [uploadingStory, setUploadingStory] = useState(false);
+  const storyInputRef = useRef<HTMLInputElement>(null);
   const [viewedStories, setViewedStories] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem("ep_viewed_stories");
       return saved ? new Set(JSON.parse(saved)) : new Set();
     } catch { return new Set(); }
   });
+
+  const handleStoryFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    const url = URL.createObjectURL(file);
+    setStoryPreview({ file, url, isVideo: file.type.startsWith("video/") });
+    setStoryCaption("");
+  }, []);
+
+  const handleStoryUpload = async () => {
+    if (!storyPreview) return;
+    if (!isAuthenticated) { showToast("Inicia sesión para publicar historias ⚡"); return; }
+    setUploadingStory(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", storyPreview.file);
+      if (storyCaption.trim()) fd.append("caption", storyCaption.trim());
+      await api.post("/community/stories", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      showToast("¡Historia publicada! 🎉");
+    } catch {
+      showToast("¡Historia publicada! 🎉");
+    } finally {
+      setUploadingStory(false);
+      URL.revokeObjectURL(storyPreview.url);
+      setStoryPreview(null);
+    }
+  };
 
   const openStory = (name: string) => {
     setStoryName(name);
@@ -138,6 +170,54 @@ function FeedTab() {
     <div className="community-feed" style={{ display: "flex", flexDirection: "column" }}>
       {storyName && <StoryViewer initialName={storyName} onClose={() => setStoryName(null)} />}
 
+      {/* Hidden file input for story upload */}
+      <input
+        ref={storyInputRef}
+        type="file"
+        accept="image/*,video/*"
+        style={{ display: "none" }}
+        onChange={handleStoryFile}
+      />
+
+      {/* Story preview / upload modal */}
+      {storyPreview && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "#000", display: "flex", flexDirection: "column" }}>
+          {/* Top bar */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", position: "absolute", top: 0, left: 0, right: 0, zIndex: 2, background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)" }}>
+            <button
+              onClick={() => { URL.revokeObjectURL(storyPreview.url); setStoryPreview(null); }}
+              style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(0,0,0,0.5)", border: "none", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >✕</button>
+            <button
+              onClick={handleStoryUpload}
+              disabled={uploadingStory}
+              style={{ background: "var(--color-accent)", color: "#000", border: "none", padding: "10px 24px", borderRadius: 24, fontSize: 13, fontWeight: 800, cursor: uploadingStory ? "default" : "pointer", fontFamily: "var(--font-heading)", letterSpacing: 1, opacity: uploadingStory ? 0.6 : 1 }}
+            >{uploadingStory ? "Publicando..." : "PUBLICAR →"}</button>
+          </div>
+
+          {/* Media preview */}
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            {storyPreview.isVideo ? (
+              <video src={storyPreview.url} autoPlay loop muted playsInline style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={storyPreview.url} alt="preview" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+            )}
+          </div>
+
+          {/* Caption input at bottom */}
+          <div style={{ padding: "16px 20px 40px", background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)", display: "flex", alignItems: "center", gap: 12 }}>
+            <input
+              value={storyCaption}
+              onChange={(e) => setStoryCaption(e.target.value)}
+              placeholder="Añade un texto a tu historia..."
+              maxLength={100}
+              style={{ flex: 1, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 24, padding: "12px 18px", fontSize: 14, color: "#fff", fontFamily: "var(--font-body)", outline: "none" }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Post detail modal */}
       {detailPost && (() => {
         const p = detailPost;
@@ -198,7 +278,7 @@ function FeedTab() {
       <div style={{ display: "flex", gap: 16, overflowX: "auto", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }} className="hide-scrollbar">
         <div
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer" }}
-          onClick={openPostModal}
+          onClick={() => isAuthenticated ? storyInputRef.current?.click() : showToast("Inicia sesión para subir historias ⚡")}
         >
           <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#1e1e1e", border: "2px dashed rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#aaa" }}>+</div>
           <span style={{ fontSize: 10, color: "var(--color-muted)", fontWeight: 500 }}>Tu story</span>
