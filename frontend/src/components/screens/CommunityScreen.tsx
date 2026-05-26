@@ -6,6 +6,7 @@ import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 import { useOnlineCount } from "@/hooks/useOnlineCount";
 import { useShare } from "@/hooks/useShare";
+import StoryViewer from "@/components/community/StoryViewer";
 
 // ==========================================
 // FEED TAB
@@ -68,6 +69,7 @@ function FeedTab() {
   const [loading, setLoading] = useState(true);
   const [pollVoted, setPollVoted] = useState<Record<string, string>>({});
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [storyName, setStoryName] = useState<string | null>(null);
 
   useEffect(() => {
     api.get("/community/posts")
@@ -114,6 +116,8 @@ function FeedTab() {
 
   return (
     <div className="community-feed" style={{ display: "flex", flexDirection: "column" }}>
+      {storyName && <StoryViewer initialName={storyName} onClose={() => setStoryName(null)} />}
+
       {/* Stories — solo creadores reales */}
       <div style={{ display: "flex", gap: 16, overflowX: "auto", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }} className="hide-scrollbar">
         <div
@@ -124,14 +128,14 @@ function FeedTab() {
           <span style={{ fontSize: 10, color: "var(--color-muted)", fontWeight: 500 }}>Tu story</span>
         </div>
         {[
-          { name: "Herson",         photo: "/imagenes/herson.jpg",  hasNew: true  },
-          { name: "Violeta",        photo: "/imagenes/violeta.jpg", hasNew: true  },
-          { name: "Elvis",          photo: "/imagenes/elvis.jpg",   hasNew: false },
+          { name: "Herson",  photo: "/imagenes/herson.jpg",  hasNew: true  },
+          { name: "Violeta", photo: "/imagenes/violeta.jpg", hasNew: true  },
+          { name: "Elvis",   photo: "/imagenes/elvis.jpg",   hasNew: false },
         ].map((s) => (
           <div
             key={s.name}
             style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0, cursor: "pointer", position: "relative" }}
-            onClick={() => showToast(`${s.name} · Stories próximamente`)}
+            onClick={() => setStoryName(s.name)}
           >
             <div style={{ padding: 3, borderRadius: "50%", background: s.hasNew ? "linear-gradient(135deg,#F0E040,#FF6B1A)" : "rgba(255,255,255,0.1)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
