@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
@@ -14,6 +14,9 @@ export default function PostModal() {
   const [content, setContent] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const [submitting, setSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isPostModalOpen) return null;
 
@@ -21,20 +24,46 @@ export default function PostModal() {
     setType("text");
     setContent("");
     setPollOptions(["", ""]);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
     closePostModal();
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { showToast("Solo se permiten imágenes"); return; }
+    if (file.size > 8 * 1024 * 1024) { showToast("La imagen no puede superar 8 MB"); return; }
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async () => {
-    if (!content.trim()) { showToast("Escribe algo primero"); return; }
+    if (!content.trim() && !imageFile) { showToast("Escribe algo o añade una foto"); return; }
     if (type === "poll" && pollOptions.filter((o) => o.trim()).length < 2) {
       showToast("Añade al menos 2 opciones"); return;
     }
     setSubmitting(true);
     try {
+      let imageUrl: string | undefined;
+
+      if (imageFile && isAuthenticated) {
+        const fd = new FormData();
+        fd.append("file", imageFile);
+        const res = await api.post("/community/upload-image", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        imageUrl = res.data.url;
+      }
+
       if (isAuthenticated) {
         await api.post("/community/posts", {
           type,
-          content: content.trim(),
+          content: content.trim() || " ",
+          imageUrl,
           pollOptions: type === "poll" ? pollOptions.filter((o) => o.trim()) : undefined,
         });
         addXP(10);
@@ -123,6 +152,16 @@ export default function PostModal() {
           ))}
         </div>
 
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: "none" }}
+          onChange={handleImageChange}
+        />
+
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto" style={{ minHeight: 0, padding: "12px 20px 16px" }}>
           <textarea
@@ -136,6 +175,22 @@ export default function PostModal() {
               fontFamily: "inherit", minHeight: 120,
             }}
           />
+
+          {/* Image preview */}
+          {imagePreview && (
+            <div style={{ position: "relative", marginTop: 10 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt="preview"
+                style={{ width: "100%", maxHeight: 280, objectFit: "cover", borderRadius: 12, display: "block" }}
+              />
+              <button
+                onClick={() => { URL.revokeObjectURL(imagePreview); setImageFile(null); setImagePreview(null); }}
+                style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}
+              >✕</button>
+            </div>
+          )}
 
           {/* Poll options */}
           {type === "poll" && (
@@ -180,18 +235,25 @@ export default function PostModal() {
           className="flex-shrink-0 flex items-center gap-3"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "14px 20px" }}
         >
-          <span style={{ fontSize: 11, color: content.length > 250 ? "#ef4444" : "var(--color-muted)", flex: 1 }}>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "8px 12px", fontSize: 12, fontWeight: 600, color: imageFile ? "var(--color-accent)" : "var(--color-muted)", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}
+          >
+            📷 Foto
+          </button>
+          <span style={{ fontSize: 11, color: content.length > 250 ? "#ef4444" : "var(--color-muted)", flex: 1, textAlign: "right" }}>
             {content.length}/280
           </span>
           <button
             onClick={handleSubmit}
-            disabled={submitting || !content.trim()}
+            disabled={submitting || (!content.trim() && !imageFile)}
             style={{
               background: "var(--color-accent)", color: "#000", border: "none",
               padding: "10px 24px", borderRadius: 12, fontSize: 12, fontWeight: 800,
-              cursor: submitting || !content.trim() ? "default" : "pointer",
+              cursor: submitting || (!content.trim() && !imageFile) ? "default" : "pointer",
               fontFamily: "var(--font-heading)", letterSpacing: 1,
-              opacity: submitting || !content.trim() ? 0.5 : 1,
+              opacity: submitting || (!content.trim() && !imageFile) ? 0.5 : 1,
+              flexShrink: 0,
             }}
           >
             {submitting ? "Publicando..." : "PUBLICAR →"}

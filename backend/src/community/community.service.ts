@@ -38,11 +38,12 @@ export class CommunityService {
     }));
   }
 
-  async createPost(authorId: string, body: { type: string; content: string; pollOptions?: string[] }) {
+  async createPost(authorId: string, body: { type: string; content: string; pollOptions?: string[]; imageUrl?: string }) {
     const post = this.postRepo.create({
       authorId,
       type: body.type as any,
       content: body.content,
+      imageUrl: body.imageUrl,
       pollOptions: body.pollOptions,
       pollVotes: body.pollOptions
         ? Object.fromEntries(body.pollOptions.map((o) => [o, 0]))

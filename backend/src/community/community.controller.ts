@@ -1,5 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import * as fs from 'fs';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CommunityService } from './community.service';
@@ -20,7 +24,7 @@ export class CommunityController {
   @Post('posts')
   createPost(
     @Req() req: any,
-    @Body() body: { type: string; content: string; pollOptions?: string[] },
+    @Body() body: { type: string; content: string; pollOptions?: string[]; imageUrl?: string },
   ) {
     return this.svc.createPost(req.user.id, body);
   }
@@ -30,6 +34,34 @@ export class CommunityController {
   @Delete('posts/:id')
   deletePost(@Req() req: any, @Param('id') id: string) {
     return this.svc.deletePost(id, req.user.id, req.user.role);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-image')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const dir = join(process.cwd(), 'uploads', 'posts');
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename: (req, file, cb) => {
+        const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`;
+        cb(null, unique);
+      },
+    }),
+    limits: { fileSize: 8 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.startsWith('image/')) {
+        return cb(new Error('Solo se permiten imágenes') as any, false);
+      }
+      cb(null, true);
+    },
+  }))
+  uploadPostImage(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
+    const backendUrl = process.env.BACKEND_URL ?? `${req.protocol}://${req.get('host')}`;
+    return { url: `${backendUrl}/uploads/posts/${file.filename}` };
   }
 
   @ApiBearerAuth()

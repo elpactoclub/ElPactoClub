@@ -419,8 +419,20 @@ function FeedTab() {
             {/* Content — clickable to open detail */}
             <div
               onClick={() => setDetailPost(post)}
-              style={{ padding: "0 16px 12px", fontSize: 14, lineHeight: 1.55, cursor: "pointer" }}
-            >{post.content}</div>
+              style={{ cursor: "pointer" }}
+            >
+              {post.content?.trim() && (
+                <div style={{ padding: "0 16px 10px", fontSize: 14, lineHeight: 1.55 }}>{post.content}</div>
+              )}
+              {post.imageUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={post.imageUrl}
+                  alt=""
+                  style={{ width: "100%", maxHeight: 340, objectFit: "cover", display: "block", marginBottom: 4 }}
+                />
+              )}
+            </div>
 
             {/* Poll */}
             {post.type === "poll" && post.pollOptions && (
