@@ -16,13 +16,6 @@ interface LeaderboardEntry {
 const LEVEL_COLORS: Record<string, string> = { Leyenda: "#A78BFA", MVP: "#60A5FA", Starter: "#22C55E", Rookie: "#777" };
 const POS_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32", "#777", "#777"];
 
-const STATIC_RANKING = [
-  { pos: 1, name: "BasketQueen", city: "Barcelona", level: "Leyenda", xp: "7,890", color: "#A78BFA", posColor: "#FFD700" },
-  { pos: 2, name: "MikelFan23", city: "Madrid", level: "MVP", xp: "5,240", color: "#60A5FA", posColor: "#C0C0C0" },
-  { pos: 3, name: "NachoBCN", city: "Barcelona", level: "MVP", xp: "4,120", color: "#F59E0B", posColor: "#CD7F32" },
-  { pos: 4, name: "Laura_BCN", city: "Valencia", level: "Starter", xp: "3,890", color: "#22C55E", posColor: "#777" },
-  { pos: 5, name: "PactoForever", city: "Sevilla", level: "Starter", xp: "2,760", color: "#EC4899", posColor: "#777" },
-];
 
 export default function AboutScreen() {
   const { showToast, openFanModal, openProjectPage, openDMWithCreator } = useUIStore();
@@ -45,9 +38,13 @@ export default function AboutScreen() {
   };
   const [rankTab, setRankTab] = useState<"global" | "ciudades">("global");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [rankLoading, setRankLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/users/leaderboard").then((r) => setLeaderboard(r.data)).catch(() => {});
+    api.get("/users/leaderboard")
+      .then((r) => setLeaderboard(r.data))
+      .catch(() => {})
+      .finally(() => setRankLoading(false));
   }, []);
 
   const handleDonar = (amount: number, project: string) => {
@@ -56,16 +53,12 @@ export default function AboutScreen() {
     showToast(`Apoyaste ${project} · −${amount} ⚡ · +${amount} XP 🏀`);
   };
 
-  const globalRanking = leaderboard.length > 0
-    ? leaderboard.slice(0, 5).map((u, i) => ({
-        pos: i + 1, name: u.name, city: u.city || "—", level: u.level,
-        xp: u.xp.toLocaleString(), color: LEVEL_COLORS[u.level] || "#777", posColor: POS_COLORS[i] || "#777",
-      }))
-    : STATIC_RANKING;
+  const globalRanking = leaderboard.slice(0, 5).map((u, i) => ({
+    pos: i + 1, name: u.name, city: u.city || "—", level: u.level,
+    xp: u.xp.toLocaleString(), color: LEVEL_COLORS[u.level] || "#777", posColor: POS_COLORS[i] || "#777",
+  }));
 
-  const myRankPos = leaderboard.length > 0 ? (leaderboard.findIndex((u) => u.name === myName) + 1 || 47) : 47;
-  const xpToTop5 = 2760;
-
+  const myRankPos = leaderboard.findIndex((u) => u.name === myName) + 1 || null;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
 
@@ -134,35 +127,42 @@ export default function AboutScreen() {
         {/* Global ranking */}
         {rankTab === "global" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {globalRanking.map((r) => (
-              <button
-                key={r.pos}
-                onClick={() => openFanModal(r.name)}
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, border: r.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)", background: r.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", cursor: "pointer", textAlign: "left", width: "100%" }}
-              >
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: r.posColor }}>{r.pos}</div>
-                <div style={{ width: 38, height: 38, borderRadius: "50%", background: r.color + "22", border: `2px solid ${r.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: r.color, flexShrink: 0 }}>{r.name[0]}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.name}</div>
-                  <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{r.city} · {r.level}</div>
-                </div>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, color: "var(--color-accent)", flexShrink: 0 }}>{r.xp} XP</div>
-              </button>
-            ))}
+            {rankLoading ? (
+              <div style={{ padding: "28px 0", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>
+                Cargando ranking... ⚡
+              </div>
+            ) : globalRanking.length === 0 ? (
+              <div style={{ padding: "28px 0", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>
+                Sin datos de ranking todavía
+              </div>
+            ) : (
+              globalRanking.map((r) => (
+                <button
+                  key={r.pos}
+                  onClick={() => openFanModal(r.name)}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, border: r.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)", background: r.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", cursor: "pointer", textAlign: "left", width: "100%" }}
+                >
+                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: r.posColor }}>{r.pos}</div>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", background: r.color + "22", border: `2px solid ${r.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: r.color, flexShrink: 0 }}>{r.name[0]}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{r.city} · {r.level}</div>
+                  </div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, color: "var(--color-accent)", flexShrink: 0 }}>{r.xp} XP</div>
+                </button>
+              ))
+            )}
 
-            {/* My position */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "linear-gradient(135deg,#1a1a10,#252515)", border: "1px solid rgba(240,224,64,0.25)", marginTop: 4 }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: "var(--color-accent)", flexShrink: 0 }}>#{myRankPos}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{myName || "TU NOMBRE"}</div>
-                <div style={{ fontSize: 11, color: "var(--color-muted)" }}>Barcelona · {myXP.toLocaleString()} XP</div>
+            {/* My position — solo si está autenticado y tiene posición real */}
+            {!rankLoading && isAuthenticated && myRankPos !== null && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "linear-gradient(135deg,#1a1a10,#252515)", border: "1px solid rgba(240,224,64,0.25)", marginTop: 4 }}>
+                <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: "var(--color-accent)", flexShrink: 0 }}>#{myRankPos}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{myName}</div>
+                  <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{myXP.toLocaleString()} XP</div>
+                </div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: 10, color: "var(--color-muted)" }}>Te faltan</div>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 18, color: "var(--color-accent)", lineHeight: 1 }}>{xpToTop5.toLocaleString()} XP</div>
-                <div style={{ fontSize: 10, color: "var(--color-muted)" }}>para top 5</div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
