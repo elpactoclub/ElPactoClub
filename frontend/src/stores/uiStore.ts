@@ -24,6 +24,7 @@ interface UIState {
   isEventPageOpen: boolean;
   isFanModalOpen: boolean;
   fanModalUser: string | null;
+  fanModalData: { city?: string; level?: string; xp?: number } | null;
   isShareCarnetOpen: boolean;
   isProjectPageOpen: boolean;
   projectId: "india" | "tecnificar" | null;
@@ -61,7 +62,7 @@ interface UIState {
   closePayment: () => void;
   openEventPage: () => void;
   closeEventPage: () => void;
-  openFanModal: (username: string) => void;
+  openFanModal: (username: string, data?: { city?: string; level?: string; xp?: number }) => void;
   closeFanModal: () => void;
   openShareCarnet: () => void;
   closeShareCarnet: () => void;
@@ -89,6 +90,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isEventPageOpen: false,
   isFanModalOpen: false,
   fanModalUser: null,
+  fanModalData: null,
   isShareCarnetOpen: false,
   isProjectPageOpen: false,
   projectId: null,
@@ -123,8 +125,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   closePayment: () => set({ isPaymentOpen: false }),
   openEventPage: () => set({ isEventPageOpen: true }),
   closeEventPage: () => set({ isEventPageOpen: false }),
-  openFanModal: (username) => set({ isFanModalOpen: true, fanModalUser: username }),
-  closeFanModal: () => set({ isFanModalOpen: false, fanModalUser: null }),
+  openFanModal: (username, data) => set({ isFanModalOpen: true, fanModalUser: username, fanModalData: data ?? null }),
+  closeFanModal: () => set({ isFanModalOpen: false, fanModalUser: null, fanModalData: null }),
   openShareCarnet: () => set({ isShareCarnetOpen: true }),
   closeShareCarnet: () => set({ isShareCarnetOpen: false }),
   openProjectPage: (id) => set({ isProjectPageOpen: true, projectId: id }),

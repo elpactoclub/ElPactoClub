@@ -3,92 +3,124 @@
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
-const FAN_DATA: Record<string, { city: string; level: string; xp: string; streak: number; badges: string[]; color: string }> = {
-  BasketQueen:  { city: "Barcelona", level: "Leyenda", xp: "7,890", streak: 30, badges: ["🗳", "💬", "🔥", "👑", "🎟", "✉"], color: "#A78BFA" },
-  MikelFan23:   { city: "Madrid",    level: "MVP",     xp: "5,240", streak: 14, badges: ["🗳", "💬", "🔥", "👑"],              color: "#60A5FA" },
-  NachoBCN:     { city: "Barcelona", level: "MVP",     xp: "4,120", streak: 7,  badges: ["🗳", "💬", "🔥"],                    color: "#F59E0B" },
-  Laura_BCN:    { city: "Valencia",  level: "Starter", xp: "3,890", streak: 5,  badges: ["🗳", "💬"],                          color: "#22C55E" },
-  PactoForever: { city: "Sevilla",   level: "Starter", xp: "2,760", streak: 3,  badges: ["🗳"],                                color: "#EC4899" },
+const LEVEL_COLORS: Record<string, string> = {
+  Leyenda: "#A78BFA",
+  MVP: "#60A5FA",
+  Starter: "#22C55E",
+  Rookie: "#777",
 };
 
+function colorFor(name: string) {
+  const palette = ["#22C55E", "#60A5FA", "#A78BFA", "#F472B6", "#F59E0B", "#34D399", "#F97316"];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return palette[Math.abs(h) % palette.length];
+}
+
 export default function FanModal() {
-  const { isFanModalOpen, fanModalUser, closeFanModal, openDM, showToast } = useUIStore();
+  const { isFanModalOpen, fanModalUser, fanModalData, closeFanModal, openDM, showToast } = useUIStore();
   const { isAuthenticated } = useUserStore();
 
   if (!isFanModalOpen || !fanModalUser) return null;
 
-  const fan = FAN_DATA[fanModalUser] ?? { city: "Desconocida", level: "Rookie", xp: "0", streak: 0, badges: [], color: "#777" };
+  const city  = fanModalData?.city  || "—";
+  const level = fanModalData?.level || "Rookie";
+  const xp    = fanModalData?.xp    ?? 0;
+  const color = LEVEL_COLORS[level] || colorFor(fanModalUser);
+  const initials = fanModalUser.slice(0, 2).toUpperCase();
 
   const handleDM = () => {
-    if (!isAuthenticated) { showToast("Inicia sesión para enviar mensajes"); return; }
+    if (!isAuthenticated) { showToast("Inicia sesión para enviar mensajes ⚡"); return; }
     closeFanModal();
     openDM();
   };
 
-  const levelColors: Record<string, string> = { Leyenda: "#FFD700", MVP: "#60A5FA", Starter: "#F59E0B", Rookie: "#777" };
+  const content = (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Handle — mobile only */}
+      <div className="lg:hidden" style={{ width: 36, height: 4, background: "#333", borderRadius: 2, margin: "14px auto 0", flexShrink: 0 }} />
 
-  return (
-    <div className="fixed inset-0 bg-[#000c] z-[310] flex items-end justify-center" onClick={(e) => e.target === e.currentTarget && closeFanModal()}>
-      <div className="bg-gray rounded-t-2xl w-full max-w-[480px] px-5 pb-10 animate-slide-up">
-        <div className="w-9 h-1 bg-gray3 rounded-sm mx-auto mt-4 mb-5" />
-
+      {/* Header gradient band */}
+      <div style={{ background: `linear-gradient(135deg, ${color}18 0%, #111 100%)`, borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "28px 24px 24px", display: "flex", alignItems: "center", gap: 18 }}>
         {/* Avatar */}
-        <div className="flex flex-col items-center mb-4">
-          <div
-            className="w-[72px] h-[72px] rounded-full flex items-center justify-center text-[28px] font-bold mb-2"
-            style={{ background: fan.color + "22", border: `3px solid ${fan.color}`, color: fan.color }}
-          >
-            {fanModalUser[0]}
-          </div>
-          <div className="font-heading text-[22px] tracking-[1px]">{fanModalUser.toUpperCase()}</div>
-          <div className="text-[11px] text-muted">📍 {fan.city}</div>
-          <div className="mt-1 px-3 py-[3px] rounded-full text-[9px] font-extrabold" style={{ background: levelColors[fan.level] + "22", color: levelColors[fan.level], border: `1px solid ${levelColors[fan.level]}50` }}>
-            {fan.level.toUpperCase()} · {fan.xp} XP
-          </div>
+        <div style={{ width: 72, height: 72, borderRadius: "50%", background: color + "22", border: `3px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontSize: 24, color, flexShrink: 0 }}>
+          {initials}
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-gray2 rounded-xl text-center py-3">
-            <div className="font-heading text-[22px] text-accent">{fan.xp}</div>
-            <div className="text-[9px] text-muted">XP Total</div>
+        {/* Name + meta */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, letterSpacing: 1, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {fanModalUser.toUpperCase()}
           </div>
-          <div className="bg-gray2 rounded-xl text-center py-3">
-            <div className="font-heading text-[22px] text-green">🔥 {fan.streak}</div>
-            <div className="text-[9px] text-muted">Días racha</div>
-          </div>
-          <div className="bg-gray2 rounded-xl text-center py-3">
-            <div className="font-heading text-[22px] text-white">{fan.badges.length}</div>
-            <div className="text-[9px] text-muted">Insignias</div>
-          </div>
+          {city !== "—" && (
+            <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 6 }}>📍 {city}</div>
+          )}
+          <span style={{ fontSize: 9, fontWeight: 900, padding: "3px 10px", borderRadius: 20, background: color + "22", color, border: `1px solid ${color}44` }}>
+            {level.toUpperCase()} · {xp.toLocaleString("es")} XP
+          </span>
         </div>
+        {/* Close — desktop */}
+        <button
+          onClick={closeFanModal}
+          className="hidden lg:flex"
+          style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#aaa", cursor: "pointer", fontSize: 13, alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+        >✕</button>
+      </div>
 
-        {/* Badges */}
-        {fan.badges.length > 0 && (
-          <div className="mb-4">
-            <div className="text-[9px] font-bold tracking-[1.5px] text-muted uppercase mb-2">Insignias</div>
-            <div className="flex gap-2 flex-wrap">
-              {fan.badges.map((b, i) => (
-                <div key={i} className="w-10 h-10 rounded-full bg-gray2 border border-border2 flex items-center justify-center text-[18px]">
-                  {b}
-                </div>
-              ))}
-            </div>
+      {/* Stats row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: "16px 20px 0" }}>
+        {[
+          { val: xp.toLocaleString("es"), label: "XP Total",  color: "var(--color-accent)" },
+          { val: "—",                     label: "Días racha", color: "var(--color-green)"  },
+          { val: "—",                     label: "Insignias",  color: "#fff"                },
+        ].map((s) => (
+          <div key={s.label} style={{ background: "#222", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-heading)", fontSize: 20, color: s.color, lineHeight: 1.1 }}>{s.val}</div>
+            <div style={{ fontSize: 9, color: "var(--color-muted)", marginTop: 3 }}>{s.label}</div>
           </div>
-        )}
+        ))}
+      </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <button onClick={handleDM} className="flex-1 bg-gray2 border border-border text-white font-bold py-3 rounded-xl text-[12px] cursor-pointer hover:border-accent transition-colors">
-            ✉ Enviar mensaje
-          </button>
-          <button onClick={() => { showToast(`${fanModalUser} añadido a favoritos ⭐`); closeFanModal(); }} className="flex-1 bg-accent text-black font-bold py-3 rounded-xl text-[12px] cursor-pointer">
-            ⭐ Seguir fan
-          </button>
-        </div>
-
-        <button onClick={closeFanModal} className="w-full mt-3 text-muted text-[11px] bg-transparent border-none cursor-pointer py-2">Cerrar</button>
+      {/* Actions */}
+      <div style={{ display: "flex", gap: 10, padding: "16px 20px 24px" }}>
+        <button
+          onClick={handleDM}
+          style={{ flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", borderRadius: 12, padding: "13px 0", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}
+        >
+          ✉ Enviar mensaje
+        </button>
+        <button
+          onClick={() => { showToast(`${fanModalUser} añadido a seguidos ⭐`); closeFanModal(); }}
+          style={{ flex: 1, background: "var(--color-accent)", color: "#000", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
+        >
+          ⭐ Seguir fan
+        </button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 310, backdropFilter: "blur(2px)" }}
+        onClick={closeFanModal}
+      />
+
+      {/* Mobile: bottom sheet */}
+      <div
+        className="lg:hidden animate-slide-up"
+        style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 311, background: "#181818", borderRadius: "16px 16px 0 0", overflow: "hidden" }}
+      >
+        {content}
+      </div>
+
+      {/* Desktop: centered dialog */}
+      <div
+        className="hidden lg:block"
+        style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 311, background: "#181818", borderRadius: 16, width: "100%", maxWidth: 440, overflow: "hidden", boxShadow: "0 32px 80px rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        {content}
+      </div>
+    </>
   );
 }

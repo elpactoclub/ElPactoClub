@@ -139,7 +139,7 @@ export default function AboutScreen() {
               globalRanking.map((r) => (
                 <button
                   key={r.pos}
-                  onClick={() => openFanModal(r.name)}
+                  onClick={() => openFanModal(r.name, { city: r.city, level: r.level, xp: leaderboard[r.pos - 1]?.xp })}
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, border: r.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)", background: r.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", cursor: "pointer", textAlign: "left", width: "100%" }}
                 >
                   <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: r.posColor }}>{r.pos}</div>
