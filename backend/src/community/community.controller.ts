@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
@@ -23,6 +23,13 @@ export class CommunityController {
     @Body() body: { type: string; content: string; pollOptions?: string[] },
   ) {
     return this.svc.createPost(req.user.id, body);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Delete('posts/:id')
+  deletePost(@Req() req: any, @Param('id') id: string) {
+    return this.svc.deletePost(id, req.user.id, req.user.role);
   }
 
   @ApiBearerAuth()

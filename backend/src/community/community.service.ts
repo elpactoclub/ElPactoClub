@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Post, Message } from './post.entity';
@@ -63,6 +63,16 @@ export class CommunityService {
     }
 
     return saved;
+  }
+
+  async deletePost(postId: string, userId: string, userRole: string) {
+    const post = await this.postRepo.findOneBy({ id: postId });
+    if (!post) throw new NotFoundException('Post no encontrado');
+    if (post.authorId !== userId && userRole !== 'admin') {
+      throw new ForbiddenException('No tienes permiso para eliminar este post');
+    }
+    await this.postRepo.remove(post);
+    return { ok: true };
   }
 
   async likePost(postId: string, userId: string) {

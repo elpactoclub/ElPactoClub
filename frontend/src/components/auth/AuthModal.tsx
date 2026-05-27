@@ -205,6 +205,7 @@ function FormContent({
               <Field label="Nombre de Fan">
                 <input
                   type="text" required
+                  autoComplete="username"
                   placeholder="Ej. BasketMaster99"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
@@ -242,6 +243,7 @@ function FormContent({
           <Field label="Email">
             <input
               type="email" required
+              autoComplete="email"
               placeholder="fan@elpacto.com"
               value={emailInput}
               onChange={(e) => setEmailInput(e.target.value)}
@@ -253,6 +255,7 @@ function FormContent({
             <div style={{ position: "relative" }}>
               <input
                 type={showPassword ? "text" : "password"} required
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 placeholder="••••••••"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
