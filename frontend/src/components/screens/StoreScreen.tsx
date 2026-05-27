@@ -4,10 +4,41 @@ import { useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
+const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
+
+const CREDIT_PACKS = {
+  "100": { credits: 100, price: "3,5€", label: "1 sorteo · 20 votos", emoji: "⚡", popular: false },
+  "200": { credits: 200, price: "6€", label: "2 sorteos · 4 charlas", emoji: "⚡⚡", popular: true },
+} as const;
+
+type PackId = keyof typeof CREDIT_PACKS;
+
 export default function StoreScreen() {
   const [activeTab, setActiveTab] = useState<"sub" | "cred" | "merch">("sub");
+  const [selectedPack, setSelectedPack] = useState<PackId | null>(null);
+  const [buyingCredits, setBuyingCredits] = useState(false);
   const { credits } = useUserStore();
   const { showToast, openPayment } = useUIStore();
+
+  const handleBuyCredits = async () => {
+    if (!selectedPack) return;
+    setBuyingCredits(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("el_pacto_token") : null;
+      const res = await fetch(`${API}/store/checkout-credits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ pack: selectedPack }),
+      });
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+      else throw new Error();
+    } catch {
+      showToast("Error al conectar con el servidor de pago");
+      setBuyingCredits(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
@@ -130,26 +161,51 @@ export default function StoreScreen() {
             Compra créditos para votar, participar en sorteos, charlas exclusivas y enviar mensajes a los creadores.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <button
-              onClick={() => showToast("Abriendo Stripe — 100 créditos · 3,5€")}
-              style={{ background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "20px 16px", textAlign: "center", cursor: "pointer" }}
-            >
-              <span style={{ fontSize: 28, display: "block", marginBottom: 10 }}>⚡</span>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>100 créditos</div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: "var(--color-accent)", lineHeight: 1 }}>3,5€</div>
-              <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 8 }}>1 sorteo · 20 votos</div>
-            </button>
-            <button
-              onClick={() => showToast("Abriendo Stripe — 200 créditos · 6€")}
-              style={{ background: "#1a1a1a", border: "1px solid rgba(240,224,64,0.4)", borderRadius: 10, padding: "20px 16px", textAlign: "center", cursor: "pointer", position: "relative" }}
-            >
-              <div style={{ position: "absolute", top: 10, right: 10, background: "var(--color-accent)", color: "#000", fontSize: 8, fontWeight: 900, padding: "2px 7px", borderRadius: 10 }}>POPULAR</div>
-              <span style={{ fontSize: 28, display: "block", marginBottom: 10 }}>⚡⚡</span>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>200 créditos</div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: "var(--color-accent)", lineHeight: 1 }}>6€</div>
-              <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 8 }}>2 sorteos · 4 charlas</div>
-            </button>
+            {(Object.entries(CREDIT_PACKS) as [PackId, typeof CREDIT_PACKS[PackId]][]).map(([id, pkg]) => {
+              const isSelected = selectedPack === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedPack(isSelected ? null : id)}
+                  style={{
+                    background: isSelected ? "linear-gradient(135deg,#1a1a08,#252508)" : "#1a1a1a",
+                    border: isSelected ? "2px solid var(--color-accent)" : pkg.popular ? "1px solid rgba(240,224,64,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 10,
+                    padding: "20px 16px",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "border 0.15s, background 0.15s",
+                  }}
+                >
+                  {pkg.popular && !isSelected && (
+                    <div style={{ position: "absolute", top: 10, right: 10, background: "var(--color-accent)", color: "#000", fontSize: 8, fontWeight: 900, padding: "2px 7px", borderRadius: 10 }}>POPULAR</div>
+                  )}
+                  {isSelected && (
+                    <div style={{ position: "absolute", top: 10, right: 10, background: "var(--color-accent)", color: "#000", fontSize: 10, fontWeight: 900, padding: "2px 7px", borderRadius: 10 }}>✓</div>
+                  )}
+                  <span style={{ fontSize: 28, display: "block", marginBottom: 10 }}>{pkg.emoji}</span>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{pkg.credits} créditos</div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: "var(--color-accent)", lineHeight: 1 }}>{pkg.price}</div>
+                  <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 8 }}>{pkg.label}</div>
+                </button>
+              );
+            })}
           </div>
+
+          {/* Buy bar — appears when a pack is selected */}
+          {selectedPack && (
+            <button
+              onClick={handleBuyCredits}
+              disabled={buyingCredits}
+              className="btn-y"
+              style={{ width: "100%", fontSize: 14, fontWeight: 800, padding: "15px", opacity: buyingCredits ? 0.6 : 1, marginTop: 2 }}
+            >
+              {buyingCredits
+                ? "Abriendo Stripe…"
+                : `Comprar — ${CREDIT_PACKS[selectedPack].credits} créditos · ${CREDIT_PACKS[selectedPack].price}`}
+            </button>
+          )}
 
           <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "18px 18px", border: "1px solid rgba(255,255,255,0.06)" }}>
             <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>¿Para qué sirven los créditos?</div>

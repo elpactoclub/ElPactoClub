@@ -43,6 +43,19 @@ export default function Home() {
         showToast("¡Pago completado! Inicia sesión para activar tu membresía 🏀");
       }
     }
+
+    // Handle credits purchase
+    const creditsSuccess = params.get("credits_success");
+    if (creditsSuccess) {
+      window.history.replaceState({}, "", window.location.pathname);
+      if (token) {
+        fetchProfile().then(() => {
+          showToast(`¡${creditsSuccess} créditos añadidos a tu cuenta! ⚡`);
+        });
+      } else {
+        showToast("¡Pago completado! Inicia sesión para ver tus créditos ⚡");
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

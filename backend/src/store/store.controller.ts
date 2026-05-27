@@ -1,4 +1,4 @@
-import { Controller, Post, Headers, Req } from '@nestjs/common';
+import { Controller, Post, Body, Headers, Req } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { Request } from 'express';
 import { ApiTags } from '@nestjs/swagger';
@@ -13,6 +13,16 @@ export class StoreController {
     const userId = req.user?.id ?? null;
     const email = req.user?.email ?? null;
     return this.storeService.createCheckoutSession(userId, email);
+  }
+
+  @Post('checkout-credits')
+  async checkoutCredits(
+    @Body('pack') pack: '100' | '200',
+    @Req() req: Request & { user?: { id: string; email: string } },
+  ) {
+    const userId = req.user?.id ?? null;
+    const email = req.user?.email ?? null;
+    return this.storeService.createCreditsCheckoutSession(pack, userId, email);
   }
 
   @Post('webhook')
