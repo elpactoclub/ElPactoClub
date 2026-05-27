@@ -59,6 +59,24 @@ export default function AboutScreen() {
   }));
 
   const myRankPos = leaderboard.findIndex((u) => u.name === myName) + 1 || null;
+
+  // Cities ranking from real leaderboard data
+  const cityRanking = (() => {
+    const map: Record<string, { totalXP: number; fans: number; leader: string }> = {};
+    leaderboard.forEach((u) => {
+      const c = u.city || "—";
+      if (!map[c]) map[c] = { totalXP: 0, fans: 0, leader: u.name };
+      map[c].totalXP += u.xp;
+      map[c].fans += 1;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1].totalXP - a[1].totalXP)
+      .slice(0, 5)
+      .map(([city, data], i) => ({
+        pos: i + 1, city, fans: data.fans, leader: data.leader,
+        xp: data.totalXP.toLocaleString(), posColor: POS_COLORS[i] || "#777",
+      }));
+  })();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
 
@@ -128,9 +146,17 @@ export default function AboutScreen() {
         {rankTab === "global" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {rankLoading ? (
-              <div style={{ padding: "28px 0", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>
-                Cargando ranking... ⚡
-              </div>
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ width: 28, height: 22, borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ height: 13, width: `${50 + (i % 3) * 15}%`, borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite" }} />
+                    <div style={{ height: 10, width: "40%", borderRadius: 4, background: "rgba(255,255,255,0.05)", animation: "pulse 1.4s ease-in-out infinite" }} />
+                  </div>
+                  <div style={{ width: 48, height: 16, borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
+                </div>
+              ))
             ) : globalRanking.length === 0 ? (
               <div style={{ padding: "28px 0", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>
                 Sin datos de ranking todavía
@@ -169,22 +195,31 @@ export default function AboutScreen() {
         {/* Cities ranking */}
         {rankTab === "ciudades" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {[
-              { pos: 1, city: "Barcelona", fans: 312, leader: "BasketQueen", xp: "247,840", posColor: "#FFD700" },
-              { pos: 2, city: "Madrid", fans: 287, leader: "MikelFan23", xp: "198,320", posColor: "#C0C0C0" },
-              { pos: 3, city: "Valencia", fans: 198, leader: "Laura_BCN", xp: "156,900", posColor: "#CD7F32" },
-              { pos: 4, city: "Sevilla", fans: 156, leader: "PactoForever", xp: "98,450", posColor: "#777" },
-              { pos: 5, city: "Bilbao", fans: 87, leader: "—", xp: "67,200", posColor: "#777" },
-            ].map((c) => (
-              <div key={c.pos} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: c.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", border: c.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: c.posColor }}>{c.pos}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{c.city}</div>
-                  <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{c.fans} fans · Líder: {c.leader}</div>
+            {rankLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ width: 28, height: 22, borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ height: 13, width: `${45 + (i % 3) * 18}%`, borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite" }} />
+                    <div style={{ height: 10, width: "55%", borderRadius: 4, background: "rgba(255,255,255,0.05)", animation: "pulse 1.4s ease-in-out infinite" }} />
+                  </div>
+                  <div style={{ width: 52, height: 16, borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite", flexShrink: 0 }} />
                 </div>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, color: "var(--color-accent)", flexShrink: 0 }}>{c.xp} XP</div>
-              </div>
-            ))}
+              ))
+            ) : cityRanking.length === 0 ? (
+              <div style={{ padding: "28px 0", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>Sin datos todavía</div>
+            ) : (
+              cityRanking.map((c) => (
+                <div key={c.pos} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: c.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", border: c.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: c.posColor }}>{c.pos}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{c.city}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{c.fans} {c.fans === 1 ? "fan" : "fans"} · Líder: {c.leader}</div>
+                  </div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, color: "var(--color-accent)", flexShrink: 0 }}>{c.xp} XP</div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
