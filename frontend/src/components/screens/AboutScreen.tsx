@@ -234,11 +234,14 @@ export default function AboutScreen() {
       {/* Sponsor Principal */}
       <div>
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 16, paddingLeft: 2 }}>SPONSOR PRINCIPAL</div>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "24px 0", display: "flex", justifyContent: "center", alignItems: "center" }}>
-          {/* Stylized logo placeholder — car silhouette */}
-          <svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 28 C30 28 40 12 70 12 C100 12 110 28 130 28" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.85"/>
-            <path d="M25 28 L30 20 C45 10 55 8 70 8 C85 8 95 10 110 20 L115 28" stroke="white" strokeWidth="2" fill="rgba(255,255,255,0.08)" strokeLinecap="round"/>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "28px 0", display: "flex", justifyContent: "center", alignItems: "center" }}>
+          {/* Nike swoosh */}
+          <svg viewBox="0 0 400 120" width="160" height="48" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M2,98 C2,98 72,58 165,28 C235,4 300,-2 338,14 C363,24 374,44 360,60 C346,76 308,82 270,74 C232,66 175,42 128,58 C85,72 42,110 2,98 Z"
+              fill="white"
+              opacity="0.92"
+            />
           </svg>
         </div>
       </div>
