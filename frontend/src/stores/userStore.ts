@@ -45,6 +45,7 @@ interface UserState {
   setName: (name: string) => void;
   setAvatar: (avatar: string) => void;
   setCity: (city: string) => void;
+  setCountry: (country: string) => void;
   setVoted: (id: string, option: string) => void;
   toggleLike: (id: string) => void;
   toggleReaction: (id: string) => void;
@@ -148,6 +149,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   setName: (name) => set({ name }),
   setAvatar: (avatar) => set({ avatar }),
   setCity: (city) => set({ city }),
+  setCountry: (country) => set({ country }),
 
   setVoted: (id, option) =>
     set((state) => ({ voted: { ...state.voted, [id]: option } })),

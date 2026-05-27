@@ -11,14 +11,28 @@ const AVATAR_OPTIONS = [
   "🏅", "🎽", "🥊", "🎮", "🦅", "🐝", "🦊", "🎭",
 ];
 
-const CITIES = ["Barcelona", "Madrid", "Valencia", "Sevilla", "Bilbao", "Málaga", "Zaragoza", "Murcia", "Palma", "Otra"];
+const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  España: ["Barcelona", "Madrid", "Valencia", "Sevilla", "Bilbao", "Málaga", "Zaragoza", "Murcia", "Palma", "Otra"],
+  Argentina: ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata", "Mar del Plata", "Otra"],
+  México: ["Ciudad de México", "Guadalajara", "Monterrey", "Cancún", "Puebla", "Querétaro", "Otra"],
+  Colombia: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Otra"],
+  Perú: ["Lima", "Arequipa", "Trujillo", "Cusco", "Piura", "Otra"],
+  Chile: ["Santiago", "Valparaíso", "Concepción", "La Serena", "Temuco", "Otra"],
+  Brasil: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Fortaleza", "Outra"],
+  Uruguay: ["Montevideo", "Salto", "Paysandú", "Maldonado", "Outra"],
+  Paraguay: ["Asunción", "Ciudad del Este", "Encarnación", "Outra"],
+  Otro: ["Otra"],
+};
+
+const COUNTRIES = Object.keys(CITIES_BY_COUNTRY);
 
 export default function PersonalizeModal() {
   const { isPersonalizeOpen, closePersonalize, showToast } = useUIStore();
-  const { name, avatar, city, setName, setAvatar, setCity, isAuthenticated } = useUserStore();
+  const { name, avatar, city, country, setName, setAvatar, setCity, setCountry, isAuthenticated } = useUserStore();
 
   const [localName, setLocalName] = useState(name);
   const [localAvatar, setLocalAvatar] = useState(avatar);
+  const [localCountry, setLocalCountry] = useState(country || "España");
   const [localCity, setLocalCity] = useState(city);
   const [saving, setSaving] = useState(false);
 
@@ -26,11 +40,17 @@ export default function PersonalizeModal() {
     if (isPersonalizeOpen) {
       setLocalName(name === "Tu Nombre" ? "" : name);
       setLocalAvatar(avatar);
+      setLocalCountry(country || "España");
       setLocalCity(city);
     }
   }, [isPersonalizeOpen]);
 
   if (!isPersonalizeOpen) return null;
+
+  const handleCountryChange = (c: string) => {
+    setLocalCountry(c);
+    setLocalCity(CITIES_BY_COUNTRY[c]?.[0] ?? "Otra");
+  };
 
   const handleSave = async () => {
     if (!localName.trim()) { showToast("Escribe tu nombre"); return; }
@@ -41,11 +61,13 @@ export default function PersonalizeModal() {
           name: localName.trim(),
           avatar: localAvatar,
           city: localCity || undefined,
+          country: localCountry || undefined,
         });
       }
       setName(localName.trim());
       setAvatar(localAvatar);
       setCity(localCity);
+      setCountry(localCountry);
       showToast("¡Perfil actualizado! ✅");
       closePersonalize();
     } catch {
@@ -122,13 +144,27 @@ export default function PersonalizeModal() {
         />
       </div>
 
+      {/* Country */}
+      <div style={{ padding: "0 20px 16px" }}>
+        <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", display: "block", marginBottom: 8 }}>
+          TU PAÍS
+        </label>
+        <select
+          value={localCountry}
+          onChange={(e) => handleCountryChange(e.target.value)}
+          style={{ width: "100%", background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: "#fff", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-body)", cursor: "pointer" }}
+        >
+          {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
       {/* City */}
       <div style={{ padding: "0 20px 24px" }}>
         <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", display: "block", marginBottom: 8 }}>
           TU CIUDAD
         </label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {CITIES.map((c) => (
+          {(CITIES_BY_COUNTRY[localCountry] ?? ["Otra"]).map((c) => (
             <button
               key={c}
               onClick={() => setLocalCity(c)}
