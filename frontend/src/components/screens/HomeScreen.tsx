@@ -411,12 +411,12 @@ function MyContribution() {
 // ==========================================
 function MonthlyRaffle() {
   const { addTicket, addXP, isAuthenticated } = useUserStore();
-  const { showToast } = useUIStore();
+  const { showToast, openPayment } = useUIStore();
   const [participants, setParticipants] = useState(247);
 
   const handleJoin = async () => {
     if (!isAuthenticated) {
-      useUIStore.setState({ isLandingOpen: true });
+      openPayment();
       return;
     }
     try {
