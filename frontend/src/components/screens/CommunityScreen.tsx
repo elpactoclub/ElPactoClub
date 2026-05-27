@@ -475,6 +475,7 @@ function getAuthorColor(name: string | undefined, role: string) {
 function ChatTab() {
   const { addXP, name: myName, isAuthenticated } = useUserStore();
   const { showToast } = useUIStore();
+  const openLogin = () => useUIStore.setState({ isLandingOpen: true });
   const [activeChannel, setActiveChannel] = useState<Channel>("general");
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [loading, setLoading] = useState(true);
@@ -582,20 +583,32 @@ function ChatTab() {
       </div>
 
       {/* Input */}
-      <div style={{ display: "flex", gap: 10, padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "var(--color-black)", flexShrink: 0 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendChat(input)}
-          placeholder={isAuthenticated ? "Escribe algo..." : "Inicia sesión para chatear"}
-          style={{ flex: 1, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "13px 16px", fontSize: 13, color: "#fff", fontFamily: "var(--font-body)", outline: "none" }}
-        />
-        <button
-          onClick={() => sendChat(input)}
-          style={{ background: "#fff", color: "#000", border: "none", padding: "13px 22px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", flexShrink: 0 }}
-        >
-          Enviar
-        </button>
+      <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", background: "var(--color-black)", flexShrink: 0 }}>
+        {isAuthenticated ? (
+          <div style={{ display: "flex", gap: 10 }}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendChat(input)}
+              placeholder="Escribe algo..."
+              style={{ flex: 1, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "13px 16px", fontSize: 13, color: "#fff", fontFamily: "var(--font-body)", outline: "none" }}
+            />
+            <button
+              onClick={() => sendChat(input)}
+              style={{ background: "#fff", color: "#000", border: "none", padding: "13px 22px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", flexShrink: 0 }}
+            >
+              Enviar
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={openLogin}
+            className="btn-y"
+            style={{ width: "100%", fontSize: 13, fontWeight: 800, padding: "13px" }}
+          >
+            Inicia sesión para chatear ⚡
+          </button>
+        )}
       </div>
     </div>
   );
