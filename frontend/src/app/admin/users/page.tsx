@@ -102,7 +102,7 @@ export default function UsersPage() {
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Buscar por nombre, email, ciudad..."
             className="admin-input"
-            style={{ width: 260 }}
+            style={{ width: 260, maxWidth: "100%" }}
           />
           <button type="submit" className="admin-btn-primary">Buscar</button>
         </form>
@@ -126,13 +126,13 @@ export default function UsersPage() {
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
-                <td style={{ fontWeight: 600, color: "#fff" }}>{u.name}</td>
-                <td className="muted">{u.email}</td>
-                <td><span className={`admin-badge ${roleBadge(u)}`}>{ROLE_LABELS[u.role]}</span></td>
-                <td><span style={{ color: "var(--color-accent)", fontWeight: 700 }}>{u.credits} ⚡</span></td>
-                <td><span style={{ color: "#c4b5fd", fontWeight: 600 }}>{u.xp} XP</span></td>
-                <td className="muted">{u.city ?? "—"}</td>
-                <td className="actions">
+                <td data-label="Nombre" style={{ fontWeight: 600, color: "#fff" }}>{u.name}</td>
+                <td data-label="Email" className="muted">{u.email}</td>
+                <td data-label="Rol"><span className={`admin-badge ${roleBadge(u)}`}>{ROLE_LABELS[u.role]}</span></td>
+                <td data-label="Créditos"><span style={{ color: "var(--color-accent)", fontWeight: 700 }}>{u.credits} ⚡</span></td>
+                <td data-label="XP"><span style={{ color: "#c4b5fd", fontWeight: 600 }}>{u.xp} XP</span></td>
+                <td data-label="Ciudad" className="muted">{u.city ?? "—"}</td>
+                <td data-label="" className="actions">
                   <button onClick={() => openEdit(u)} className="admin-btn-edit">Editar</button>
                   <button onClick={() => deleteUser(u.id)} className="admin-btn-delete">Eliminar</button>
                 </td>

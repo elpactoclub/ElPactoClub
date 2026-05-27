@@ -142,17 +142,17 @@ export default function EventsPage() {
           <tbody>
             {events.map((e) => (
               <tr key={e.id}>
-                <td style={{ fontWeight: 600, color: "#fff" }}>{e.title}</td>
-                <td className="muted" style={{ textTransform: "capitalize" }}>{e.type}</td>
-                <td className="muted">{fmtDate(e.date)}</td>
-                <td className="muted">{e.city ?? "—"}</td>
-                <td>{e.creditsCost ? <span style={{ color: "var(--color-accent)", fontWeight: 700 }}>{e.creditsCost} ⚡</span> : <span style={{ color: "#22C55E", fontWeight: 600 }}>Gratis</span>}</td>
-                <td>
+                <td data-label="Evento" style={{ fontWeight: 600, color: "#fff" }}>{e.title}</td>
+                <td data-label="Tipo" className="muted" style={{ textTransform: "capitalize" }}>{e.type}</td>
+                <td data-label="Fecha" className="muted">{fmtDate(e.date)}</td>
+                <td data-label="Ciudad" className="muted">{e.city ?? "—"}</td>
+                <td data-label="Coste">{e.creditsCost ? <span style={{ color: "var(--color-accent)", fontWeight: 700 }}>{e.creditsCost} ⚡</span> : <span style={{ color: "#22C55E", fontWeight: 600 }}>Gratis</span>}</td>
+                <td data-label="Estado">
                   <span className={`admin-badge ${e.isActive ? "admin-badge-green" : "admin-badge-gray"}`}>
                     {e.isActive ? "Activo" : "Inactivo"}
                   </span>
                 </td>
-                <td className="actions">
+                <td data-label="" className="actions">
                   <button onClick={() => openEdit(e)} className="admin-btn-edit">Editar</button>
                   <button onClick={() => deleteEvent(e.id)} className="admin-btn-delete">Eliminar</button>
                 </td>

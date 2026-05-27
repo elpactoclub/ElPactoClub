@@ -233,6 +233,50 @@ body {
 .admin-table td.actions button { margin-left: 10px; }
 .admin-table .empty { text-align: center; color: #666; padding: 36px 16px; font-size: 13px; }
 
+@media (max-width: 767px) {
+  .admin-header form { width: 100%; }
+  .admin-header form .admin-input { flex: 1; width: auto !important; min-width: 0; }
+
+  .admin-table thead { display: none; }
+
+  .admin-table tbody tr {
+    display: block;
+    padding: 14px 16px 10px;
+  }
+
+  .admin-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border: none;
+    gap: 10px;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #666;
+    flex-shrink: 0;
+  }
+
+  .admin-table td[data-label=""]::before { display: none; }
+
+  .admin-table td.actions {
+    justify-content: flex-end;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .admin-table td.actions button { margin-left: 8px; }
+
+  .admin-table .empty { display: block; }
+}
+
 .admin-btn-primary {
   background: var(--color-accent);
   color: #000;
