@@ -204,40 +204,52 @@ function DailyReward() {
   return (
     <div>
       <Sec left="Recompensa diaria" right="🎁 Gira la ruleta cada día" rightGreen />
-      <div className="card" style={{ padding: "14px", textAlign: "center" }}>
-        <div style={{ fontSize: "11px", color: "var(--color-muted)", marginBottom: "14px" }}>
-          Hoy · {todayName} · Gira y descubre tu premio
-        </div>
-        <div style={{ position: "relative", display: "inline-block", marginBottom: "14px" }}>
-          <div style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", fontSize: "20px", zIndex: 10, filter: "drop-shadow(0 2px 4px rgba(0,0,0,.5))" }}>▼</div>
-          <canvas
-            ref={canvasRef}
-            width={220}
-            height={220}
-            className={spinning ? "animate-spin-slow" : ""}
-            style={{ borderRadius: "50%", boxShadow: "0 4px 20px rgba(0,0,0,.4)" }}
-          />
-        </div>
-        {ruletaSpun ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ width: "100%", background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--color-muted)", padding: "13px", borderRadius: "9px", fontSize: "13px", fontWeight: 700, textAlign: "center", fontFamily: "'DM Sans', sans-serif" }}>
-              ✓ Vuelve mañana
+      <div className="card" style={{ padding: "20px 24px" }}>
+        <div className="daily-reward-inner">
+          {/* Wheel */}
+          <div style={{ position: "relative", display: "inline-block", flexShrink: 0 }}>
+            <div style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", fontSize: "20px", zIndex: 10, filter: "drop-shadow(0 2px 4px rgba(0,0,0,.5))" }}>▼</div>
+            <canvas
+              ref={canvasRef}
+              width={220}
+              height={220}
+              className={spinning ? "animate-spin-slow" : ""}
+              style={{ borderRadius: "50%", boxShadow: "0 4px 24px rgba(0,0,0,.5)", display: "block" }}
+            />
+          </div>
+
+          {/* Info + button */}
+          <div className="daily-reward-info">
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>
+              Hoy · {todayName}
             </div>
-            {result && (
-              <div style={{ width: "100%", background: "var(--color-accent)", color: "var(--color-black)", padding: "13px", borderRadius: "9px", fontSize: "13px", fontWeight: 800, textAlign: "center", fontFamily: "'DM Sans', sans-serif" }}>
-                🎟 {result}{result.includes("ticket") ? " de sorteo" : ""}!
+            <div style={{ fontSize: "11px", color: "var(--color-muted)", marginBottom: "20px", lineHeight: 1.5 }}>
+              Gira la ruleta y descubre tu recompensa diaria.<br />
+              Vuelve cada día para no perder tu racha.
+            </div>
+
+            {ruletaSpun ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--color-muted)", padding: "13px 20px", borderRadius: "10px", fontSize: "13px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                  ✓ Vuelve mañana
+                </div>
+                {result && (
+                  <div style={{ background: "var(--color-accent)", color: "var(--color-black)", padding: "13px 20px", borderRadius: "10px", fontSize: "13px", fontWeight: 800, fontFamily: "'DM Sans', sans-serif" }}>
+                    🎟 {result}{result.includes("ticket") ? " de sorteo" : ""}!
+                  </div>
+                )}
               </div>
+            ) : (
+              <button
+                onClick={handleSpin}
+                disabled={spinning}
+                style={{ background: "var(--color-accent)", color: "var(--color-black)", border: "none", padding: "14px 36px", borderRadius: "10px", fontSize: "14px", fontWeight: 800, cursor: spinning ? "default" : "pointer", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.5px", opacity: spinning ? 0.7 : 1 }}
+              >
+                {spinning ? "Girando..." : "🎰 Girar ruleta"}
+              </button>
             )}
           </div>
-        ) : (
-          <button
-            onClick={handleSpin}
-            disabled={spinning}
-            style={{ width: "100%", background: "var(--color-accent)", color: "var(--color-black)", border: "none", padding: "13px 32px", borderRadius: "9px", fontSize: "13px", fontWeight: 800, cursor: spinning ? "default" : "pointer", fontFamily: "'DM Sans', sans-serif" }}
-          >
-            🎰 Girar ruleta
-          </button>
-        )}
+        </div>
       </div>
     </div>
   );
