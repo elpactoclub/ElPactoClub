@@ -18,7 +18,7 @@ export class CommunityService {
     private readonly users: UsersService,
   ) {}
 
-  async getPosts() {
+  async getPosts(userId?: string) {
     const posts = await this.postRepo.find({
       where: { isVisible: true },
       order: { createdAt: 'DESC' },
@@ -34,6 +34,7 @@ export class CommunityService {
       authorName: userMap[p.authorId]?.name ?? 'Fan',
       authorAvatar: userMap[p.authorId]?.avatar ?? '🏀',
       authorRole: userMap[p.authorId]?.role ?? 'fan',
+      liked: !!(userId && (p.likedBy ?? []).includes(userId)),
     }));
   }
 
@@ -64,9 +65,17 @@ export class CommunityService {
     return saved;
   }
 
-  async likePost(postId: string) {
-    await this.postRepo.increment({ id: postId }, 'likesCount', 1);
-    return { ok: true };
+  async likePost(postId: string, userId: string) {
+    const post = await this.postRepo.findOneBy({ id: postId });
+    if (!post) return { ok: false };
+    const likedBy = post.likedBy || [];
+    const wasLiked = likedBy.includes(userId);
+    const newLikedBy = wasLiked
+      ? likedBy.filter((id) => id !== userId)
+      : [...likedBy, userId];
+    const newCount = Math.max(0, (post.likesCount ?? 0) + (wasLiked ? -1 : 1));
+    await this.postRepo.update(postId, { likedBy: newLikedBy, likesCount: newCount });
+    return { liked: !wasLiked, likesCount: newCount };
   }
 
   async votePoll(postId: string, option: string) {

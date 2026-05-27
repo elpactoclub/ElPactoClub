@@ -33,6 +33,7 @@ interface ApiPost {
   pollOptions?: string[];
   pollVotes?: Record<string, number>;
   likesCount: number;
+  liked?: boolean;
   createdAt: string;
   isOnline?: boolean;
 }
@@ -119,7 +120,15 @@ function FeedTab() {
 
   useEffect(() => {
     api.get("/community/posts")
-      .then((r) => setPosts(r.data))
+      .then((r) => {
+        const fetched: ApiPost[] = r.data;
+        setPosts(fetched);
+        // Sync liked map from backend (source of truth)
+        const fromApi: Record<string, boolean> = {};
+        fetched.forEach((p) => { if (p.liked) fromApi[p.id] = true; });
+        useUserStore.setState({ liked: fromApi });
+        if (typeof window !== "undefined") localStorage.setItem("ep_liked", JSON.stringify(fromApi));
+      })
       .catch(() => setPosts([]))
       .finally(() => setLoading(false));
   }, []);
@@ -128,12 +137,29 @@ function FeedTab() {
     if (!isAuthenticated) { showToast("Inicia sesión para reaccionar ⚡"); return; }
     const wasLiked = !!liked[postId];
     const delta = wasLiked ? -1 : 1;
+    // Optimistic update
     toggleLike(postId);
     setPosts((prev) => prev.map((p) => p.id !== postId ? p : {
       ...p, likesCount: Math.max(0, p.likesCount + delta),
     }));
     setDetailPost((prev) => prev?.id === postId ? { ...prev, likesCount: Math.max(0, prev.likesCount + delta) } : prev);
-    try { await api.post(`/community/posts/${postId}/like`); } catch {}
+    // Sync with backend response
+    try {
+      const r = await api.post(`/community/posts/${postId}/like`);
+      const { liked: serverLiked, likesCount: serverCount } = r.data ?? {};
+      if (typeof serverCount === "number") {
+        setPosts((prev) => prev.map((p) => p.id !== postId ? p : { ...p, likesCount: serverCount }));
+        setDetailPost((prev) => prev?.id === postId ? { ...prev, likesCount: serverCount } : prev);
+      }
+      if (typeof serverLiked === "boolean") {
+        useUserStore.setState((s) => {
+          const next = { ...s.liked, [postId]: serverLiked };
+          if (!serverLiked) delete next[postId];
+          if (typeof window !== "undefined") localStorage.setItem("ep_liked", JSON.stringify(next));
+          return { liked: next };
+        });
+      }
+    } catch {}
   };
 
   const handlePollVote = async (postId: string, option: string) => {

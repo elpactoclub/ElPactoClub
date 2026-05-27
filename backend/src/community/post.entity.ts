@@ -25,6 +25,9 @@ export class Post {
   @Column({ default: 0 })
   likesCount: number;
 
+  @Column({ type: 'jsonb', default: [] })
+  likedBy: string[];
+
   @Column({ default: true })
   isVisible: boolean;
 

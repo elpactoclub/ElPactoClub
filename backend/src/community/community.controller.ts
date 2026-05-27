@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CommunityService } from './community.service';
 
 @ApiTags('community')
@@ -8,9 +9,10 @@ import { CommunityService } from './community.service';
 export class CommunityController {
   constructor(private readonly svc: CommunityService) {}
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('posts')
-  getPosts() {
-    return this.svc.getPosts();
+  getPosts(@Req() req: any) {
+    return this.svc.getPosts(req.user?.id);
   }
 
   @ApiBearerAuth()
@@ -23,9 +25,11 @@ export class CommunityController {
     return this.svc.createPost(req.user.id, body);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('posts/:id/like')
-  likePost(@Param('id') id: string) {
-    return this.svc.likePost(id);
+  likePost(@Req() req: any, @Param('id') id: string) {
+    return this.svc.likePost(id, req.user.id);
   }
 
   @Post('posts/:id/vote')
