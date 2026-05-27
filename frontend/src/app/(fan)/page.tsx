@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import Landing from "@/components/landing/Landing";
@@ -8,8 +8,11 @@ import Onboarding from "@/components/landing/Onboarding";
 import AppShell from "@/components/layout/AppShell";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
   const { isLandingOpen, isOnboardingOpen, showToast } = useUIStore();
   const { isAuthenticated, fetchProfile, token, becomeSocioApi } = useUserStore();
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (token) {
@@ -42,6 +45,10 @@ export default function Home() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (!mounted) {
+    return <div style={{ position: "fixed", inset: 0, background: "#0A0A0A" }} />;
+  }
 
   if (isOnboardingOpen) {
     return (
