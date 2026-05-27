@@ -42,6 +42,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${dmSans.variable} ${bebasNeue.variable} h-full`}>
+      <head>
+        {/* Preload onboarding and landing hero images so they're ready before JS runs */}
+        <link rel="preload" as="image" href="/imagenes/herson2.jpg" fetchPriority="high" />
+        <link rel="preload" as="image" href="/imagenes/herson.jpg" />
+        <link rel="preload" as="image" href="/imagenes/violeta.jpg" />
+        <link rel="preload" as="image" href="/imagenes/elvis.jpg" />
+      </head>
       <body className="h-full bg-black">
         {children}
       </body>

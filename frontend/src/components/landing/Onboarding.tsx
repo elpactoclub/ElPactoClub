@@ -86,7 +86,7 @@ export default function Onboarding() {
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={current.avatarImg} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+        <img src={current.avatarImg} alt="" fetchPriority={step === 0 ? "high" : "auto"} loading={step === 0 ? "eager" : "lazy"} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
       </div>
 
       {/* Label */}
@@ -219,12 +219,14 @@ export default function Onboarding() {
           <img
             src={current.bgImg}
             alt=""
+            fetchPriority={step === 0 ? "high" : "auto"}
+            loading={step === 0 ? "eager" : "lazy"}
             style={{
               position: "absolute", inset: 0,
               width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top",
               opacity: 0.6,
-              transition: "all 0.4s",
+              transition: "opacity 0.4s",
             }}
           />
           {/* Gradiente lateral para fundir con el contenido */}
