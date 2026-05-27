@@ -135,7 +135,19 @@ export default function ProjectPageModal() {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#000c] z-[300] flex flex-col" style={{ maxWidth: 480, margin: "0 auto" }}>
+    <>
+      {/* Backdrop — visible on desktop */}
+      <div
+        className="fixed inset-0 z-[300] hidden sm:block"
+        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(3px)" }}
+        onClick={handleClose}
+      />
+
+      {/* Panel — full screen on mobile, centered 480px column on desktop */}
+      <div
+        className="fixed top-0 bottom-0 left-0 right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[480px] z-[301] flex flex-col"
+        style={{ background: "var(--color-gray)" }}
+      >
       {/* Hero */}
       <div className="relative h-[180px] flex-shrink-0" style={{ background: `linear-gradient(135deg, ${project.color}22, ${project.color}11)` }}>
         <div className="absolute inset-0 flex flex-col justify-end p-4">
@@ -260,6 +272,7 @@ export default function ProjectPageModal() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
