@@ -106,12 +106,15 @@ function SeasonCard() {
 // ==========================================
 // DAILY REWARD (ROULETTE)
 // ==========================================
+const SPIN_DURATION = 4000;
+
 function DailyReward() {
   const { ruletaSpun, spinRuleta, spinRuletaApi, isAuthenticated, addCredits, addXP } = useUserStore();
   const { showToast } = useUIStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [wheelDeg, setWheelDeg] = useState(0);
 
   const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const todayName = DAYS[new Date().getDay()];
@@ -126,6 +129,16 @@ function DailyReward() {
     { label: "+5 ⚡",  color: "#F59E0B", key: "+5 ⚡" },
     { label: "Sorteo", color: "#06B6D4", key: "🎁 Sorpresa" },
   ];
+
+  const spinToIndex = (idx: number) => {
+    const segAngle = 360 / segments.length;
+    // Angle where segment idx's center aligns with the top pointer
+    const targetAngle = (360 - ((idx + 0.5) * segAngle % 360)) % 360;
+    // 5 full rotations + correction from current position
+    const finalDeg = wheelDeg + 5 * 360 + ((targetAngle - wheelDeg % 360) + 360) % 360;
+    setWheelDeg(finalDeg);
+    return finalDeg;
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -181,23 +194,24 @@ function DailyReward() {
       const prize = await spinRuletaApi();
       if (!prize) { setSpinning(false); showToast("Error al conectar con la ruleta real ❌"); return; }
       const winIdx = segments.findIndex((s) => s.key === prize.prize);
-      const targetSeg = segments[winIdx >= 0 ? winIdx : 0];
+      const idx = winIdx >= 0 ? winIdx : 0;
+      spinToIndex(idx);
       setTimeout(() => {
         setSpinning(false);
-        setResult(targetSeg.label);
-        showToast(`Premio: ${targetSeg.label} · Reclamado ✓`);
-      }, 2000);
+        setResult(segments[idx].label);
+        showToast(`Premio: ${segments[idx].label} · Reclamado ✓`);
+      }, SPIN_DURATION);
     } else {
-      const winIdx = Math.floor(Math.random() * segments.length);
-      const prize = segments[winIdx];
+      const idx = Math.floor(Math.random() * segments.length);
+      spinToIndex(idx);
       setTimeout(() => {
         setSpinning(false);
         spinRuleta();
         addCredits(10);
         addXP(25);
-        setResult(prize.label);
+        setResult(segments[idx].label);
         showToast(`+10 créditos · ¡Recompensa diaria! 🎁`);
-      }, 2000);
+      }, SPIN_DURATION);
     }
   };
 
@@ -213,8 +227,13 @@ function DailyReward() {
               ref={canvasRef}
               width={220}
               height={220}
-              className={spinning ? "animate-spin-slow" : ""}
-              style={{ borderRadius: "50%", boxShadow: "0 4px 24px rgba(0,0,0,.5)", display: "block" }}
+              style={{
+                borderRadius: "50%",
+                boxShadow: "0 4px 24px rgba(0,0,0,.5)",
+                display: "block",
+                transform: `rotate(${wheelDeg}deg)`,
+                transition: spinning ? `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)` : "none",
+              }}
             />
           </div>
 
