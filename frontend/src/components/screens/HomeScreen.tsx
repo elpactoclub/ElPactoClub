@@ -205,7 +205,7 @@ function DailyReward() {
     <div>
       <Sec left="Recompensa diaria" right="🎁 Gira la ruleta cada día" rightGreen />
       <div className="card" style={{ padding: "20px 24px" }}>
-        <div className="daily-reward-inner">
+        <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-10">
           {/* Wheel */}
           <div style={{ position: "relative", display: "inline-block", flexShrink: 0 }}>
             <div style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", fontSize: "20px", zIndex: 10, filter: "drop-shadow(0 2px 4px rgba(0,0,0,.5))" }}>▼</div>
@@ -219,7 +219,7 @@ function DailyReward() {
           </div>
 
           {/* Info + button */}
-          <div className="daily-reward-info">
+          <div className="flex-1 w-full text-center lg:text-left">
             <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>
               Hoy · {todayName}
             </div>
@@ -391,26 +391,28 @@ function MyContribution() {
 // MONTHLY RAFFLE
 // ==========================================
 function MonthlyRaffle() {
-  const { spendCredits, addTicket, addXP, isAuthenticated } = useUserStore();
+  const { addTicket, addXP, isAuthenticated } = useUserStore();
   const { showToast } = useUIStore();
   const [participants, setParticipants] = useState(247);
 
   const handleJoin = async () => {
-    if (isAuthenticated) {
-      try {
-        const { api } = await import("@/services/api");
-        const raffles = await api.get("/gamification/raffles");
-        if (raffles.data && raffles.data.length > 0) {
-          const activeRaffle = raffles.data[0];
-          await api.post(`/gamification/raffles/${activeRaffle.id}/enter`);
-          addTicket(); addXP(50); setParticipants((p) => p + 1);
-          showToast("🎟 Entrada añadida · +50 XP ✓");
-        } else { showToast("No hay sorteos activos en este momento."); }
-      } catch { showToast("Necesitas 75 ⚡ para participar ❌"); }
-    } else {
-      if (!spendCredits(75)) { showToast("Sin créditos suficientes"); return; }
-      addTicket(); addXP(50); setParticipants((p) => p + 1);
-      showToast("🎟 Entrada añadida · +50 XP");
+    if (!isAuthenticated) {
+      useUIStore.setState({ isLandingOpen: true });
+      return;
+    }
+    try {
+      const { api } = await import("@/services/api");
+      const raffles = await api.get("/gamification/raffles");
+      if (raffles.data && raffles.data.length > 0) {
+        const activeRaffle = raffles.data[0];
+        await api.post(`/gamification/raffles/${activeRaffle.id}/enter`);
+        addTicket(); addXP(50); setParticipants((p) => p + 1);
+        showToast("🎟 Entrada añadida · +50 XP ✓");
+      } else {
+        showToast("No hay sorteos activos en este momento.");
+      }
+    } catch {
+      showToast("Necesitas 75 ⚡ para participar ❌");
     }
   };
 
