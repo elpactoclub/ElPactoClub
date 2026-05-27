@@ -17,8 +17,14 @@ export default function StoreScreen() {
   const [activeTab, setActiveTab] = useState<"sub" | "cred" | "merch">("sub");
   const [selectedPack, setSelectedPack] = useState<PackId | null>(null);
   const [buyingCredits, setBuyingCredits] = useState(false);
-  const { credits } = useUserStore();
-  const { showToast, openPayment } = useUIStore();
+  const { credits, isSocio, isAuthenticated } = useUserStore();
+  const { showToast, openPayment, openCarnet } = useUIStore();
+
+  const handleVerCarnet = () => {
+    if (!isAuthenticated) { showToast("Inicia sesión para ver tu carnet ⚡"); return; }
+    if (!isSocio) { openPayment(); return; }
+    openCarnet();
+  };
 
   const handleBuyCredits = async () => {
     if (!selectedPack) return;
@@ -125,7 +131,7 @@ export default function StoreScreen() {
           </div>
 
           {/* Basketball Emotion */}
-          <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => showToast("Basketball Emotion · Muestra tu carnet")}>
+          <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={handleVerCarnet}>
             <div style={{ width: 52, height: 52, borderRadius: 12, background: "linear-gradient(135deg,#FF6B1A,#FF8C42)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🏀</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Basketball Emotion</div>
@@ -139,7 +145,7 @@ export default function StoreScreen() {
           </div>
 
           {/* Hoops */}
-          <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => showToast("Hoops · Muestra tu carnet")}>
+          <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={handleVerCarnet}>
             <div style={{ width: 52, height: 52, borderRadius: 12, background: "linear-gradient(135deg,#d4c800,#F0E040)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>⚡</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Hoops</div>

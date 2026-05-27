@@ -14,7 +14,7 @@ export default function CarnetModal() {
       className="fixed inset-0 bg-black/80 z-[400] flex items-end justify-center"
       onClick={(e) => e.target === e.currentTarget && closeCarnet()}
     >
-      <div className="bg-gray rounded-t-2xl w-full px-4 pb-8 animate-slide-up">
+      <div className="bg-gray rounded-t-2xl w-full max-w-[480px] px-4 pb-8 animate-slide-up">
         {/* Handle */}
         <div className="w-9 h-1 bg-gray3 rounded-sm mx-auto mt-[14px] mb-[16px]" />
 
