@@ -152,7 +152,7 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
             {city ? `📍 ${city}` : "📍 Sin ciudad"}
             {isSocio && socioSince ? ` · Socio desde ${formatSocioDate(socioSince)}` : ""}
           </div>
-          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 8 }}>
             <span style={{ fontSize: 8, fontWeight: 800, padding: "3px 8px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)", color: "#aaa" }}>
               {level.toUpperCase()}
             </span>
@@ -167,6 +167,12 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
               </span>
             )}
           </div>
+          <button
+            onClick={openPersonalize}
+            style={{ fontSize: 10, fontWeight: 700, color: "var(--color-accent)", background: "rgba(240,224,64,0.08)", border: "1px solid rgba(240,224,64,0.25)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "var(--font-body)" }}
+          >
+            ✎ Editar perfil
+          </button>
         </div>
 
         {/* Close (mobile modal only) */}

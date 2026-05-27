@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
@@ -21,6 +21,14 @@ export default function PersonalizeModal() {
   const [localAvatar, setLocalAvatar] = useState(avatar);
   const [localCity, setLocalCity] = useState(city);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (isPersonalizeOpen) {
+      setLocalName(name === "Tu Nombre" ? "" : name);
+      setLocalAvatar(avatar);
+      setLocalCity(city);
+    }
+  }, [isPersonalizeOpen]);
 
   if (!isPersonalizeOpen) return null;
 
