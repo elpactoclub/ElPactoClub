@@ -116,7 +116,12 @@ export default function Landing() {
           style={{ borderLeft: "1px solid rgba(255,255,255,0.05)", padding: "52px 60px" }}
         >
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, width: "100%", maxWidth: 380 }}>
-            {["/imagenes/herson.jpg", "/imagenes/elvis.jpg", "/imagenes/violeta.jpg", "/imagenes/edugil.jpg"].map((src, i) => (
+            {[
+              { src: "/imagenes/herson.jpg",  pos: "center top"    },
+              { src: "/imagenes/elvis.jpg",   pos: "center top"    },
+              { src: "/imagenes/violeta.jpg", pos: "center top"    },
+              { src: "/imagenes/edugil.jpg",  pos: "center 30%"    },
+            ].map(({ src, pos }, i) => (
               <div
                 key={i}
                 style={{
@@ -128,7 +133,7 @@ export default function Landing() {
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: pos }} />
               </div>
             ))}
           </div>
