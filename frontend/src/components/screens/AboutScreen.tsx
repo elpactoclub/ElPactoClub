@@ -19,7 +19,7 @@ const POS_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32", "#777", "#777"];
 
 export default function AboutScreen() {
   const { showToast, openFanModal, openProjectPage, openDMWithCreator } = useUIStore();
-  const { spendCredits, addXP, name: myName, xp: myXP, isAuthenticated } = useUserStore();
+  const { spendCredits, addXP, name: myName, xp: myXP, city: myCity, id: myId, isAuthenticated } = useUserStore();
   const [contactOpen, setContactOpen] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -58,10 +58,13 @@ export default function AboutScreen() {
     xp: u.xp.toLocaleString(), color: LEVEL_COLORS[u.level] || "#777", posColor: POS_COLORS[i] || "#777",
   }));
 
-  const myRankPos = leaderboard.findIndex((u) => u.name === myName) + 1 || null;
+  const myRankIndex = myId ? leaderboard.findIndex((u) => u.id === myId) : -1;
+  const myRankPos = myRankIndex >= 0 ? myRankIndex + 1 : null;
+  const myInTop5 = myRankPos !== null && myRankPos <= 5;
+  const xpToTop5 = !myInTop5 ? Math.max(0, (leaderboard[4]?.xp ?? 0) - myXP + 1) : 0;
 
   // Cities ranking from real leaderboard data
-  const cityRanking = (() => {
+  const allCitiesSorted = (() => {
     const map: Record<string, { totalXP: number; fans: number; leader: string }> = {};
     leaderboard.forEach((u) => {
       const c = u.city || "—";
@@ -69,14 +72,18 @@ export default function AboutScreen() {
       map[c].totalXP += u.xp;
       map[c].fans += 1;
     });
-    return Object.entries(map)
-      .sort((a, b) => b[1].totalXP - a[1].totalXP)
-      .slice(0, 5)
-      .map(([city, data], i) => ({
-        pos: i + 1, city, fans: data.fans, leader: data.leader,
-        xp: data.totalXP.toLocaleString(), posColor: POS_COLORS[i] || "#777",
-      }));
+    return Object.entries(map).sort((a, b) => b[1].totalXP - a[1].totalXP);
   })();
+
+  const cityRanking = allCitiesSorted.slice(0, 5).map(([city, data], i) => ({
+    pos: i + 1, city, fans: data.fans, leader: data.leader,
+    xp: data.totalXP.toLocaleString(), posColor: POS_COLORS[i] || "#777",
+  }));
+
+  const myCityIndex = myCity ? allCitiesSorted.findIndex(([c]) => c === myCity) : -1;
+  const myCityRankPos = myCityIndex >= 0 ? myCityIndex + 1 : null;
+  const myCityData = myCityIndex >= 0 ? allCitiesSorted[myCityIndex][1] : null;
+  const myCityInTop5 = myCityRankPos !== null && myCityRankPos <= 5;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
 
@@ -179,14 +186,26 @@ export default function AboutScreen() {
               ))
             )}
 
-            {/* My position — solo si está autenticado y tiene posición real */}
-            {!rankLoading && isAuthenticated && myRankPos !== null && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "linear-gradient(135deg,#1a1a10,#252515)", border: "1px solid rgba(240,224,64,0.25)", marginTop: 4 }}>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: "var(--color-accent)", flexShrink: 0 }}>#{myRankPos}</div>
+            {/* My position — show if authenticated and not already in top 5 */}
+            {!rankLoading && isAuthenticated && !myInTop5 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "linear-gradient(135deg,#1a1a10,#252515)", border: "1px solid rgba(240,224,64,0.3)", marginTop: 4 }}>
+                <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, color: "var(--color-accent)", width: 28, textAlign: "center", flexShrink: 0 }}>
+                  {myRankPos ? `#${myRankPos}` : "—"}
+                </div>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(240,224,64,0.15)", border: "2px solid rgba(240,224,64,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "var(--color-accent)", flexShrink: 0 }}>
+                  {myName[0]?.toUpperCase()}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{myName}</div>
-                  <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{myXP.toLocaleString()} XP</div>
+                  <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{myCity || "—"} · {myXP.toLocaleString()} XP</div>
                 </div>
+                {xpToTop5 > 0 && (
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 9, color: "var(--color-muted)", lineHeight: 1.3 }}>te faltan</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#60A5FA" }}>{xpToTop5.toLocaleString()} XP</div>
+                    <div style={{ fontSize: 9, color: "var(--color-muted)" }}>para top 5</div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -209,16 +228,48 @@ export default function AboutScreen() {
             ) : cityRanking.length === 0 ? (
               <div style={{ padding: "28px 0", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>Sin datos todavía</div>
             ) : (
-              cityRanking.map((c) => (
-                <div key={c.pos} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: c.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", border: c.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)" }}>
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: c.posColor }}>{c.pos}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{c.city}</div>
-                    <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{c.fans} {c.fans === 1 ? "fan" : "fans"} · Líder: {c.leader}</div>
+              <>
+                {cityRanking.map((c) => (
+                  <div key={c.pos} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: c.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", border: c.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)" }}>
+                    <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: c.posColor }}>{c.pos}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{c.city}</div>
+                      <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{c.fans} {c.fans === 1 ? "fan" : "fans"} · Líder: {c.leader}</div>
+                    </div>
+                    <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, color: "var(--color-accent)", flexShrink: 0 }}>{c.xp} XP</div>
                   </div>
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, color: "var(--color-accent)", flexShrink: 0 }}>{c.xp} XP</div>
-                </div>
-              ))
+                ))}
+
+                {/* My city card */}
+                {isAuthenticated && myCity && myCityRankPos !== null && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: "linear-gradient(135deg,#1a1a10,#252515)", border: "1px solid rgba(240,224,64,0.3)", marginTop: 4 }}>
+                    <div style={{ fontSize: 14, flexShrink: 0 }}>📍</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, color: "var(--color-muted)", marginBottom: 3 }}>Tu ciudad — {myCity}</div>
+                      {myCityInTop5 ? (
+                        <>
+                          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 1 }}>#{myCityRankPos} {myCity} lidera el ranking</div>
+                          <div style={{ fontSize: 12, color: "#22C55E" }}>¡Seguíd así! 🔥</div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 1 }}>#{myCityRankPos} — {myCityData?.fans ?? 0} {(myCityData?.fans ?? 0) === 1 ? "fan" : "fans"}</div>
+                          <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{myCityData?.totalXP.toLocaleString() ?? 0} XP acumulados</div>
+                        </>
+                      )}
+                    </div>
+                    {!myCityInTop5 && (
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: 9, color: "var(--color-muted)", lineHeight: 1.3 }}>te faltan</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#60A5FA" }}>
+                          {Math.max(0, (allCitiesSorted[4]?.[1]?.totalXP ?? 0) - (myCityData?.totalXP ?? 0) + 1).toLocaleString()} XP
+                        </div>
+                        <div style={{ fontSize: 9, color: "var(--color-muted)" }}>para top 5</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
