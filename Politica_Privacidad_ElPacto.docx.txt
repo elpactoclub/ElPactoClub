@@ -1,0 +1,62 @@
+﻿POLÍTICA DE PRIVACIDAD
+Club Bàsquet El Pacto
+Última actualización: mayo de 2025
+1. Responsable del Tratamiento
+En cumplimiento del Reglamento (UE) 2016/679 del Parlamento Europeo y del Consejo (RGPD) y la Ley Orgánica 3/2018, de 5 de diciembre, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD), le informamos que el responsable del tratamiento de sus datos personales es:
+* Denominación social: Club Bàsquet El Pacto
+* NIF: G56373806
+* Domicilio social: Calle Jeroni Marsal, núm. 68, planta 4, puerta 1 — 08340 Vilassar de Mar (Barcelona)
+* Correo electrónico de contacto: soporte@elpactoclub.com
+
+
+2. Datos Personales que Recopilamos
+Al registrarse en nuestra aplicación web, recopilamos los siguientes datos personales:
+* Nombre y apellidos
+* Dirección de correo electrónico
+* Contraseña (almacenada de forma cifrada)
+* Fecha de nacimiento
+* País y ciudad de residencia
+* Datos de pago (gestionados íntegramente por Stripe, Inc.; el Club no almacena datos de tarjeta bancaria ni IBAN)
+En el caso de socios menores de 14 años, será necesario el consentimiento expreso del padre, madre o tutor legal para el tratamiento de sus datos personales, de conformidad con el artículo 7 de la LOPDGDD.
+3. Finalidad del Tratamiento
+Sus datos personales son tratados con las siguientes finalidades:
+* Gestión de la membresía: alta, mantenimiento y baja como socio del Club.
+* Acceso a la aplicación: autenticación e identificación del usuario en la plataforma.
+* Gestión de pagos: procesamiento de cuotas y transacciones a través del proveedor de pagos Stripe.
+* Comunicaciones: envío de información relevante sobre la actividad del Club, novedades y notificaciones de servicio.
+* Cumplimiento legal: atención de obligaciones legales y reglamentarias aplicables.
+
+
+4. Base Jurídica del Tratamiento
+La base jurídica que legitima el tratamiento de sus datos es:
+* Ejecución de un contrato (art. 6.1.b RGPD): para la gestión de su membresía y acceso a la plataforma.
+* Consentimiento (art. 6.1.a RGPD): para el envío de comunicaciones comerciales y, en el caso de menores de 14 años, consentimiento del tutor legal.
+* Cumplimiento de obligaciones legales (art. 6.1.c RGPD): para atender requerimientos legales o administrativos.
+
+
+5. Plazos de Conservación
+Sus datos personales se conservarán mientras se mantenga la relación de membresía con el Club. Una vez causada baja, los datos se bloquearán y conservarán durante los plazos legalmente establecidos (con carácter general, 5 años para obligaciones fiscales y mercantiles), transcurridos los cuales serán suprimidos de forma segura.
+6. Destinatarios y Encargados del Tratamiento
+El Club no vende ni cede sus datos personales a terceros. No obstante, para la prestación del servicio contamos con los siguientes encargados del tratamiento:
+* Stripe, Inc.: proveedor de servicios de pago. Stripe puede tratar datos fuera del Espacio Económico Europeo, en todo caso bajo las garantías adecuadas previstas en el RGPD. Puede consultar su política de privacidad en https://stripe.com/es/privacy
+El Club podrá incorporar nuevos encargados del tratamiento en el futuro, informando debidamente a los usuarios con carácter previo a dicha incorporación mediante la actualización de esta Política de Privacidad.
+7. Transferencias Internacionales de Datos
+Stripe, Inc. está establecida en los Estados Unidos y puede procesar datos en ese u otros países. Dicha transferencia se realiza al amparo de las garantías adecuadas establecidas en el RGPD (Decisiones de adecuación, Cláusulas Contractuales Tipo u otros mecanismos aplicables). El Club velará en todo momento por que cualquier transferencia internacional de datos cuente con las garantías legales oportunas.
+8. Sus Derechos
+De conformidad con el RGPD y la LOPDGDD, usted tiene derecho a:
+* Acceso: conocer qué datos suyos tratamos.
+* Rectificación: corregir datos inexactos o incompletos.
+* Supresión: solicitar la eliminación de sus datos cuando ya no sean necesarios.
+* Oposición: oponerse al tratamiento de sus datos en determinadas circunstancias.
+* Limitación del tratamiento: solicitar la restricción del tratamiento de sus datos.
+* Portabilidad: recibir sus datos en un formato estructurado y de uso común.
+* Retirar el consentimiento: en cualquier momento, sin que ello afecte a la licitud del tratamiento previo.
+Para ejercer cualquiera de estos derechos, puede dirigirse a nosotros mediante correo electrónico a soporte@elpactoclub.com, indicando en el asunto "Ejercicio de derechos RGPD" y adjuntando copia de su documento de identidad.
+Si considera que el tratamiento de sus datos no se ajusta a la normativa vigente, tiene derecho a presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD), con sede en Calle Jorge Juan, 6, 28001 Madrid — www.aepd.es
+9. Seguridad de los Datos
+El Club aplica las medidas técnicas y organizativas necesarias para garantizar la seguridad de sus datos personales y evitar su alteración, pérdida, tratamiento o acceso no autorizado. Las contraseñas se almacenan de forma cifrada y los datos de pago son tratados exclusivamente por Stripe bajo estándares PCI-DSS.
+10. Menores de Edad
+El Club admite socios menores de edad. De conformidad con el artículo 7 de la LOPDGDD, los menores de 14 años solo podrán ser registrados con el consentimiento expreso y verificable de su padre, madre o tutor legal. El Club podrá solicitar documentación acreditativa de dicho consentimiento cuando lo considere necesario.
+11. Modificaciones de esta Política
+El Club se reserva el derecho a modificar la presente Política de Privacidad para adaptarla a novedades legislativas, jurisprudenciales o de buenas prácticas. Cualquier modificación relevante será comunicada a los usuarios con carácter previo a su entrada en vigor, a través de la aplicación o por correo electrónico.
+Club Bàsquet El Pacto · NIF G56373806 · soporte@elpactoclub.com

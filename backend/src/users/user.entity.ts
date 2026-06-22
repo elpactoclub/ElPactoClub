@@ -60,6 +60,9 @@ export class User {
   isSocio: boolean;
 
   @Column({ nullable: true })
+  socioNumber: number;
+
+  @Column({ nullable: true })
   socioSince: Date;
 
   @Column({ nullable: true })
@@ -87,6 +90,21 @@ export class User {
 
   @Column({ nullable: true })
   lastSeenAt: Date;
+
+  // XP multiplier (e.g. 2x for 24h from roulette)
+  @Column({ type: 'float', default: 1 })
+  xpMultiplier: number;
+
+  @Column({ nullable: true })
+  xpMultiplierExpiresAt: Date;
+
+  // Weekly activity tracking for "Semana Perfecta" badge
+  // weekKey = ISO week string e.g. "2026-W24"; weekBits: 1=voted, 2=spun, 4=chatted
+  @Column({ default: '' })
+  weekKey: string;
+
+  @Column({ default: 0 })
+  weekBits: number;
 
   @CreateDateColumn()
   createdAt: Date;

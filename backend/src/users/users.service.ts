@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan, ILike, In } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, UserLevel } from './user.entity';
+import { UserFollow } from './user-follow.entity';
+import { UserBlock } from './user-block.entity';
+import { UserVote } from '../gamification/vote.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { BadgesService } from '../badges/badges.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const LEVEL_THRESHOLDS: Record<UserLevel, number> = {
   Rookie: 0,
@@ -32,7 +37,14 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    @InjectRepository(UserVote)
+    private readonly userVotesRepo: Repository<UserVote>,
+    @InjectRepository(UserFollow)
+    private readonly followsRepo: Repository<UserFollow>,
+    @InjectRepository(UserBlock)
+    private readonly blocksRepo: Repository<UserBlock>,
     private readonly badges: BadgesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
@@ -50,7 +62,7 @@ export class UsersService {
       ...dto,
       password: hashed,
       referralCode: generateReferralCode(dto.name ?? 'Fan'),
-      credits: 50, // welcome credits
+      credits: 2, // créditos de bienvenida (plan Fan Libre: 2/mes)
       xp: 0,
       level: 'Rookie',
     });
@@ -77,17 +89,103 @@ export class UsersService {
     return user;
   }
 
+  async findByIdPublic(id: string) {
+    const user = await this.usersRepo.findOne({
+      where: { id },
+      select: ['id', 'name', 'avatar', 'city', 'country', 'xp', 'level', 'isSocio', 'role', 'socioNumber', 'createdAt'],
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
   async update(id: string, dto: UpdateUserDto): Promise<User> {
     await this.usersRepo.update(id, dto);
     return this.findById(id);
   }
 
+  /** Cambiar email y/o contraseña del propio usuario (verifica la contraseña actual). */
+  async updateCredentials(
+    id: string,
+    dto: { email?: string; currentPassword?: string; newPassword?: string },
+  ): Promise<User> {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    const patch: Partial<User> = {};
+
+    if (dto.email && dto.email.trim().toLowerCase() !== user.email) {
+      const email = dto.email.trim().toLowerCase();
+      const existing = await this.usersRepo.findOne({ where: { email } });
+      if (existing && existing.id !== id) throw new ConflictException('Ese email ya está en uso');
+      patch.email = email;
+    }
+
+    if (dto.newPassword) {
+      // Si el usuario ya tiene contraseña, exige la actual y verifícala
+      if (user.password) {
+        if (!dto.currentPassword) throw new BadRequestException('Introduce tu contraseña actual');
+        const ok = await bcrypt.compare(dto.currentPassword, user.password);
+        if (!ok) throw new BadRequestException('La contraseña actual no es correcta');
+      }
+      patch.password = await bcrypt.hash(dto.newPassword, 12);
+    }
+
+    if (Object.keys(patch).length === 0) return this.findById(id);
+    await this.usersRepo.update(id, patch);
+    return this.findById(id);
+  }
+
+  /** Plan Fan Libre: 2 créditos cada mes para los fans (los socios reciben 200 al pagar). */
+  @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
+  async grantMonthlyFreeCredits() {
+    const result = await this.usersRepo.increment({ isSocio: false }, 'credits', 2);
+    console.log(`🎁 +2 créditos mensuales (Fan Libre) a ${result.affected ?? 0} fans`);
+  }
+
   async addXP(userId: string, amount: number): Promise<User> {
     const user = await this.findById(userId);
-    const newXP = user.xp + amount;
+    // Apply active XP multiplier
+    let effective = amount;
+    if (user.xpMultiplier > 1) {
+      if (user.xpMultiplierExpiresAt && new Date(user.xpMultiplierExpiresAt) > new Date()) {
+        effective = Math.round(amount * user.xpMultiplier);
+      } else {
+        // Expired — reset silently
+        await this.usersRepo.update(userId, { xpMultiplier: 1, xpMultiplierExpiresAt: null as any });
+      }
+    }
+    const newXP = user.xp + effective;
     const newLevel = computeLevel(newXP);
     await this.usersRepo.update(userId, { xp: newXP, level: newLevel });
+    // Season badge: 1000 XP durante la temporada Verano 2026
+    if (user.xp < 1000 && newXP >= 1000) {
+      await this.badges.award(userId, 'temporada_verano_2026');
+    }
     return this.findById(userId);
+  }
+
+  async markDailyClaimed(userId: string): Promise<void> {
+    await this.usersRepo.update(userId, { dailyRewardClaimedAt: new Date() });
+  }
+
+  async setXPMultiplier(userId: string, multiplier: number, hours: number): Promise<void> {
+    const expiresAt = new Date(Date.now() + hours * 3600 * 1000);
+    await this.usersRepo.update(userId, { xpMultiplier: multiplier, xpMultiplierExpiresAt: expiresAt });
+  }
+
+  async updateWeekActivity(userId: string, bit: number): Promise<void> {
+    const now = new Date();
+    const year = now.getFullYear();
+    const startOfYear = new Date(year, 0, 1);
+    const weekNum = Math.ceil(((now.getTime() - startOfYear.getTime()) / 86400000 + startOfYear.getDay() + 1) / 7);
+    const weekKey = `${year}-W${weekNum.toString().padStart(2, '0')}`;
+    const user = await this.findById(userId);
+    const currentBits = user.weekKey === weekKey ? user.weekBits : 0;
+    const newBits = currentBits | bit;
+    await this.usersRepo.update(userId, { weekKey, weekBits: newBits });
+    if (newBits === 7) {
+      await this.badges.award(userId, 'semana_perfecta');
+    }
   }
 
   async addCredits(userId: string, amount: number): Promise<User> {
@@ -158,9 +256,17 @@ export class UsersService {
     const oneMonthFromCreate = new Date(user.createdAt);
     oneMonthFromCreate.setDate(oneMonthFromCreate.getDate() + 30);
 
+    const maxResult = await this.usersRepo
+      .createQueryBuilder('u')
+      .select('MAX(u.socioNumber)', 'max')
+      .where('u.isSocio = :v', { v: true })
+      .getRawOne<{ max: number | null }>();
+    const nextNumber = (maxResult?.max ?? 0) + 1;
+
     await this.usersRepo.update(userId, {
       isSocio: true,
       socioSince: now,
+      socioNumber: nextNumber,
       role: 'socio',
       credits: user.credits + 200, // 200 créditos mensuales del plan socio
     });
@@ -189,6 +295,8 @@ export class UsersService {
     return this.findById(userId);
   }
 
+  private readonly visitorSessions = new Map<string, Date>();
+
   async updateOnlineStatus(userId: string, isOnline: boolean): Promise<void> {
     await this.usersRepo.update(userId, {
       isOnline,
@@ -196,21 +304,41 @@ export class UsersService {
     });
   }
 
+  visitorPing(sessionId: string): void {
+    this.visitorSessions.set(sessionId, new Date());
+  }
+
   async getOnlineCount(): Promise<{ count: number }> {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const count = await this.usersRepo
-      .createQueryBuilder('u')
-      .where('u.isOnline = :online', { online: true })
-      .andWhere('u.lastSeenAt > :time', { time: fiveMinAgo })
-      .getCount();
+    for (const [id, ts] of this.visitorSessions) {
+      if (ts < fiveMinAgo) this.visitorSessions.delete(id);
+    }
+    return { count: this.visitorSessions.size };
+  }
+
+  async getFansCount(): Promise<{ count: number }> {
+    const count = await this.usersRepo.count();
     return { count };
+  }
+
+  /** Fan counts grouped by country (for the "fans por país" map), most fans first. */
+  async getFansByCountry(): Promise<{ country: string; count: number }[]> {
+    const rows = await this.usersRepo
+      .createQueryBuilder('u')
+      .select('COALESCE(NULLIF(u.country, \'\'), :unknown)', 'country')
+      .addSelect('COUNT(*)', 'count')
+      .setParameter('unknown', 'Otros')
+      .groupBy('country')
+      .orderBy('count', 'DESC')
+      .getRawMany();
+    return rows.map((r) => ({ country: r.country, count: Number(r.count) }));
   }
 
   async getLeaderboard(limit = 50): Promise<User[]> {
     return this.usersRepo.find({
       order: { xp: 'DESC' },
       take: limit,
-      select: ['id', 'name', 'avatar', 'city', 'xp', 'level', 'isSocio'],
+      select: ['id', 'name', 'avatar', 'city', 'country', 'xp', 'level', 'isSocio'],
     });
   }
 
@@ -234,5 +362,139 @@ export class UsersService {
     const result = await this.usersRepo.delete({ email });
     if (result.affected === 0) return { ok: false, message: 'User not found' };
     return { ok: true, message: `User ${email} deleted` };
+  }
+
+  async getWeeklyVoteStats(userId: string): Promise<{ votes: number; clubPct: string }> {
+    const since = new Date();
+    since.setDate(since.getDate() - 7);
+
+    const [userVotes, totalVotes] = await Promise.all([
+      this.userVotesRepo.count({ where: { userId, createdAt: MoreThan(since) } }),
+      this.userVotesRepo.count({ where: { createdAt: MoreThan(since) } }),
+    ]);
+
+    const clubPct = totalVotes > 0
+      ? ((userVotes / totalVotes) * 100).toFixed(1)
+      : '0.0';
+
+    return { votes: userVotes, clubPct };
+  }
+
+  async searchUsers(q: string, requesterId?: string) {
+    if (!q || q.trim().length < 2) return [];
+    const users = await this.usersRepo.find({
+      where: [{ name: ILike(`%${q}%`) }],
+      select: ['id', 'name', 'avatar', 'role', 'xp', 'level', 'city', 'isSocio'],
+      take: 20,
+    });
+    if (!requesterId) return users.map((u) => ({ ...u, isFollowing: false, isBlocked: false }));
+    const [followed, mutualBlocked] = await Promise.all([
+      this.followsRepo.find({ where: { followerId: requesterId } }),
+      this.getMutualBlockIds(requesterId),
+    ]);
+    const followedIds = new Set(followed.map((f) => f.followedId));
+    const blockedSet = new Set(mutualBlocked);
+    return users
+      .filter((u) => !blockedSet.has(u.id))
+      .map((u) => ({ ...u, isFollowing: followedIds.has(u.id) }));
+  }
+
+  async getPublicProfile(id: string, requesterId?: string) {
+    const user = await this.usersRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    const { password, ...rest } = user as any;
+    const [followersCount, followingCount] = await Promise.all([
+      this.followsRepo.count({ where: { followedId: id } }),
+      this.followsRepo.count({ where: { followerId: id } }),
+    ]);
+    const isFollowing = requesterId
+      ? !!(await this.followsRepo.findOne({ where: { followerId: requesterId, followedId: id } }))
+      : false;
+    const isBlocked = requesterId
+      ? !!(await this.blocksRepo.findOne({ where: { blockerId: requesterId, blockedId: id } }))
+      : false;
+    return { ...rest, followersCount, followingCount, isFollowing, isBlocked };
+  }
+
+  async getActivity(userId: string) {
+    return this.notifications.listForUser(userId);
+  }
+
+  async getFollowers(userId: string) {
+    const rows = await this.followsRepo.find({ where: { followedId: userId } });
+    if (!rows.length) return [];
+    const ids = rows.map((r) => r.followerId);
+    const users = await this.usersRepo.find({ where: { id: In(ids) } });
+    return users.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar, level: u.level, xp: u.xp, city: u.city, isSocio: u.isSocio, role: u.role }));
+  }
+
+  async getFollowing(userId: string) {
+    const rows = await this.followsRepo.find({ where: { followerId: userId } });
+    if (!rows.length) return [];
+    const ids = rows.map((r) => r.followedId);
+    const users = await this.usersRepo.find({ where: { id: In(ids) } });
+    return users.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar, level: u.level, xp: u.xp, city: u.city, isSocio: u.isSocio, role: u.role }));
+  }
+
+  async follow(followerId: string, followedId: string) {
+    if (followerId === followedId) throw new BadRequestException('No puedes seguirte a ti mismo');
+    const existing = await this.followsRepo.findOne({ where: { followerId, followedId } });
+    if (!existing) {
+      await this.followsRepo.save({ followerId, followedId });
+      const follower = await this.usersRepo.findOne({ where: { id: followerId }, select: ['name'] });
+      this.notifications.notify(followedId, 'new_follow', 'Nuevo seguidor', `${follower?.name ?? 'Alguien'} ha empezado a seguirte`, { followerId }).catch(() => {});
+    }
+    const count = await this.followsRepo.count({ where: { followedId } });
+    return { following: true, followersCount: count };
+  }
+
+  async unfollow(followerId: string, followedId: string) {
+    await this.followsRepo.delete({ followerId, followedId });
+    const count = await this.followsRepo.count({ where: { followedId } });
+    return { following: false, followersCount: count };
+  }
+
+  // ─── BLOCKS ──────────────────────────────────────────────────────────────
+  async getFollowingIds(userId: string): Promise<string[]> {
+    const rows = await this.followsRepo.find({ where: { followerId: userId } });
+    return rows.map((r) => r.followedId);
+  }
+
+  /** IDs the user has blocked. */
+  async getBlockedIds(userId: string): Promise<string[]> {
+    const rows = await this.blocksRepo.find({ where: { blockerId: userId } });
+    return rows.map((r) => r.blockedId);
+  }
+
+  /** IDs of users in either direction of a block with this user (hide both ways). */
+  async getMutualBlockIds(userId: string): Promise<string[]> {
+    const rows = await this.blocksRepo.find({
+      where: [{ blockerId: userId }, { blockedId: userId }],
+    });
+    const ids = new Set<string>();
+    for (const r of rows) ids.add(r.blockerId === userId ? r.blockedId : r.blockerId);
+    return [...ids];
+  }
+
+  async blockUser(blockerId: string, blockedId: string) {
+    if (blockerId === blockedId) throw new BadRequestException('No puedes bloquearte a ti mismo');
+    const existing = await this.blocksRepo.findOne({ where: { blockerId, blockedId } });
+    if (!existing) await this.blocksRepo.save({ blockerId, blockedId });
+    // Blocking removes any follow relationship in both directions
+    await this.followsRepo.delete({ followerId: blockerId, followedId: blockedId });
+    await this.followsRepo.delete({ followerId: blockedId, followedId: blockerId });
+    return { blocked: true };
+  }
+
+  async unblockUser(blockerId: string, blockedId: string) {
+    await this.blocksRepo.delete({ blockerId, blockedId });
+    return { blocked: false };
+  }
+
+  async getBlockedUsers(userId: string) {
+    const ids = await this.getBlockedIds(userId);
+    if (!ids.length) return [];
+    const users = await this.usersRepo.find({ where: { id: In(ids) } });
+    return users.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar, level: u.level, xp: u.xp, city: u.city, isSocio: u.isSocio, role: u.role }));
   }
 }

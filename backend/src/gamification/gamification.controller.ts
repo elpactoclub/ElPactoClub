@@ -2,7 +2,10 @@ import { Controller, Get, Post, Param, Body, UseGuards, Request } from '@nestjs/
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { GamificationService } from './gamification.service';
 
 class CastVoteDto {
@@ -27,8 +30,8 @@ export class GamificationController {
   // Votes
   @Get('votes')
   @ApiOperation({ summary: 'Get active vote decisions' })
-  getVotes() {
-    return this.gamificationService.getActiveVotes();
+  getVotes(@Request() req: { user: { id: string } }) {
+    return this.gamificationService.getActiveVotes(req.user.id);
   }
 
   @Post('votes/:id/cast')
@@ -48,7 +51,9 @@ export class GamificationController {
   }
 
   @Post('votes/:id/settle')
-  @ApiOperation({ summary: 'Settle a group bet (admin) — pays out winners; doubles if ≥60% correct' })
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Settle a group bet (admin only) — pays out winners; doubles if ≥60% correct' })
   settle(@Param('id') id: string, @Body() dto: SettleBetDto) {
     return this.gamificationService.settleBet(id, dto.correctOption);
   }
@@ -56,8 +61,8 @@ export class GamificationController {
   // Raffles
   @Get('raffles')
   @ApiOperation({ summary: 'Get active raffles' })
-  getRaffles() {
-    return this.gamificationService.getActiveRaffles();
+  getRaffles(@Request() req: { user: { id: string } }) {
+    return this.gamificationService.getActiveRaffles(req.user.id);
   }
 
   @Post('raffles/:id/enter')
@@ -68,6 +73,7 @@ export class GamificationController {
 
   // Roulette
   @Post('roulette/spin')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Spin the daily roulette' })
   spinRoulette(@Request() req: { user: { id: string } }) {
     return this.gamificationService.spinRoulette(req.user.id);

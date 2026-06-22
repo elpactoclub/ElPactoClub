@@ -1,12 +1,18 @@
-import { Controller, Post, Body, Headers, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, Headers, Req, UseGuards } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { Request } from 'express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('store')
 @Controller('store')
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
+
+  @Get('benefits')
+  getBenefits() {
+    return this.storeService.getActiveBenefits();
+  }
 
   @Post('checkout')
   async checkout(@Req() req: Request & { user?: { id: string; email: string } }) {
@@ -15,6 +21,8 @@ export class StoreController {
     return this.storeService.createCheckoutSession(userId, email);
   }
 
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('checkout-credits')
   async checkoutCredits(
     @Body('pack') pack: '100' | '200',

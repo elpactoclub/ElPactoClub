@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
+import Skel from "@/components/ui/Skel";
+import { useAuthLoading } from "@/hooks/useAuthLoading";
 
 interface Notification {
   id: string;
@@ -39,24 +41,23 @@ function timeAgo(iso: string) {
 }
 
 export default function NotificationPanel() {
-  const { isNotifOpen, closeNotif, showToast, setNotifUnreadCount } = useUIStore();
+  const { isNotifOpen, closeNotif, showToast, setNotifUnreadCount, openAuth } = useUIStore();
   const { isAuthenticated } = useUserStore();
+  const authLoading = useAuthLoading();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isNotifOpen) return;
-    if (!isAuthenticated) {
-      setNotifications(STATIC_NOTIFS);
-      setNotifUnreadCount(STATIC_NOTIFS.filter((n) => !n.readAt).length);
-      return;
-    }
+    if (!isNotifOpen || !isAuthenticated) return;
+    setLoading(true);
     api.get("/notifications/me")
       .then((r) => {
         const data = r.data.length > 0 ? r.data : STATIC_NOTIFS;
         setNotifications(data);
         setNotifUnreadCount(data.filter((n: Notification) => !n.readAt).length);
       })
-      .catch(() => { setNotifications(STATIC_NOTIFS); });
+      .catch(() => { setNotifications(STATIC_NOTIFS); })
+      .finally(() => setLoading(false));
   }, [isNotifOpen, isAuthenticated]);
 
   if (!isNotifOpen) return null;
@@ -90,17 +91,51 @@ export default function NotificationPanel() {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <span style={{ fontSize: 15, fontWeight: 700 }}>Notificaciones</span>
-          <button onClick={markAllRead} style={{ background: "transparent", border: "none", color: "var(--color-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}>
-            Marcar todo leído
-          </button>
+          {isAuthenticated && (
+            <button onClick={markAllRead} style={{ background: "transparent", border: "none", color: "var(--color-accent)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}>
+              Marcar todo leído
+            </button>
+          )}
         </div>
 
+        {/* Not logged in CTA */}
+        {!isAuthenticated && (
+          <div style={{ padding: "32px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🔔</div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Inicia sesión para ver tus notificaciones</div>
+            <div style={{ fontSize: 12, color: "var(--color-muted)", marginBottom: 20, lineHeight: 1.5 }}>Recibe alertas de eventos, decisiones del club y más.</div>
+            <button
+              onClick={() => { closeNotif(); openAuth(); }}
+              style={{ background: "var(--color-accent)", color: "#000", border: "none", padding: "12px 28px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
+            >
+              INICIAR SESIÓN ⚡
+            </button>
+          </div>
+        )}
+
+        {/* Skeletons mientras carga */}
+        {(loading || authLoading) && isAuthenticated === false ? null : (loading || authLoading) && (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <Skel w={8} h={8} r={4} style={{ flexShrink: 0 }} />
+                <Skel w={40} h={40} r={20} />
+                <div style={{ flex: 1 }}>
+                  <Skel w="65%" h={13} style={{ marginBottom: 6 }} />
+                  <Skel w="45%" h={10} r={4} style={{ marginBottom: 5 }} />
+                  <Skel w={36} h={9} r={4} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Items */}
-        {notifications.length === 0 && (
+        {!loading && !authLoading && isAuthenticated && notifications.length === 0 && (
           <div style={{ padding: "24px 16px", textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>No hay notificaciones</div>
         )}
 
-        {notifications.map((n, i) => {
+        {!loading && !authLoading && isAuthenticated && notifications.map((n, i) => {
           const meta = TYPE_META[n.type] ?? TYPE_META.new_vote;
           const isRead = !!n.readAt;
           return (

@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
+
+const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
+
+function fmtPrice(n: number): string {
+  return n % 1 === 0 ? `${n}€` : `${n.toFixed(2).replace(".", ",")}€`;
+}
 
 export default function PaymentModal() {
   const { isPaymentOpen, closePayment, showToast } = useUIStore();
   const { isAuthenticated } = useUserStore();
   const [loading, setLoading] = useState(false);
+  const [socioPrice, setSocioPrice] = useState("5€");
+
+  useEffect(() => {
+    if (!isPaymentOpen) return;
+    fetch(`${API}/prices`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.socio) setSocioPrice(fmtPrice(d.socio)); })
+      .catch(() => {});
+  }, [isPaymentOpen]);
 
   if (!isPaymentOpen) return null;
 
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("el_pacto_token") : null;
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1/store/checkout`,
         {
@@ -71,6 +86,7 @@ export default function PaymentModal() {
             benefits={benefits}
             loading={loading}
             isAuthenticated={isAuthenticated}
+            socioPrice={socioPrice}
             onCheckout={handleCheckout}
             onClose={closePayment}
           />
@@ -95,6 +111,7 @@ export default function PaymentModal() {
             benefits={benefits}
             loading={loading}
             isAuthenticated={isAuthenticated}
+            socioPrice={socioPrice}
             onCheckout={handleCheckout}
             onClose={closePayment}
             desktop
@@ -109,6 +126,7 @@ function ModalContent({
   benefits,
   loading,
   isAuthenticated,
+  socioPrice,
   onCheckout,
   onClose,
   desktop = false,
@@ -116,6 +134,7 @@ function ModalContent({
   benefits: string[];
   loading: boolean;
   isAuthenticated: boolean;
+  socioPrice: string;
   onCheckout: () => void;
   onClose: () => void;
   desktop?: boolean;
@@ -168,7 +187,7 @@ function ModalContent({
           <div style={{ fontSize: 14, fontWeight: 700 }}>Plan Socio</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
             <span style={{ fontFamily: "var(--font-heading)", fontSize: 32, color: "var(--color-accent)", lineHeight: 1 }}>
-              5€
+              {socioPrice}
             </span>
             <span style={{ fontSize: 10, color: "var(--color-muted)" }}>/mes</span>
           </div>
@@ -207,7 +226,7 @@ function ModalContent({
         className="btn-y"
         style={{ fontSize: 13, fontWeight: 800, padding: "14px", opacity: loading ? 0.6 : 1 }}
       >
-        {loading ? "Redirigiendo a Stripe…" : "PAGAR CON STRIPE — 5€/mes"}
+        {loading ? "Redirigiendo a Stripe…" : `PAGAR CON STRIPE — ${socioPrice}/mes`}
       </button>
       <button
         onClick={onClose}

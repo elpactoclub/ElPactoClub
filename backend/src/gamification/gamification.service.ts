@@ -1,6 +1,6 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not, IsNull } from 'typeorm';
 import { Vote, UserVote, VotationType } from './vote.entity';
 import { Raffle, RaffleEntry } from './raffle.entity';
 import { UsersService } from '../users/users.service';
@@ -30,8 +30,12 @@ export class GamificationService {
   ) {}
 
   // ─── VOTES ──────────────────────────────────────────────────────────────
-  getActiveVotes(): Promise<Vote[]> {
-    return this.votesRepo.find({ where: { isActive: true }, order: { createdAt: 'DESC' } });
+  async getActiveVotes(userId?: string): Promise<(Vote & { myVote: string | null })[]> {
+    const votes = await this.votesRepo.find({ where: { isActive: true }, order: { createdAt: 'DESC' } });
+    if (!userId) return votes.map((v) => ({ ...v, myVote: null }));
+    const userVotes = await this.userVotesRepo.find({ where: { userId } });
+    const myVoteMap = new Map(userVotes.map((uv) => [uv.voteId, uv.selectedOption]));
+    return votes.map((v) => ({ ...v, myVote: myVoteMap.get(v.id) ?? null }));
   }
 
   async castVote(userId: string, voteId: string, selectedOption: string): Promise<Vote> {
@@ -43,7 +47,8 @@ export class GamificationService {
     const existing = await this.userVotesRepo.findOne({ where: { userId, voteId } });
     if (existing) throw new ConflictException('Already voted');
 
-    if (vote.creditsCost > 0) {
+    const isFree = vote.votationType === 'encuesta' || vote.votationType === 'pregunta';
+    if (!isFree && vote.creditsCost > 0) {
       await this.usersService.spendCredits(userId, vote.creditsCost);
     }
     if (vote.xpReward > 0) {
@@ -69,6 +74,9 @@ export class GamificationService {
 
     // Mission: increment weekly votes counter
     await this.missions.increment('weekly_votes_500', 1);
+
+    // Weekly activity bit 1 = voted
+    await this.usersService.updateWeekActivity(userId, 1);
 
     return this.votesRepo.findOne({ where: { id: voteId } }) as Promise<Vote>;
   }
@@ -114,14 +122,52 @@ export class GamificationService {
   }
 
   // ─── RAFFLES ────────────────────────────────────────────────────────────
-  getActiveRaffles(): Promise<Raffle[]> {
-    return this.rafflesRepo.find({ where: { isActive: true } });
+  async getActiveRaffles(userId?: string) {
+    // Active raffles take priority; if there are none, keep showing the most
+    // recent finalized one (with its winner) until the admin activates another.
+    let raffles = await this.rafflesRepo.find({ where: { isActive: true }, order: { createdAt: 'DESC' } });
+    if (raffles.length === 0) {
+      raffles = await this.rafflesRepo.find({ where: { winnerId: Not(IsNull()) }, order: { drawDate: 'DESC' }, take: 1 });
+    }
+
+    // Resolve winner names for finalized raffles
+    const winnerIds = [...new Set(raffles.map((r) => r.winnerId).filter(Boolean) as string[])];
+    const winnerName = new Map<string, string>();
+    await Promise.all(winnerIds.map(async (id) => {
+      try { const u = await this.usersService.findById(id); winnerName.set(id, u.name); } catch { /* ignore */ }
+    }));
+
+    const enteredIds = userId
+      ? new Set((await this.entriesRepo.find({ where: { userId } })).map((e) => e.raffleId))
+      : new Set<string>();
+
+    return raffles.map((r) => ({
+      ...r,
+      hasEntered: enteredIds.has(r.id),
+      isFinished: !!r.winnerId,
+      winnerName: r.winnerId ? (winnerName.get(r.winnerId) ?? null) : null,
+    }));
   }
 
   async enterRaffle(userId: string, raffleId: string): Promise<RaffleEntry> {
     const raffle = await this.rafflesRepo.findOne({ where: { id: raffleId } });
     if (!raffle) throw new NotFoundException('Raffle not found');
     if (!raffle.isActive) throw new ConflictException('Raffle is closed');
+
+    // Audience eligibility
+    const audience = raffle.audience ?? 'all';
+    if (audience !== 'all') {
+      const user = await this.usersService.findById(userId);
+      if (audience === 'socios' && !user.isSocio) {
+        throw new ForbiddenException('Este sorteo es solo para socios');
+      }
+      if (audience === 'fans' && (user.role === 'creator' || user.role === 'admin')) {
+        throw new ForbiddenException('Este sorteo es solo para fans');
+      }
+    }
+
+    const existing = await this.entriesRepo.findOne({ where: { userId, raffleId } });
+    if (existing) throw new ConflictException('Ya participas en este sorteo');
 
     await this.usersService.spendCredits(userId, raffle.ticketCost);
     await this.usersService.addXP(userId, raffle.xpReward);
@@ -162,16 +208,28 @@ export class GamificationService {
       { label: '2x XP', credits: 0, xp: 40 },
       { label: '1 Ticket', credits: 0, xp: 15 },
       { label: '🎁 Sorpresa', credits: 15, xp: 10 },
-      { label: '¡Ánimo!', credits: 2, xp: 3 },
+      { label: 'Voto gratis', credits: 5, xp: 0 },
     ];
 
     const prize = prizes[Math.floor(Math.random() * prizes.length)];
     if (prize.credits > 0) await this.usersService.addCredits(userId, prize.credits);
-    if (prize.xp > 0) await this.usersService.addXP(userId, prize.xp);
+
+    if (prize.label === '2x XP') {
+      // Real 24h multiplier instead of flat XP
+      await this.usersService.setXPMultiplier(userId, 2, 24);
+    } else if (prize.xp > 0) {
+      await this.usersService.addXP(userId, prize.xp);
+    }
 
     // Mission: daily_300 counter increments per roulette spin
     await this.missions.increment('daily_300', 1);
 
-    return { prize: prize.label, credits: prize.credits, xp: prize.xp };
+    // Mark daily reward claimed (fixes re-spin bug)
+    await this.usersService.markDailyClaimed(userId);
+
+    // Weekly activity bit 2 = spun roulette
+    await this.usersService.updateWeekActivity(userId, 2);
+
+    return { prize: prize.label, credits: prize.credits, xp: prize.label === '2x XP' ? 0 : prize.xp };
   }
 }

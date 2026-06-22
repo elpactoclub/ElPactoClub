@@ -6,7 +6,8 @@ import { useUIStore } from "@/stores/uiStore";
 import { api } from "@/services/api";
 
 export default function TopNav() {
-  const { xp, credits, isAuthenticated, avatar } = useUserStore();
+  const { xp, credits, isAuthenticated, avatar, xpMultiplier, xpMultiplierExpiresAt } = useUserStore();
+  const multiplierActive = xpMultiplier > 1 && !!xpMultiplierExpiresAt && new Date(xpMultiplierExpiresAt) > new Date();
   const { openProfile, toggleNotif, openDM, notifUnreadCount } = useUIStore();
   const [dmUnread, setDmUnread] = useState(0);
 
@@ -56,9 +57,13 @@ export default function TopNav() {
             cursor: "pointer",
           }}
         >
-          <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#F0E040", flexShrink: 0 }} />
-          <span style={{ fontSize: "11px", color: "#F0E040", lineHeight: 1 }}>★</span>
+          <span style={{ fontSize: "10px", fontWeight: 800, color: "#F0E040", lineHeight: 1, letterSpacing: "0.5px", textTransform: "uppercase" }}>exp:</span>
           <span style={{ fontSize: "12px", fontWeight: 700, color: "#fff" }}>{xp.toLocaleString()}</span>
+          {multiplierActive && (
+            <span style={{ fontSize: "9px", fontWeight: 900, color: "#A78BFA", background: "rgba(167,139,250,0.15)", borderRadius: 4, padding: "1px 4px", lineHeight: 1 }}>
+              {xpMultiplier}x XP
+            </span>
+          )}
           <span style={{ fontSize: "11px", color: "var(--color-accent)", lineHeight: 1, marginLeft: 2 }}>⚡</span>
           <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-accent)" }}>{credits}</span>
         </button>
@@ -68,7 +73,7 @@ export default function TopNav() {
           style={{ position: "relative", cursor: "pointer", fontSize: "17px", width: "30px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "none" }}
         >
           🔔
-          {notifUnreadCount > 0 && (
+          {isAuthenticated && notifUnreadCount > 0 && (
             <div style={{ position: "absolute", top: "-3px", right: "-3px", width: "14px", height: "14px", borderRadius: "50%", background: "#F59E0B", fontSize: "7px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--color-black)", color: "#000" }}>
               {notifUnreadCount > 9 ? "9+" : notifUnreadCount}
             </div>

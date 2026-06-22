@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
+import Skel from "@/components/ui/Skel";
+import { useAuthLoading } from "@/hooks/useAuthLoading";
 
 interface Conversation {
   partnerId: string;
@@ -47,14 +49,16 @@ function timeAgo(iso?: string) {
 }
 
 export default function MessagesScreen() {
-  const { showToast } = useUIStore();
+  const { showToast, setTab } = useUIStore();
   const { isAuthenticated, credits } = useUserStore();
+  const authLoading = useAuthLoading();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [partner, setPartner] = useState<Conversation | null>(null);
   const [thread, setThread] = useState<ThreadMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [threadLoading, setThreadLoading] = useState(false);
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
@@ -81,12 +85,15 @@ export default function MessagesScreen() {
   const openThread = async (conv: Conversation) => {
     setActiveId(conv.partnerId);
     setPartner(conv);
+    setThreadLoading(true);
     try {
       const r = await api.get(`/dm/thread/${conv.partnerId}`);
       setPartner({ ...conv, ...r.data.partner, partnerId: conv.partnerId });
       setThread(r.data.messages ?? []);
     } catch {
       setThread([]);
+    } finally {
+      setThreadLoading(false);
     }
   };
 
@@ -103,7 +110,7 @@ export default function MessagesScreen() {
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message;
-      if (msg?.includes("credits") || msg?.includes("Insufficient")) showToast("Créditos insuficientes ❌");
+      if (msg?.includes("credits") || msg?.includes("Insufficient")) { showToast("Necesitas más créditos ⚡"); setTab("store"); }
       else if (msg?.includes("caracteres")) showToast("Máximo 100 caracteres ❌");
       else showToast("No se pudo enviar el mensaje ❌");
       setInput(content);
@@ -129,13 +136,76 @@ export default function MessagesScreen() {
         </div>
       </div>
 
-      {!isAuthenticated ? (
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-muted)", fontSize: 14 }}>
-          Inicia sesión para ver y enviar mensajes ⚡
+      {authLoading ? (
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <Skel w={46} h={46} r={23} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <Skel w={120} h={13} r={4} />
+                    <Skel w={28} h={11} r={4} />
+                  </div>
+                  <Skel w="60%" h={11} r={4} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : !isAuthenticated ? (
+        <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+          {/* Fake conversations — blurred */}
+          {[
+            { name: "Herson", preview: "¡Gracias por el apoyo! 🏀", time: "2m", color: "#22C55E", creator: true },
+            { name: "Violeta Verano", preview: "Nos vemos en el próximo evento", time: "1h", color: "#F472B6", creator: true },
+            { name: "Elvis Ude", preview: "¿Viste el último partido?", time: "3h", color: "#60A5FA", creator: true },
+            { name: "BasketFan99", preview: "¡Gran temporada!", time: "1d", color: "#A78BFA", creator: false },
+          ].map((c, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)", filter: "blur(4px)", pointerEvents: "none", userSelect: "none" }}>
+              <div style={{ width: 46, height: 46, borderRadius: "50%", background: c.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
+                {c.name[0]}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{c.name}{c.creator && <span style={{ fontSize: 9, color: c.color, marginLeft: 6 }}>CREADOR</span>}</span>
+                  <span style={{ fontSize: 11, color: "var(--color-muted)" }}>{c.time}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "var(--color-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.preview}</div>
+              </div>
+            </div>
+          ))}
+          {/* Lock overlay */}
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}>
+            <div style={{ fontSize: 32 }}>✉️</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Tus mensajes privados</div>
+            <div style={{ fontSize: 12, color: "var(--color-muted)", textAlign: "center", maxWidth: 220 }}>Inicia sesión para hablar con creadores y otros fans</div>
+            <button
+              onClick={() => useUIStore.setState({ isAuthOpen: true } as any)}
+              style={{ marginTop: 4, background: "var(--color-accent)", color: "#000", border: "none", padding: "11px 28px", borderRadius: 20, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
+            >
+              Iniciar sesión →
+            </button>
+          </div>
         </div>
       ) : !activeId ? (
         <div style={{ flex: 1, overflowY: "auto" }}>
-          {loading && <div style={{ padding: 24, textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>Cargando...</div>}
+          {loading && (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <Skel w={46} h={46} r={23} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Skel w={120} h={13} r={4} />
+                      <Skel w={28} h={11} r={4} />
+                    </div>
+                    <Skel w="60%" h={11} r={4} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {!loading && conversations.length === 0 && (
             <div style={{ padding: 32, textAlign: "center", fontSize: 13, color: "var(--color-muted)" }}>No tienes conversaciones todavía.</div>
           )}
@@ -164,10 +234,24 @@ export default function MessagesScreen() {
       ) : partner ? (
         <>
           <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, padding: "20px" }}>
-            {thread.length === 0 && (
+            {threadLoading && (
+              <>
+                {[
+                  { isMe: false, w: 160 }, { isMe: true, w: 120 },
+                  { isMe: false, w: 200 }, { isMe: false, w: 140 },
+                  { isMe: true, w: 180 }, { isMe: true, w: 100 },
+                ].map((b, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, flexDirection: b.isMe ? "row-reverse" : "row", alignItems: "flex-end" }}>
+                    {!b.isMe && <Skel w={28} h={28} r={14} />}
+                    <Skel w={b.w} h={38} r={12} />
+                  </div>
+                ))}
+              </>
+            )}
+            {!threadLoading && thread.length === 0 && (
               <div style={{ textAlign: "center", fontSize: 12, color: "var(--color-muted)", marginTop: 20 }}>No hay mensajes aún. ¡Escribe el primero!</div>
             )}
-            {thread.map((m) => (
+            {!threadLoading && thread.map((m) => (
               <div key={m.id} style={{ display: "flex", gap: 8, flexDirection: m.isMe ? "row-reverse" : "row" }}>
                 {!m.isMe && (
                   <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: colorFor(partner.partnerId), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#fff" }}>

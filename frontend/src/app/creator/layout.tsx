@@ -20,17 +20,21 @@ const NAV_ITEMS = [
   { href: "/creator/messages", label: "Mensajes fans", icon: "💬" },
 ];
 
+const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
+const isImg = (a?: string) => !!a && (a.startsWith("http") || a.startsWith("data:"));
+
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [creatorName, setCreatorName] = useState<string>("");
+  const [avatar, setAvatar] = useState<string>("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("el_pacto_token");
     if (!token) {
-      router.replace("/admin/login");
+      router.replace("/");
       return;
     }
     const decoded = decodeToken(token);
@@ -38,9 +42,19 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
       setCreatorName(decoded.name ?? (decoded.role === "admin" ? "Admin" : "Creador"));
       setReady(true);
     } else {
-      router.replace("/admin/login");
+      router.replace("/");
     }
   }, [pathname, router]);
+
+  // Cargar foto y nombre reales del perfil
+  useEffect(() => {
+    const token = localStorage.getItem("el_pacto_token");
+    if (!token) return;
+    fetch(`${API}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((u) => { if (u) { if (u.name) setCreatorName(u.name); setAvatar(u.avatar ?? ""); } })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
@@ -48,13 +62,13 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
 
   function handleLogout() {
     localStorage.removeItem("el_pacto_token");
-    router.push("/admin/login");
+    router.push("/");
   }
 
   const currentPage = NAV_ITEMS.find((it) => pathname.startsWith(it.href));
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a", color: "#fff", fontFamily: "var(--font-sans)" }}>
+    <div style={{ display: "flex", height: "100dvh", overflow: "hidden", background: "#0a0a0a", color: "#fff", fontFamily: "var(--font-sans)" }}>
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
@@ -93,7 +107,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
           <span>Volver a la app</span>
         </Link>
 
-        <nav style={{ flex: 1, padding: "14px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "14px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
           {NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
@@ -125,8 +139,11 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
 
         <div style={{ padding: "14px 12px 18px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px 10px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #A78BFA, #EC4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-              {creatorName?.[0]?.toUpperCase() ?? "C"}
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg, #A78BFA, #EC4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0, overflow: "hidden" }}>
+              {isImg(avatar)
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : (creatorName?.[0]?.toUpperCase() ?? "C")}
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{creatorName}</div>
@@ -145,7 +162,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
         <header style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#0d0d0d", position: "sticky", top: 0, zIndex: 30 }}>
           <button
             className="admin-burger md:hidden"
@@ -160,7 +177,7 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
           </div>
         </header>
 
-        <main style={{ flex: 1, overflowY: "auto", padding: "26px 22px 32px" }}>{children}</main>
+        <main className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "26px 22px 32px" }}>{children}</main>
       </div>
     </div>
   );

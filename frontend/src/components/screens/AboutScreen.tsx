@@ -1,14 +1,111 @@
 "use client";
 
-import { useUIStore } from "@/stores/uiStore";
+import { useUIStore, type ProjectData } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 
+// Sponsors ocultos durante el periodo de prueba. Cambiar a `true` para volver a mostrarlos.
+const SHOW_SPONSORS = false;
+
+const PRIVACY_TEXT = `POLÍTICA DE PRIVACIDAD
+Club Bàsquet El Pacto
+Última actualización: mayo de 2025
+
+1. Responsable del Tratamiento
+En cumplimiento del Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), el responsable del tratamiento es:
+• Denominación social: Club Bàsquet El Pacto
+• NIF: G56373806
+• Domicilio: Calle Jeroni Marsal, núm. 68, planta 4, puerta 1 — 08340 Vilassar de Mar (Barcelona)
+• Contacto: soporte@elpactoclub.com
+
+2. Datos Personales que Recopilamos
+Al registrarse recopilamos: nombre y apellidos, correo electrónico, contraseña (cifrada), fecha de nacimiento, país y ciudad de residencia, y datos de pago (gestionados íntegramente por Stripe; el Club no almacena datos de tarjeta).
+
+3. Finalidad del Tratamiento
+• Gestión de la membresía: alta, mantenimiento y baja como socio.
+• Acceso a la aplicación: autenticación e identificación.
+• Gestión de pagos: procesamiento a través de Stripe.
+• Comunicaciones: información sobre la actividad del Club.
+• Cumplimiento legal: atención de obligaciones legales.
+
+4. Base Jurídica del Tratamiento
+• Ejecución de un contrato (art. 6.1.b RGPD): gestión de membresía y acceso.
+• Consentimiento (art. 6.1.a RGPD): comunicaciones comerciales.
+• Cumplimiento de obligaciones legales (art. 6.1.c RGPD).
+
+5. Plazos de Conservación
+Sus datos se conservarán mientras se mantenga la membresía. Tras la baja, se bloquearán y conservarán durante los plazos legales (5 años para obligaciones fiscales y mercantiles).
+
+6. Destinatarios
+El Club no vende datos a terceros. Encargados del tratamiento:
+• Stripe, Inc.: proveedor de pagos. Política: https://stripe.com/es/privacy
+
+7. Transferencias Internacionales
+Stripe puede procesar datos en EE.UU. bajo las garantías del RGPD (Cláusulas Contractuales Tipo u otros mecanismos aplicables).
+
+8. Sus Derechos
+Acceso, rectificación, supresión, oposición, limitación, portabilidad y retirada del consentimiento. Contacte en soporte@elpactoclub.com indicando "Ejercicio de derechos RGPD". Puede reclamar ante la AEPD (www.aepd.es).
+
+9. Seguridad
+Las contraseñas se almacenan cifradas. Los datos de pago son tratados por Stripe bajo estándares PCI-DSS.
+
+10. Menores de Edad
+Los menores de 14 años requieren consentimiento expreso del tutor legal conforme al art. 7 LOPDGDD.
+
+11. Modificaciones
+Cualquier cambio relevante se comunicará con antelación por la app o correo electrónico.
+
+Club Bàsquet El Pacto · NIF G56373806 · soporte@elpactoclub.com`;
+
+const TERMS_TEXT = `TÉRMINOS Y CONDICIONES
+Club Bàsquet El Pacto — Plataforma de socios
+Última actualización: mayo de 2025
+
+1. Objeto y Ámbito de Aplicación
+Las presentes Condiciones regulan el acceso y uso de la aplicación web del Club Bàsquet El Pacto (NIF G56373806), domiciliado en Calle Jeroni Marsal, núm. 68, planta 4, puerta 1, 08340 Vilassar de Mar (Barcelona). El acceso implica la aceptación plena de estas Condiciones.
+
+2. Registro y Cuenta de Usuario
+Al registrarse, el usuario se compromete a facilitar información veraz, mantener la confidencialidad de sus credenciales y no compartir su cuenta. El registro de menores de 14 años requiere consentimiento del tutor legal.
+
+3. Membresía
+3.1 Precio: la cuota mensual vigente se indica en la Plataforma antes de completar la suscripción (orientativamente ~3 €/mes). El Club puede modificarlo con 30 días de antelación.
+3.2 Facturación: mensual y recurrente mediante Stripe. En caso de impago, el Club puede suspender el acceso.
+3.3 Duración: sin permanencia mínima. Renovación automática mensual salvo cancelación previa.
+3.4 Baja y reembolsos: baja en cualquier momento desde el perfil o en soporte@elpactoclub.com, efectiva al final del periodo en curso. No se realizan reembolsos de cuotas ya abonadas.
+
+4. Créditos de la Plataforma
+Los créditos virtuales no tienen valor monetario fuera de la Plataforma y no son reembolsables. No caducan mientras la cuenta esté activa. En caso de baja, los créditos no utilizados quedan sin efecto.
+
+5. Normas de Conducta
+Queda prohibido publicar contenidos ofensivos, acosar a otros usuarios, suplantar identidades, intentar accesos no autorizados o realizar uso comercial no autorizado. El incumplimiento puede causar la baja definitiva.
+
+6. Suspensión y Baja
+El Club puede suspender o dar de baja por impago, conducta inapropiada, uso fraudulento o incumplimiento de estas Condiciones.
+
+7. Propiedad Intelectual
+Todos los contenidos de la Plataforma son propiedad del Club o sus titulares. Queda prohibida su reproducción sin autorización expresa.
+
+8. Limitación de Responsabilidad
+El Club no garantiza disponibilidad ininterrumpida y no es responsable de interrupciones técnicas, contenidos de usuarios o uso indebido de la Plataforma.
+
+9. Modificaciones
+Cambios relevantes se comunicarán con al menos 30 días de antelación. El uso continuado implica aceptación.
+
+10. Legislación y Jurisdicción
+Legislación española. Juzgados y Tribunales de Barcelona, sin perjuicio de los derechos del consumidor.
+
+13. Contacto
+soporte@elpactoclub.com
+
+Club Bàsquet El Pacto · NIF G56373806 · soporte@elpactoclub.com`;
+
 interface LeaderboardEntry {
   id: string;
   name: string;
+  avatar?: string;
   city?: string;
+  country?: string;
   level: string;
   xp: number;
 }
@@ -16,45 +113,80 @@ interface LeaderboardEntry {
 const LEVEL_COLORS: Record<string, string> = { Leyenda: "#A78BFA", MVP: "#60A5FA", Starter: "#22C55E", Rookie: "#777" };
 const POS_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32", "#777", "#777"];
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  "España": "🇪🇸", "Espana": "🇪🇸", "Spain": "🇪🇸",
+  "México": "🇲🇽", "Mexico": "🇲🇽",
+  "Argentina": "🇦🇷", "Colombia": "🇨🇴", "Chile": "🇨🇱", "Perú": "🇵🇪", "Peru": "🇵🇪",
+  "Venezuela": "🇻🇪", "Ecuador": "🇪🇨", "Uruguay": "🇺🇾", "Paraguay": "🇵🇾", "Bolivia": "🇧🇴",
+  "Estados Unidos": "🇺🇸", "USA": "🇺🇸", "Francia": "🇫🇷", "France": "🇫🇷",
+  "Italia": "🇮🇹", "Portugal": "🇵🇹", "Alemania": "🇩🇪", "Reino Unido": "🇬🇧",
+  "India": "🇮🇳", "Brasil": "🇧🇷", "Brazil": "🇧🇷", "Marruecos": "🇲🇦", "Andorra": "🇦🇩",
+};
+function flagFor(country: string): string {
+  return COUNTRY_FLAGS[country] ?? "🌍";
+}
+
 
 export default function AboutScreen() {
-  const { showToast, openFanModal, openProjectPage, openDMWithCreator } = useUIStore();
+  const { showToast, openAuth, setTab, openFanModal, openProjectPage, openDMWithUser } = useUIStore();
   const { spendCredits, addXP, name: myName, xp: myXP, city: myCity, id: myId, isAuthenticated } = useUserStore();
   const [contactOpen, setContactOpen] = useState(false);
+  const [legalOpen, setLegalOpen] = useState<"privacy" | "terms" | null>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactMsg, setContactMsg] = useState("");
+  const [sendingContact, setSendingContact] = useState(false);
 
-  const handleContactSend = () => {
+  const handleContactSend = async () => {
     if (!contactName.trim() || !contactEmail.trim() || !contactMsg.trim()) {
       showToast("Rellena todos los campos"); return;
     }
-    const subject = encodeURIComponent(`Colaboración El Pacto BC — ${contactName}`);
-    const body = encodeURIComponent(`Nombre: ${contactName}\nEmail: ${contactEmail}\n\n${contactMsg}`);
-    window.open(`mailto:hola@elpactoclub.com?subject=${subject}&body=${body}`, "_blank");
-    setContactOpen(false);
-    setContactName(""); setContactEmail(""); setContactMsg("");
-    showToast("Abriendo tu cliente de correo 📩");
+    setSendingContact(true);
+    try {
+      await api.post("/contact", { name: contactName.trim(), email: contactEmail.trim(), message: contactMsg.trim() });
+      setContactOpen(false);
+      setContactName(""); setContactEmail(""); setContactMsg("");
+      showToast("¡Mensaje enviado! Te respondemos en 24h ✅");
+    } catch {
+      showToast("Error al enviar. Escríbenos a hola@elpactoclub.com");
+    } finally {
+      setSendingContact(false);
+    }
   };
   const [rankTab, setRankTab] = useState<"global" | "ciudades">("global");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [rankLoading, setRankLoading] = useState(true);
+  const [fansCount, setFansCount] = useState<number | null>(null);
+  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [clubCreators, setClubCreators] = useState<{ id: string; userId: string; name: string; photoUrl?: string | null; avatar?: string }[]>([]);
+  const [creatorsLoading, setCreatorsLoading] = useState(true);
 
   useEffect(() => {
     api.get("/users/leaderboard")
       .then((r) => setLeaderboard(r.data))
       .catch(() => {})
       .finally(() => setRankLoading(false));
+    api.get("/users/count")
+      .then((r) => setFansCount(r.data?.count ?? null))
+      .catch(() => {});
+    api.get("/projects")
+      .then((r) => setProjects(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setProjects([]));
+    api.get("/club-creators")
+      .then((r) => setClubCreators(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setClubCreators([]))
+      .finally(() => setCreatorsLoading(false));
   }, []);
 
   const handleDonar = (amount: number, project: string) => {
-    if (!spendCredits(amount)) { showToast("Sin créditos suficientes"); return; }
+    if (!isAuthenticated) { openAuth(); return; }
+    if (!spendCredits(amount)) { showToast("Necesitas más créditos ⚡"); setTab("store"); return; }
     addXP(amount);
     showToast(`Apoyaste ${project} · −${amount} ⚡ · +${amount} XP 🏀`);
   };
 
   const globalRanking = leaderboard.slice(0, 5).map((u, i) => ({
-    pos: i + 1, name: u.name, city: u.city || "—", level: u.level,
+    pos: i + 1, id: u.id, name: u.name, avatar: u.avatar, city: u.city || "—", level: u.level,
     xp: u.xp.toLocaleString(), color: LEVEL_COLORS[u.level] || "#777", posColor: POS_COLORS[i] || "#777",
   }));
 
@@ -65,10 +197,11 @@ export default function AboutScreen() {
 
   // Cities ranking from real leaderboard data
   const allCitiesSorted = (() => {
-    const map: Record<string, { totalXP: number; fans: number; leader: string }> = {};
+    const map: Record<string, { totalXP: number; fans: number; leader: string; country?: string }> = {};
     leaderboard.forEach((u) => {
       const c = u.city || "—";
-      if (!map[c]) map[c] = { totalXP: 0, fans: 0, leader: u.name };
+      // leaderboard viene ordenado por XP desc, así el primer usuario de cada ciudad es el líder
+      if (!map[c]) map[c] = { totalXP: 0, fans: 0, leader: u.name, country: u.country };
       map[c].totalXP += u.xp;
       map[c].fans += 1;
     });
@@ -76,7 +209,7 @@ export default function AboutScreen() {
   })();
 
   const cityRanking = allCitiesSorted.slice(0, 5).map(([city, data], i) => ({
-    pos: i + 1, city, fans: data.fans, leader: data.leader,
+    pos: i + 1, city, fans: data.fans, leader: data.leader, country: data.country,
     xp: data.totalXP.toLocaleString(), posColor: POS_COLORS[i] || "#777",
   }));
 
@@ -87,50 +220,64 @@ export default function AboutScreen() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
 
-      {/* Hero — white bg */}
-      <div style={{ background: "#fff", borderRadius: 10, padding: "18px 20px", color: "#000" }}>
-        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Quiénes somos</div>
-        <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, lineHeight: 1.1, marginBottom: 10, color: "#000" }}>EL BALONCESTO YA NO ES SOLO DEPORTE</div>
-        <div style={{ fontSize: 13, color: "#3b82f6", lineHeight: 1.55 }}>Club nativo digital donde el basket se mezcla con impacto social, comunidad real y contenido que importa.</div>
+      {/* Hero — Quiénes somos card */}
+      <div style={{ background: "#fff", borderRadius: 10, padding: "16px", color: "#000" }}>
+        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 2, color: "#666", marginBottom: 5 }}>QUIÉNES SOMOS</div>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, lineHeight: 1.2, marginBottom: 7, color: "#000" }}>EL BALONCESTO YA NO ES SOLO DEPORTE</div>
+        <div style={{ fontSize: 11, color: "#555", lineHeight: 1.6 }}>Club nativo digital donde el basket se mezcla con impacto social, comunidad real y contenido que importa.</div>
       </div>
 
-      {/* Creators */}
-      <div>
-        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", marginBottom: 10, paddingLeft: 2 }}>CREADORES DEL CLUB</div>
-        <div style={{ display: "flex", gap: 10, overflowX: "auto" }} className="hide-scrollbar">
-          {[
-            { name: "Elvis Ude", role: "Creador · Jugador", img: "/imagenes/elvis.jpg" },
-            { name: "Herson", role: "Capitán · Creador", img: "/imagenes/herson.jpg" },
-            { name: "Violeta Verano", role: "Creadora · Jugadora", img: "/imagenes/violeta.jpg" },
-          ].map((c) => (
-            <div key={c.name} style={{ minWidth: 150, background: "#1a1a1a", borderRadius: 10, overflow: "hidden", flexShrink: 0, border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div style={{ height: 140, overflow: "hidden" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={c.img} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-              </div>
-              <div style={{ padding: "10px 12px" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{c.name}</div>
-                <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 10 }}>{c.role}</div>
-                <button
-                  onClick={() => {
-                    if (!isAuthenticated) { showToast("Inicia sesión para enviar mensajes ⚡"); return; }
-                    openDMWithCreator(c.name);
-                  }}
-                  style={{ width: "100%", background: "#252525", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", borderRadius: 8, padding: "8px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}
-                >
-                  ✉ Mensaje ⚡ 50
-                </button>
-              </div>
-            </div>
-          ))}
+      {/* Creators — dynamic from backend */}
+      {(creatorsLoading || clubCreators.length > 0) && (
+        <div>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", marginBottom: 10, paddingLeft: 2 }}>CREADORES DEL CLUB</div>
+          <div style={{ display: "flex", gap: 10, overflowX: "auto" }} className="hide-scrollbar">
+            {creatorsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} style={{ width: 150, flexShrink: 0, background: "#1a1a1a", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div style={{ height: 140, background: "rgba(255,255,255,0.06)", animation: "pulse 1.4s ease-in-out infinite" }} />
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ height: 13, width: "70%", borderRadius: 4, background: "rgba(255,255,255,0.07)", animation: "pulse 1.4s ease-in-out infinite", marginBottom: 6 }} />
+                    <div style={{ height: 10, width: "45%", borderRadius: 4, background: "rgba(255,255,255,0.05)", animation: "pulse 1.4s ease-in-out infinite", marginBottom: 12 }} />
+                    <div style={{ height: 30, borderRadius: 8, background: "rgba(255,255,255,0.05)", animation: "pulse 1.4s ease-in-out infinite" }} />
+                  </div>
+                </div>
+              ))
+            ) : clubCreators.map((c) => {
+              const img = c.photoUrl;
+              return (
+                <div key={c.id} style={{ width: 150, flexShrink: 0, background: "#1a1a1a", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div style={{ height: 140, overflow: "hidden", background: "#222", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>
+                    {img
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={img} alt={c.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                      : <span>{c.avatar || "🏀"}</span>}
+                  </div>
+                  <div style={{ padding: "10px 12px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{c.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 10 }}>Creador</div>
+                    <button
+                      onClick={() => {
+                        if (!isAuthenticated) { openAuth(); return; }
+                        openDMWithUser({ id: c.userId, name: c.name, avatar: c.avatar, role: "creator" });
+                      }}
+                      style={{ width: "100%", background: "#252525", border: "1px solid rgba(255,255,255,0.07)", color: "#fff", borderRadius: 8, padding: "8px 0", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}
+                    >
+                      ✉ Mensaje ⚡ 50
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Ranking */}
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, paddingLeft: 2 }}>
           <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)" }}>RANKING DE LA COMUNIDAD</span>
-          <span style={{ fontSize: 11, color: "var(--color-muted)" }}>1,247 fans activos</span>
+          <span style={{ fontSize: 11, color: "var(--color-muted)" }}>{(fansCount ?? leaderboard.length).toLocaleString("es")} {(fansCount ?? leaderboard.length) === 1 ? "fan" : "fans"}</span>
         </div>
 
         {/* Tab buttons */}
@@ -172,11 +319,18 @@ export default function AboutScreen() {
               globalRanking.map((r) => (
                 <button
                   key={r.pos}
-                  onClick={() => openFanModal(r.name, { city: r.city, level: r.level, xp: leaderboard[r.pos - 1]?.xp })}
+                  onClick={() => openFanModal(r.name, { id: r.id, city: r.city, level: r.level, xp: leaderboard[r.pos - 1]?.xp, avatar: r.avatar })}
                   style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, border: r.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)", background: r.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", cursor: "pointer", textAlign: "left", width: "100%" }}
                 >
                   <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: r.posColor }}>{r.pos}</div>
-                  <div style={{ width: 38, height: 38, borderRadius: "50%", background: r.color + "22", border: `2px solid ${r.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: r.color, flexShrink: 0 }}>{r.name[0]}</div>
+                  <div style={{ width: 38, height: 38, borderRadius: "50%", background: r.color + "22", border: `2px solid ${r.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: r.color, flexShrink: 0, overflow: "hidden" }}>
+                    {r.avatar?.startsWith("http") || r.avatar?.startsWith("data:")
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={r.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : r.avatar && r.avatar.length <= 2
+                        ? <span style={{ fontSize: 20 }}>{r.avatar}</span>
+                        : <span>{r.name[0]}</span>}
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{r.name}</div>
                     <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{r.city} · {r.level}</div>
@@ -211,7 +365,7 @@ export default function AboutScreen() {
           </div>
         )}
 
-        {/* Cities ranking */}
+        {/* Cities ranking — con país de cada ciudad */}
         {rankTab === "ciudades" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {rankLoading ? (
@@ -233,7 +387,10 @@ export default function AboutScreen() {
                   <div key={c.pos} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 10, background: c.pos === 1 ? "linear-gradient(135deg,#1a1400,#252000)" : "#1a1a1a", border: c.pos === 1 ? "1px solid rgba(255,215,0,0.25)" : "1px solid rgba(255,255,255,0.05)" }}>
                     <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, width: 28, textAlign: "center", flexShrink: 0, color: c.posColor }}>{c.pos}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{c.city}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>
+                        {c.city}
+                        {c.country && <span style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", marginLeft: 6 }}>{flagFor(c.country)} {c.country}</span>}
+                      </div>
                       <div style={{ fontSize: 11, color: "var(--color-muted)" }}>{c.fans} {c.fans === 1 ? "fan" : "fans"} · Líder: {c.leader}</div>
                     </div>
                     <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, color: "var(--color-accent)", flexShrink: 0 }}>{c.xp} XP</div>
@@ -275,60 +432,49 @@ export default function AboutScreen() {
         )}
       </div>
 
-      {/* India project */}
-      <div style={{ background: "linear-gradient(135deg,#1a1400,#221a00)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 10, padding: "16px 16px 0", cursor: "pointer" }} onClick={() => openProjectPage("india")}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 6 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#F59E0B", flexShrink: 0 }}>IN</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>India · Dribble Academy</div>
-            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1px", color: "#F59E0B", textTransform: "uppercase" }}>PROYECTO ACTIVO</div>
+      {/* Impact projects — dynamic from backend */}
+      {projects.map((p) => {
+        const color = p.color || "#F59E0B";
+        return (
+          <div key={p.id} style={{ background: `linear-gradient(135deg, ${color}1a, ${color}0d)`, border: `1px solid ${color}40`, borderRadius: 10, padding: 16, cursor: "pointer" }} onClick={() => openProjectPage(p)}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 6 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: p.imageUrl ? "#222" : `${color}26`, border: `1px solid ${color}4d`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, overflow: "hidden" }}>
+                {p.imageUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={p.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : (p.emoji || "🏀")}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>{p.title}</div>
+                <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1px", color, textTransform: "uppercase" }}>PROYECTO ACTIVO</div>
+              </div>
+              <button onClick={(e) => { e.stopPropagation(); openProjectPage(p); }} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", flexShrink: 0 }}>Ver más →</button>
+            </div>
+            <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.55, marginBottom: 14 }}>
+              {p.summary || p.description}
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDonar(50, p.title); }}
+              style={{ width: "100%", background: "var(--color-accent)", color: "#000", border: "none", padding: "13px 16px", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            >
+              Apoyar 50 ⚡
+            </button>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); openProjectPage("india"); }} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", flexShrink: 0 }}>Ver más →</button>
-        </div>
-        <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.55, marginBottom: 16 }}>
-          Colaboramos con la <strong style={{ color: "#F59E0B" }}>Fundación Dribble Academy</strong> para llevar el baloncesto a India — equipo conjunto, formación local y colaboradores estratégicos.
-        </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); handleDonar(50, "India"); }}
-          style={{ width: "100%", background: "var(--color-accent)", color: "#000", border: "none", padding: "14px", borderRadius: "0 0 10px 10px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-        >
-          Apoyar 50 ⚡
-        </button>
-      </div>
+        );
+      })}
 
-      {/* Tecnificar project */}
-      <div style={{ background: "linear-gradient(135deg,#0d0014,#140020)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "16px 16px 0", cursor: "pointer" }} onClick={() => openProjectPage("tecnificar")}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 6 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎓</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>Tecnificar</div>
-            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1px", color: "#8B5CF6", textTransform: "uppercase" }}>PROYECTO ACTIVO</div>
-          </div>
-          <button onClick={(e) => { e.stopPropagation(); openProjectPage("tecnificar"); }} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)", flexShrink: 0 }}>Ver más →</button>
-        </div>
-        <div style={{ fontSize: 13, color: "#ccc", lineHeight: 1.55, marginBottom: 16 }}>
-          Becas de tecnificación para jóvenes jugadores con talento que no tienen recursos para acceder a formación de élite.
-        </div>
-        <button
-          onClick={(e) => { e.stopPropagation(); handleDonar(50, "Tecnificar"); }}
-          style={{ width: "100%", background: "var(--color-accent)", color: "#000", border: "none", padding: "14px", borderRadius: "0 0 10px 10px", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-        >
-          Apoyar 50 ⚡
-        </button>
-      </div>
-
+      {/* Sponsors — ocultos durante el periodo de prueba (ver SHOW_SPONSORS arriba) */}
+      {SHOW_SPONSORS && (
+      <>
       {/* Sponsor Principal */}
       <div>
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "2px", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 16, paddingLeft: 2 }}>SPONSOR PRINCIPAL</div>
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "28px 0", display: "flex", justifyContent: "center", alignItems: "center" }}>
-          {/* Nike swoosh */}
-          <svg viewBox="0 0 400 120" width="160" height="48" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M2,98 C2,98 72,58 165,28 C235,4 300,-2 338,14 C363,24 374,44 360,60 C346,76 308,82 270,74 C232,66 175,42 128,58 C85,72 42,110 2,98 Z"
-              fill="white"
-              opacity="0.92"
-            />
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "32px 0", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10 }}>
+          {/* Nike swoosh — logo oficial */}
+          <svg viewBox="0 0 24 24" width="220" height="80" fill="white" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nike">
+            <path d="M24 7.8L6.442 15.276c-1.456.616-2.679.925-3.668.925-1.12 0-1.933-.392-2.437-1.177-.317-.504-.41-1.143-.28-1.918.13-.775.476-1.6 1.036-2.478.467-.71 1.232-1.643 2.297-2.8-.42.672-.715 1.31-.886 1.91-.32 1.13-.13 2.006.572 2.625.522.467 1.222.7 2.1.7.71 0 1.503-.15 2.38-.45L24 7.8z" />
           </svg>
+          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 6, color: "#fff", fontFamily: "Arial Black, Arial, sans-serif", textTransform: "uppercase" }}>NIKE</div>
         </div>
       </div>
 
@@ -368,24 +514,52 @@ export default function AboutScreen() {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* CTA */}
-      <div style={{ background: "#FAFAF0", borderRadius: 10, padding: "22px 20px 24px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", background: "var(--color-accent)", opacity: 0.15 }} />
-        <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "#888", marginBottom: 8 }}>Únete</div>
-        <div style={{ fontFamily: "var(--font-heading)", fontSize: 26, lineHeight: 1.05, color: "#000", marginBottom: 12 }}>
+      <div style={{ padding: "24px 20px", background: "#fff", borderRadius: 10, color: "#000", position: "relative", overflow: "hidden", marginTop: 4 }}>
+        <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "var(--accent)", opacity: 0.15, pointerEvents: "none" }} />
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#888", marginBottom: 8, textTransform: "uppercase" }}>Únete</div>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, lineHeight: 1.1, marginBottom: 10, color: "#000" }}>
           ¿QUIERES SER<br />COLABORADOR<br />DE EL PACTO?
         </div>
-        <div style={{ fontSize: 13, color: "#3b82f6", lineHeight: 1.55, marginBottom: 20 }}>
-          Llegamos a más de 1,200 fans <strong style={{ color: "#1d4ed8" }}>comprometidos</strong> con el basket. Si tu marca quiere estar donde está la comunidad, hablemos.
+        <div style={{ fontSize: 11, color: "#555", lineHeight: 1.6, marginBottom: 16 }}>
+          Llegamos a más de 1,200 fans comprometidos con el basket. Si tu marca quiere estar donde está la comunidad, hablemos.
         </div>
         <button
           onClick={() => setContactOpen(true)}
-          style={{ background: "#111", color: "#fff", border: "none", padding: "13px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-body)" }}
+          style={{ background: "#000", color: "#fff", border: "none", padding: "11px 22px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
         >
           Escribirnos →
         </button>
       </div>
+
+      {/* Legal footer */}
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#444", letterSpacing: 0.5 }}>© 2025 Club Bàsquet El Pacto · NIF G56373806</div>
+        <div style={{ display: "flex", gap: 20 }}>
+          <button onClick={() => setLegalOpen("terms")} style={{ background: "transparent", border: "none", fontSize: 11, color: "var(--color-muted)", cursor: "pointer", fontFamily: "var(--font-body)", textDecoration: "underline", padding: 0 }}>Términos y condiciones</button>
+          <button onClick={() => setLegalOpen("privacy")} style={{ background: "transparent", border: "none", fontSize: 11, color: "var(--color-muted)", cursor: "pointer", fontFamily: "var(--font-body)", textDecoration: "underline", padding: 0 }}>Política de privacidad</button>
+        </div>
+      </div>
+
+      {/* Legal modal */}
+      {legalOpen && (
+        <div className="fixed inset-0 flex items-end lg:items-center justify-center lg:p-6" style={{ zIndex: 500, background: "rgba(0,0,0,0.85)" }}>
+          <div className="rounded-t-2xl lg:rounded-2xl" style={{ background: "#111", display: "flex", flexDirection: "column", maxWidth: 640, width: "100%", height: "90dvh", maxHeight: "90dvh", overflow: "hidden" }}>
+            <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+              <div style={{ flex: 1, fontSize: 15, fontWeight: 800 }}>
+                {legalOpen === "privacy" ? "Política de Privacidad" : "Términos y Condiciones"}
+              </div>
+              <button onClick={() => setLegalOpen(null)} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", color: "#aaa", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            </div>
+            <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px", fontSize: 12, lineHeight: 1.75, color: "#ccc", whiteSpace: "pre-wrap" }}>
+              {legalOpen === "privacy" ? PRIVACY_TEXT : TERMS_TEXT}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Contact modal */}
       {contactOpen && (
@@ -448,9 +622,10 @@ export default function AboutScreen() {
             <div style={{ padding: "0 20px 20px", display: "flex", justifyContent: "flex-end" }}>
               <button
                 onClick={handleContactSend}
-                style={{ background: "var(--color-accent)", color: "#000", border: "none", padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-heading)", letterSpacing: 1 }}
+                disabled={sendingContact}
+                style={{ background: "var(--color-accent)", color: "#000", border: "none", padding: "12px 28px", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: sendingContact ? "not-allowed" : "pointer", fontFamily: "var(--font-heading)", letterSpacing: 1, opacity: sendingContact ? 0.7 : 1 }}
               >
-                ENVIAR →
+                {sendingContact ? "ENVIANDO…" : "ENVIAR →"}
               </button>
             </div>
           </div>

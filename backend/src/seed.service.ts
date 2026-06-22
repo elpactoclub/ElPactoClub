@@ -7,6 +7,9 @@ import { Raffle } from './gamification/raffle.entity';
 import { Vote } from './gamification/vote.entity';
 import { Post, Message } from './community/post.entity';
 import { User } from './users/user.entity';
+import { StoreBenefit } from './store/store-benefit.entity';
+import { Project } from './projects/project.entity';
+import { ClubCreator } from './club-creators/club-creator.entity';
 import { BadgesService } from './badges/badges.service';
 import { MissionsService } from './missions/missions.service';
 
@@ -25,6 +28,9 @@ export class SeedService implements OnApplicationBootstrap {
     @InjectRepository(Post)    private readonly postsRepo:    Repository<Post>,
     @InjectRepository(Message) private readonly messagesRepo: Repository<Message>,
     @InjectRepository(User)    private readonly usersRepo:    Repository<User>,
+    @InjectRepository(StoreBenefit) private readonly benefitsRepo: Repository<StoreBenefit>,
+    @InjectRepository(Project) private readonly projectsRepo: Repository<Project>,
+    @InjectRepository(ClubCreator) private readonly clubCreatorsRepo: Repository<ClubCreator>,
     private readonly badges:   BadgesService,
     private readonly missions: MissionsService,
   ) {}
@@ -39,8 +45,131 @@ export class SeedService implements OnApplicationBootstrap {
     await this.seedEvents();
     await this.seedVotes();
     await this.seedCreators();
+    await this.seedStoreBenefits();
+    await this.seedProjects();
+    await this.seedClubCreators();
+    await this.backfillSocioNumbers();
 
     console.log('✅ Seed complete');
+  }
+
+  // ── Asigna Nº de socio a socios que no lo tengan, por antigüedad ────────────
+  private async backfillSocioNumbers() {
+    const missing = await this.usersRepo
+      .createQueryBuilder('u')
+      .where('u.isSocio = :v', { v: true })
+      .andWhere('u.socioNumber IS NULL')
+      .orderBy('u.socioSince', 'ASC', 'NULLS FIRST')
+      .addOrderBy('u.createdAt', 'ASC')
+      .getMany();
+    if (missing.length === 0) return;
+
+    const maxResult = await this.usersRepo
+      .createQueryBuilder('u')
+      .select('MAX(u.socioNumber)', 'max')
+      .where('u.isSocio = :v', { v: true })
+      .getRawOne<{ max: number | null }>();
+    let next = (maxResult?.max ?? 0) + 1;
+
+    for (const u of missing) {
+      await this.usersRepo.update(u.id, { socioNumber: next });
+      next++;
+    }
+    console.log(`🎫 Asignados ${missing.length} Nº de socio`);
+
+    // Rellenar fecha de socio (DESDE) para socios sin ella → usar su fecha de registro
+    const noSince = await this.usersRepo
+      .createQueryBuilder('u')
+      .where('u.isSocio = :v', { v: true })
+      .andWhere('u.socioSince IS NULL')
+      .getMany();
+    for (const u of noSince) {
+      await this.usersRepo.update(u.id, { socioSince: u.createdAt ?? new Date() });
+    }
+    if (noSince.length) console.log(`📅 Fecha de socio asignada a ${noSince.length} socios`);
+  }
+
+  // ── Club creators showcase ─────────────────────────────────────────────────
+  private async seedClubCreators() {
+    if (await this.clubCreatorsRepo.count() > 0) return;
+    const showcase = [
+      { email: 'elvis@elpacto.com',   name: 'Elvis Ude',      photoUrl: '/imagenes/elvis.jpg' },
+      { email: 'herson@elpacto.com',  name: 'Herson',         photoUrl: '/imagenes/herson.jpg' },
+      { email: 'violeta@elpacto.com', name: 'Violeta Verano', photoUrl: '/imagenes/violeta.jpg' },
+    ];
+    let order = 0;
+    for (const s of showcase) {
+      const user = await this.usersRepo.findOne({ where: { email: s.email } });
+      if (!user) continue;
+      await this.clubCreatorsRepo.save({
+        userId: user.id,
+        name: s.name,
+        photoUrl: s.photoUrl,
+        displayOrder: order++,
+        isActive: true,
+      });
+    }
+    console.log('  ✔ Club creators');
+  }
+
+  // ── Impact projects ──────────────────────────────────────────────────────
+  private async seedProjects() {
+    if (await this.projectsRepo.count() > 0) return;
+    await this.projectsRepo.save([
+      {
+        slug: 'india',
+        emoji: '🇮🇳',
+        title: 'India · Dribble Academy',
+        subtitle: 'Llevamos el baloncesto a India',
+        summary: 'Colaboramos con la Fundación Dribble Academy para llevar el baloncesto a India — equipo conjunto, formación local y colaboradores estratégicos.',
+        description: 'Colaboramos con la Fundación Dribble Academy para llevar el baloncesto a India. Equipo conjunto Dribble Academy El Pacto, formación de community manager local, material deportivo y colaboradores estratégicos. Cada crédito donado va directo a infraestructura básica: canchas, balones y becas de entrenamiento.',
+        color: '#F59E0B',
+        badgeLabel: 'Dribble Spirit 🇮🇳',
+        displayOrder: 0,
+        isActive: true,
+      },
+      {
+        slug: 'tecnificar',
+        emoji: '🎓',
+        title: 'Tecnificar',
+        subtitle: 'Becas para jóvenes con talento',
+        summary: 'Becas de tecnificación para jóvenes jugadores con talento que no tienen recursos para acceder a formación de élite.',
+        description: 'Becas de tecnificación para jóvenes jugadores con talento que no tienen recursos para acceder a formación de élite. Material deportivo, seguimiento, mentoría y colaboradores estratégicos. El club anuncia al primer becado en exclusiva si llegamos a la misión colectiva.',
+        color: '#A78BFA',
+        badgeLabel: 'Mentor 🎓',
+        displayOrder: 1,
+        isActive: true,
+      },
+    ]);
+    console.log('  ✔ Projects');
+  }
+
+  // ── Store benefits ───────────────────────────────────────────────────────
+  private async seedStoreBenefits() {
+    if (await this.benefitsRepo.count() > 0) return;
+    await this.benefitsRepo.save([
+      {
+        name: 'Basketball Emotion',
+        description: 'La mayor tienda de basket de España',
+        discount: '5%',
+        emoji: '🏀',
+        color: '#FF6B1A',
+        link: 'https://www.basketballemotion.com',
+        displayOrder: 0,
+        isActive: true,
+      },
+      {
+        name: 'Hoops',
+        description: 'Material deportivo oficial del club',
+        discount: '10%',
+        emoji: '⚡',
+        color: '#F0E040',
+        link: '',
+        displayOrder: 1,
+        isActive: true,
+      },
+    ]);
+    console.log('  ✔ Store benefits');
   }
 
   // ── Raffles ────────────────────────────────────────────────────────────────
@@ -95,14 +224,6 @@ export class SeedService implements OnApplicationBootstrap {
 
   // ── Votes ──────────────────────────────────────────────────────────────────
   private async seedVotes() {
-    // Reset votes with fake results (legacy seed data)
-    await this.votesRepo
-      .createQueryBuilder()
-      .delete()
-      .where('results != :empty::jsonb', { empty: '{}' })
-      .execute()
-      .catch(() => {});
-
     const exists = await this.votesRepo
       .createQueryBuilder('v')
       .where('v.votationType IS NOT NULL')

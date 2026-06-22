@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DmService } from './dm.service';
+import { SendDmDto } from './dto/send-dm.dto';
 
 @ApiTags('dm')
 @ApiBearerAuth()
@@ -31,7 +33,8 @@ export class DmController {
   }
 
   @Post('send')
-  send(@Req() req: any, @Body() body: { recipientId: string; content: string }) {
+  @Throttle({ default: { ttl: 5000, limit: 1 } })
+  send(@Req() req: any, @Body() body: SendDmDto) {
     return this.svc.send(req.user.id, body.recipientId, body.content);
   }
 

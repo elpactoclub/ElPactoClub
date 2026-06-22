@@ -67,6 +67,20 @@ function StatCard({ label, value, sub, icon, color }: StatCardProps) {
   );
 }
 
+function SkeletonStatCard() {
+  return (
+    <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 18px 16px", position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "#1e1e1e" }} />
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <div className="skeleton" style={{ width: 80, height: 11, borderRadius: 4 }} />
+        <div className="skeleton" style={{ width: 32, height: 32, borderRadius: 8 }} />
+      </div>
+      <div className="skeleton" style={{ width: 56, height: 30, borderRadius: 6, marginBottom: 8 }} />
+      <div className="skeleton" style={{ width: 100, height: 11, borderRadius: 4 }} />
+    </div>
+  );
+}
+
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div style={{ marginBottom: 14, display: "flex", alignItems: "baseline", gap: 10 }}>
@@ -79,6 +93,26 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastMsg, setBroadcastMsg] = useState("");
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [broadcastDone, setBroadcastDone] = useState(false);
+
+  async function sendBroadcast(e: React.FormEvent) {
+    e.preventDefault();
+    if (!broadcastTitle.trim() || !broadcastMsg.trim()) return;
+    setBroadcasting(true);
+    try {
+      await fetch(`${API}/admin/broadcast`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ title: broadcastTitle.trim(), message: broadcastMsg.trim() }),
+      });
+      setBroadcastDone(true);
+      setBroadcastTitle(""); setBroadcastMsg("");
+      setTimeout(() => setBroadcastDone(false), 3000);
+    } finally { setBroadcasting(false); }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("el_pacto_token");
@@ -106,8 +140,35 @@ export default function DashboardPage() {
   if (error) return <p style={{ color: "#ef4444" }}>{error}</p>;
   if (!stats) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 60, color: "#666", fontSize: 14 }}>
-        Cargando estadísticas...
+      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+        <div style={{ background: "linear-gradient(135deg, #131310, #0c0c0c)", border: "1px solid rgba(240,224,64,0.08)", borderRadius: 16, padding: "22px 24px", marginBottom: 24 }}>
+          <div className="skeleton" style={{ width: 100, height: 10, borderRadius: 4, marginBottom: 10 }} />
+          <div className="skeleton" style={{ width: 280, height: 24, borderRadius: 6, marginBottom: 10 }} />
+          <div className="skeleton" style={{ width: 180, height: 13, borderRadius: 4 }} />
+        </div>
+        <section style={{ marginBottom: 28 }}>
+          <div className="skeleton" style={{ width: 100, height: 18, borderRadius: 6, marginBottom: 14 }} />
+          <div className="admin-grid-3">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonStatCard key={i} />)}
+          </div>
+        </section>
+        <section>
+          <div className="skeleton" style={{ width: 100, height: 18, borderRadius: 6, marginBottom: 14 }} />
+          <div className="admin-grid-4">
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)}
+          </div>
+        </section>
+        <style jsx>{`
+          .admin-grid-3 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+          .admin-grid-4 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+          @media (min-width: 560px) {
+            .admin-grid-3, .admin-grid-4 { grid-template-columns: repeat(2, 1fr); }
+          }
+          @media (min-width: 900px) {
+            .admin-grid-3 { grid-template-columns: repeat(3, 1fr); }
+            .admin-grid-4 { grid-template-columns: repeat(4, 1fr); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -161,13 +222,27 @@ export default function DashboardPage() {
       </section>
 
       {/* Contenido */}
-      <section>
+      <section style={{ marginBottom: 28 }}>
         <SectionHeader title="CONTENIDO" subtitle="Actividad del club" />
         <div className="admin-grid-4">
           <StatCard label="Eventos" value={stats.events.total} icon="📅" color="#60A5FA" />
           <StatCard label="Votaciones" value={stats.votes.total} icon="🗳" color="#F0E040" />
           <StatCard label="Misiones" value={stats.missions.total} icon="🎯" color="#F59E0B" />
           <StatCard label="Posts" value={stats.posts.total} icon="💬" color="#22C55E" />
+        </div>
+      </section>
+
+      {/* Notificación broadcast */}
+      <section>
+        <SectionHeader title="NOTIFICACIÓN A TODOS" subtitle="Llega a todos los usuarios registrados" />
+        <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px" }}>
+          <form onSubmit={sendBroadcast} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} placeholder="Título (ej: ¡Nuevo evento esta noche!)" className="admin-input" required />
+            <input value={broadcastMsg} onChange={(e) => setBroadcastMsg(e.target.value)} placeholder="Mensaje (ej: No te pierdas el MVP'S TOUR 3x3 — inscríbete ya)" className="admin-input" required />
+            <button type="submit" disabled={broadcasting || broadcastDone} style={{ padding: "10px 20px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none", background: broadcastDone ? "#22C55E" : "var(--color-accent)", color: "#000", alignSelf: "flex-start", transition: "background 0.2s" }}>
+              {broadcasting ? "Enviando..." : broadcastDone ? "✓ Enviado a todos" : "📢 Enviar a todos los fans"}
+            </button>
+          </form>
         </div>
       </section>
 

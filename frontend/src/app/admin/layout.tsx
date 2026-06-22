@@ -16,11 +16,18 @@ function decodeToken(token: string): { role?: string } | null {
 }
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: "📊", roles: ["admin", "creator"] },
-  { href: "/admin/events", label: "Eventos", icon: "📅", roles: ["admin", "creator"] },
-  { href: "/admin/users", label: "Usuarios", icon: "👥", roles: ["admin"] },
-  { href: "/admin/votes", label: "Votaciones", icon: "🗳", roles: ["admin"] },
-  { href: "/admin/missions", label: "Misiones", icon: "🎯", roles: ["admin"] },
+  { href: "/admin/dashboard", label: "Dashboard",  icon: "📊", roles: ["admin", "creator"] },
+  { href: "/admin/events",    label: "Eventos",     icon: "📅", roles: ["admin", "creator"] },
+  { href: "/admin/users",     label: "Usuarios",    icon: "👥", roles: ["admin"] },
+  { href: "/admin/posts",     label: "Posts",       icon: "💬", roles: ["admin"] },
+  { href: "/admin/votes",     label: "Votaciones",  icon: "🗳", roles: ["admin"] },
+  { href: "/admin/raffles",   label: "Sorteos",     icon: "🎁", roles: ["admin"] },
+  { href: "/admin/store-benefits", label: "Beneficios", icon: "🏷️", roles: ["admin"] },
+  { href: "/admin/projects",  label: "Proyectos",   icon: "🌍", roles: ["admin"] },
+  { href: "/admin/club-creators", label: "Creadores", icon: "🎬", roles: ["admin"] },
+  { href: "/admin/messages",  label: "Mensaje directo", icon: "✉️", roles: ["admin"] },
+  { href: "/admin/missions",  label: "Misiones",    icon: "🎯", roles: ["admin"] },
+  { href: "/admin/pricing",   label: "Precios",     icon: "💰", roles: ["admin"] },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,20 +36,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [role, setRole] = useState<AdminRole | null>(null);
   const [ready, setReady] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [avatar, setAvatar] = useState<string>("");
+  const [adminName, setAdminName] = useState<string>("Admin");
 
   useEffect(() => {
-    if (pathname === "/admin/login") {
-      setReady(true);
-      return;
-    }
     const token = localStorage.getItem("el_pacto_token");
     if (!token) {
-      router.replace("/admin/login");
+      // Sin sesión: volver a la app (login normal)
+      router.replace("/");
       return;
     }
     const decoded = decodeToken(token);
     if (!decoded?.role) {
-      router.replace("/admin/login");
+      router.replace("/");
       return;
     }
     if (decoded.role === "creator") {
@@ -51,7 +57,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
     if (decoded.role !== "admin") {
-      router.replace("/admin/login");
+      // No es admin: a la app
+      router.replace("/");
       return;
     }
     setRole("admin");
@@ -60,20 +67,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
+  // Cargar foto y nombre reales del perfil
+  useEffect(() => {
+    const token = localStorage.getItem("el_pacto_token");
+    if (!token) return;
+    const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
+    fetch(`${API}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((u) => { if (u) { if (u.name) setAdminName(u.name); setAvatar(u.avatar ?? ""); } })
+      .catch(() => {});
+  }, []);
+
   if (!ready) return null;
-  if (pathname === "/admin/login") return <>{children}</>;
 
   const visibleNav = NAV_ITEMS.filter((item) => role && item.roles.includes(role));
 
   function handleLogout() {
     localStorage.removeItem("el_pacto_token");
-    router.push("/admin/login");
+    router.push("/");
   }
 
   const currentPage = visibleNav.find((it) => pathname.startsWith(it.href));
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a", color: "#fff", fontFamily: "var(--font-sans)" }}>
+    <div style={{ display: "flex", height: "100dvh", overflow: "hidden", background: "#0a0a0a", color: "#fff", fontFamily: "var(--font-sans)" }}>
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
@@ -137,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </Link>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "14px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <nav style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "14px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
           {visibleNav.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
@@ -170,11 +187,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Footer */}
         <div style={{ padding: "14px 12px 18px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 8px 10px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#aaa", flexShrink: 0 }}>
-              {role?.[0]?.toUpperCase() ?? "?"}
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#aaa", flexShrink: 0, overflow: "hidden" }}>
+              {avatar && (avatar.startsWith("http") || avatar.startsWith("data:"))
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : (adminName?.[0]?.toUpperCase() ?? "A")}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", textTransform: "capitalize" }}>{role}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>{adminName}</div>
               <div style={{ fontSize: 10, color: "#777" }}>Sesión activa</div>
             </div>
           </div>
@@ -204,7 +224,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0 }}>
         {/* Topbar */}
         <header style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 22px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "#0d0d0d", position: "sticky", top: 0, zIndex: 30 }}>
           <button
@@ -223,7 +243,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main style={{ flex: 1, overflowY: "auto", padding: "26px 22px 32px" }}>
+        <main className="panel-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "26px 22px 32px" }}>
           {children}
         </main>
       </div>

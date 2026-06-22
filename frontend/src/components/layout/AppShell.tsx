@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { registerPush } from "@/services/pushNotifications";
 import TopNav from "./TopNav";
 import BottomNav from "./BottomNav";
 import DesktopSidebar from "./DesktopSidebar";
@@ -26,6 +27,8 @@ import ViewPostModal from "@/components/community/ViewPostModal";
 import ShareCarnetModal from "@/components/profile/ShareCarnetModal";
 import PersonalizeModal from "@/components/profile/PersonalizeModal";
 import ProjectPageModal from "@/components/projects/ProjectPageModal";
+import UserSearchModal from "@/components/users/UserSearchModal";
+import UserProfileModal from "@/components/users/UserProfileModal";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
@@ -45,12 +48,35 @@ export default function AppShell() {
   const activeTab = useUIStore((s) => s.activeTab);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const Screen = screens[activeTab] || HomeScreen;
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, [activeTab]);
+
+  const sessionId = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    let id = localStorage.getItem("ep_session_id");
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem("ep_session_id", id); }
+    return id;
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const ping = () => api.post("/users/visitor-ping", { sessionId }).catch(() => {});
+    ping();
+    const id = setInterval(ping, 60000);
+    return () => clearInterval(id);
+  }, [sessionId]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
     const ping = () => api.post("/users/me/ping").catch(() => {});
     ping();
     const id = setInterval(ping, 60000);
+    // Register web push on login
+    const token = localStorage.getItem("el_pacto_token");
+    if (token) registerPush(token);
     return () => clearInterval(id);
   }, [isAuthenticated]);
 
@@ -61,7 +87,7 @@ export default function AppShell() {
         <TopNav />
       </div>
       <NotificationPanel />
-      <main className="flex-1 overflow-y-auto flex flex-col">
+      <main ref={mainRef} className="flex-1 overflow-y-auto flex flex-col" style={{ overscrollBehavior: "contain" }}>
         <Screen />
       </main>
       <div className="lg:hidden">
@@ -80,6 +106,8 @@ export default function AppShell() {
       <ShareCarnetModal />
       <PersonalizeModal />
       <ProjectPageModal />
+      <UserSearchModal />
+      <UserProfileModal />
     </div>
   );
 }

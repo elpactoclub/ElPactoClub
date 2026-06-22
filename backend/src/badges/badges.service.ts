@@ -19,6 +19,7 @@ export const BADGE_DEFINITIONS: Array<Omit<Badge, never>> = [
   { code: 'reclutador', name: 'Reclutador', emoji: '🤝', description: 'Invita a 3 amigos que se hacen socios', isSecret: false, sortOrder: 12 },
   { code: 'semana_perfecta', name: 'Semana Perfecta', emoji: '⭐', description: 'Completa todas las misiones de una semana', isSecret: false, sortOrder: 13 },
   { code: 'og_dia_1', name: 'OG · Desde el Día 1', emoji: '🥇', description: 'Primer fan en entrar al club', isSecret: true, sortOrder: 14 },
+  { code: 'temporada_verano_2026', name: 'Badge de Verano 2026', emoji: '⭐', description: 'Consiguiste 1.000 XP durante la Temporada Verano 2026', isSecret: false, sortOrder: 15 },
 ];
 
 @Injectable()

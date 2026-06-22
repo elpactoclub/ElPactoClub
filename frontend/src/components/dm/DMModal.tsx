@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
+import { getSocket } from "@/services/socket";
 
 interface Conversation {
   partnerId: string;
@@ -47,7 +48,7 @@ function timeAgo(iso?: string) {
 }
 
 export default function DMModal() {
-  const { isDMOpen, closeDM, showToast, dmOpenWithCreator } = useUIStore();
+  const { isDMOpen, closeDM, showToast, setTab, dmOpenWithCreator, dmOpenWithUser } = useUIStore();
   const { isAuthenticated, credits } = useUserStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -55,6 +56,11 @@ export default function DMModal() {
   const [thread, setThread] = useState<ThreadMsg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [partnerTyping, setPartnerTyping] = useState(false);
+  const activeIdRef = useRef<string | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingSentRef = useRef(false);
+  useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
 
   const loadConversations = useCallback(async () => {
     setLoading(true);
@@ -83,11 +89,72 @@ export default function DMModal() {
     }
   }, []);
 
+  // Real-time: incoming DMs
+  useEffect(() => {
+    if (!isDMOpen || !isAuthenticated) return;
+    let sock: ReturnType<typeof getSocket> | null = null;
+    try {
+      sock = getSocket();
+      const handleTyping = (data: { senderId: string; isTyping: boolean }) => {
+        if (data.senderId !== activeIdRef.current) return;
+        setPartnerTyping(data.isTyping);
+        if (data.isTyping) {
+          // Auto-clear after 4s in case stop event is lost
+          setTimeout(() => setPartnerTyping(false), 4000);
+        }
+      };
+      sock.on("dm_typing", handleTyping);
+
+      const handleDM = (dm: { id: string; content: string; senderId: string; senderName: string; createdAt: string }) => {
+        // Append to active thread if it's from the current partner
+        if (activeIdRef.current === dm.senderId) {
+          setThread((prev) => {
+            if (prev.some((m) => m.id === dm.id)) return prev;
+            return [...prev, { id: dm.id, content: dm.content, isMe: false, createdAt: dm.createdAt }];
+          });
+          api.post(`/dm/read/${dm.senderId}`).catch(() => {});
+        }
+        // Update conversations list
+        setConversations((prev) => {
+          const exists = prev.some((c) => c.partnerId === dm.senderId);
+          if (exists) {
+            return prev.map((c) => c.partnerId === dm.senderId
+              ? { ...c, lastMsg: dm.content, time: dm.createdAt, unread: activeIdRef.current !== dm.senderId }
+              : c
+            );
+          }
+          // New conversation: add it with minimal info
+          return [{ partnerId: dm.senderId, name: dm.senderName, avatar: dm.senderName[0] ?? "?", role: "fan", isCreator: false, lastMsg: dm.content, time: dm.createdAt, unread: true }, ...prev];
+        });
+      };
+      sock.on("new_dm", handleDM);
+      return () => {
+        sock?.off("dm_typing", handleTyping);
+        sock?.off("new_dm", handleDM);
+      };
+    } catch {}
+  }, [isDMOpen, isAuthenticated]);
+
   useEffect(() => {
     if (!isDMOpen || !isAuthenticated) return;
 
     const init = async () => {
       const convs = await loadConversations();
+
+      // Abrir hilo directo con un usuario por id (fans, no solo creadores)
+      if (dmOpenWithUser) {
+        const u = dmOpenWithUser;
+        useUIStore.setState({ dmOpenWithUser: null });
+        const existing = convs.find((c) => c.partnerId === u.id);
+        openThread(existing ?? {
+          partnerId: u.id,
+          name: u.name,
+          avatar: u.avatar ?? (u.name[0] ?? "?"),
+          role: u.role ?? "fan",
+          isCreator: u.role === "creator",
+        });
+        return;
+      }
 
       if (dmOpenWithCreator) {
         useUIStore.setState({ dmOpenWithCreator: null });
@@ -128,9 +195,38 @@ export default function DMModal() {
     loadConversations();
   };
 
+  function emitTyping(isTyping: boolean) {
+    if (!partner) return;
+    try {
+      getSocket().emit("dm_typing", { recipientId: partner.partnerId, isTyping });
+    } catch {}
+  }
+
+  function handleInputChange(val: string) {
+    setInput(val);
+    if (!partner) return;
+    if (!typingSentRef.current && val.length > 0) {
+      typingSentRef.current = true;
+      emitTyping(true);
+    }
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      typingSentRef.current = false;
+      emitTyping(false);
+    }, 2000);
+    if (val.length === 0) {
+      typingSentRef.current = false;
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      emitTyping(false);
+    }
+  }
+
   const sendMessage = async () => {
     const content = input.trim();
     if (!content || !partner) return;
+    typingSentRef.current = false;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    emitTyping(false);
     setInput("");
     try {
       const r = await api.post("/dm/send", { recipientId: partner.partnerId, content });
@@ -141,7 +237,7 @@ export default function DMModal() {
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message;
-      if (msg?.includes("credits") || msg?.includes("Insufficient")) showToast("Créditos insuficientes ❌");
+      if (msg?.includes("credits") || msg?.includes("Insufficient")) { showToast("Necesitas más créditos ⚡"); closeDM(); setTab("store"); }
       else if (msg?.includes("caracteres")) showToast(`Máximo 100 caracteres ❌`);
       else showToast("No se pudo enviar el mensaje ❌");
       setInput(content);
@@ -192,7 +288,7 @@ export default function DMModal() {
               <div style={{ padding: 40, textAlign: "center", fontSize: 13, color: "var(--color-muted)", lineHeight: 1.6 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
                 <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>Sin mensajes aún</div>
-                <div>Ve a <strong>El Pacto</strong> y toca el botón Mensaje en la tarjeta de un creador para empezar</div>
+                <div>Abre el perfil de un fan o creador y toca <strong>Enviar mensaje</strong> para empezar una conversación</div>
               </div>
             )}
             {conversations.map((c) => (
@@ -239,7 +335,32 @@ export default function DMModal() {
                   </div>
                 </div>
               ))}
+              {partnerTyping && (
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: colorFor(partner.partnerId), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: "#fff" }}>
+                    {initials(partner.name)}
+                  </div>
+                  <div style={{ background: "#2a2a2a", borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 4 }}>
+                    <span className="typing-dot" />
+                    <span className="typing-dot" style={{ animationDelay: "0.18s" }} />
+                    <span className="typing-dot" style={{ animationDelay: "0.36s" }} />
+                  </div>
+                </div>
+              )}
             </div>
+            <style>{`
+              .typing-dot {
+                display: inline-block;
+                width: 7px; height: 7px;
+                border-radius: 50%;
+                background: #777;
+                animation: typingBounce 0.8s ease-in-out infinite;
+              }
+              @keyframes typingBounce {
+                0%, 60%, 100% { transform: translateY(0); }
+                30% { transform: translateY(-5px); background: #aaa; }
+              }
+            `}</style>
 
             {isCreatorChat && (
               <div style={{ margin: "0 16px 8px", padding: "8px 14px", background: "#222", border: "1px solid rgba(240,224,64,0.2)", borderRadius: 8, fontSize: 11, color: "var(--color-muted)", textAlign: "center" }}>
@@ -254,7 +375,7 @@ export default function DMModal() {
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                   maxLength={isCreatorChat ? 100 : undefined}
                   placeholder={isCreatorChat ? `Escribe... (⚡${partner.costPerMsg ?? 50})` : "Escribe un mensaje..."}

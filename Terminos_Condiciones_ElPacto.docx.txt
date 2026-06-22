@@ -1,0 +1,78 @@
+﻿TÉRMINOS Y CONDICIONES
+Club Bàsquet El Pacto — Plataforma de socios
+Última actualización: mayo de 2025
+1. Objeto y Ámbito de Aplicación
+Las presentes Condiciones de Uso y Membresía (en adelante, "las Condiciones") regulan el acceso y uso de la aplicación web del Club Bàsquet El Pacto (en adelante, "el Club" o "la Plataforma"), así como la relación jurídica entre el Club y sus socios.
+El Club está constituido como entidad sin ánimo de lucro con NIF G56373806, domiciliada en Calle Jeroni Marsal, núm. 68, planta 4, puerta 1, 08340 Vilassar de Mar (Barcelona).
+El acceso y uso de la Plataforma implica la aceptación plena y sin reservas de las presentes Condiciones, así como de la Política de Privacidad y la Política de Cookies del Club. Si no está de acuerdo con estas Condiciones, deberá abstenerse de utilizar la Plataforma.
+2. Registro y Cuenta de Usuario
+Para acceder a las funcionalidades completas de la Plataforma es necesario crear una cuenta de usuario. Al registrarse, el usuario se compromete a:
+* Facilitar información veraz, completa y actualizada.
+* Mantener la confidencialidad de sus credenciales de acceso (correo electrónico y contraseña).
+* Notificar al Club de forma inmediata cualquier uso no autorizado de su cuenta a través de soporte@elpactoclub.com.
+* No compartir su cuenta con terceras personas.
+La Plataforma ofrece acceso limitado a determinados contenidos públicos sin necesidad de registro. El acceso a las funcionalidades propias de la membresía (votaciones, chat, encuestas, eventos y otras) requiere ser socio activo.
+Menores de edad: el registro de menores de 14 años requiere el consentimiento expreso y verificable de su padre, madre o tutor legal. Los menores de entre 14 y 18 años podrán registrarse de forma autónoma, aunque el Club podrá requerir confirmación del tutor legal cuando lo estime oportuno.
+3. Membresía
+3.1 Modalidad y precio
+El Club ofrece una única modalidad de membresía con cuota mensual. El precio vigente en cada momento se indica de forma clara en la Plataforma antes de completar la suscripción. A título orientativo, la cuota mensual es de aproximadamente 3 euros, si bien el Club se reserva el derecho a modificar este importe previo aviso con al menos 30 días de antelación.
+3.2 Facturación y pago
+La cuota de membresía se factura de forma mensual y recurrente a partir de la fecha de alta. El cobro se realiza a través de Stripe, Inc., proveedor de servicios de pago seguro. El Club no almacena datos de tarjeta bancaria ni de domiciliación; toda la información de pago es gestionada íntegramente por Stripe bajo los estándares de seguridad PCI-DSS.
+En caso de impago o rechazo del cargo, el Club podrá suspender el acceso a las funcionalidades de la membresía hasta que se regularice la situación.
+3.3 Duración y renovación
+La membresía no tiene periodo de permanencia mínimo. Se renueva automáticamente cada mes salvo que el socio la cancele antes de la fecha de renovación. El Club se reserva la posibilidad de establecer periodos mínimos de permanencia en el futuro, informando a los socios con la debida antelación.
+3.4 Baja voluntaria y reembolsos
+El socio puede darse de baja en cualquier momento desde su perfil en la Plataforma o contactando con soporte@elpactoclub.com. La baja tendrá efecto al final del periodo mensual en curso, manteniéndose el acceso hasta dicha fecha.
+No se realizarán reembolsos de cuotas ya abonadas, dado el bajo importe de la membresía mensual y la disponibilidad inmediata de todas las funcionalidades desde el momento del alta.
+4. Créditos de la Plataforma
+4.1 Qué son los créditos
+La Plataforma ofrece un sistema de créditos virtuales (en adelante, "Créditos") que los socios pueden adquirir de forma voluntaria para acceder a funcionalidades adicionales o intercambiarlos dentro de la Plataforma. Los Créditos no tienen valor monetario fuera de la Plataforma y no pueden canjearse por dinero en efectivo ni transferirse a terceros fuera del entorno habilitado para ello.
+4.2 Adquisición de créditos
+Los Créditos se adquieren mediante la compra de packs disponibles en la Plataforma. El precio y contenido de cada pack se indican de forma clara antes de completar la compra. El pago se realiza a través de Stripe, en las mismas condiciones descritas en el apartado 3.2.
+4.3 Vigencia y reembolso de créditos
+Los Créditos adquiridos no caducan mientras la cuenta del socio permanezca activa. En caso de baja o cancelación de la cuenta, los Créditos no utilizados quedarán sin efecto y no darán lugar a reembolso, dada su naturaleza de bien digital de consumo inmediato conforme a lo previsto en el Real Decreto Legislativo 1/2007 (Ley General para la Defensa de los Consumidores y Usuarios).
+5. Venta de Productos del Club
+El Club podrá en el futuro ofrecer la venta de productos físicos (como ropa o merchandising oficial) a través de la Plataforma. En ese caso, se publicarán condiciones específicas de compra, envío, devolución y garantía con carácter previo al inicio de dicha actividad comercial, que se regirán por la normativa de consumo aplicable.
+6. Funcionalidades de la Plataforma
+Los socios activos tienen acceso a las siguientes funcionalidades, entre otras:
+* Votaciones: participación en decisiones del Club a través de votaciones habilitadas en la Plataforma.
+* Chat: comunicación entre socios y con jugadores del Club a través del sistema de mensajería interno.
+* Encuestas e interacciones: participación en encuestas y dinámicas publicadas por el Club.
+* Eventos: consulta y seguimiento de próximos eventos del Club.
+* Intercambio de créditos: uso y canje de Créditos dentro de la Plataforma.
+El Club se reserva el derecho a modificar, ampliar o restringir las funcionalidades disponibles en la Plataforma, informando a los socios con la debida antelación cuando dichos cambios sean sustanciales.
+7. Normas de Conducta y Uso Aceptable
+El uso de la Plataforma debe realizarse de forma respetuosa y conforme a la legalidad vigente. Queda expresamente prohibido:
+* Publicar o difundir contenidos ofensivos, discriminatorios, violentos, ilegales o que vulneren los derechos de terceros.
+* Acosar, amenazar o intimidar a otros socios, jugadores o miembros del Club.
+* Suplantar la identidad de otra persona o entidad.
+* Intentar acceder de forma no autorizada a sistemas, cuentas o datos de otros usuarios.
+* Realizar un uso comercial no autorizado de la Plataforma o sus contenidos.
+* Difundir spam, publicidad no solicitada o contenidos maliciosos.
+El incumplimiento de estas normas podrá dar lugar a la suspensión temporal o baja definitiva del socio, sin perjuicio de las acciones legales que pudieran corresponder.
+8. Suspensión y Baja de la Membresía
+El Club podrá suspender temporalmente o dar de baja definitivamente a un socio en los siguientes supuestos:
+* Impago: falta de abono de la cuota mensual en la fecha de renovación, tras el intento de cobro fallido.
+* Conducta inapropiada: incumplimiento de las normas de conducta establecidas en el apartado 7 de las presentes Condiciones o del Reglamento Interno del Club.
+* Uso fraudulento: manipulación del sistema de créditos, suplantación de identidad u otras conductas fraudulentas.
+* Incumplimiento de las presentes Condiciones: cualquier otro incumplimiento grave de lo establecido en este documento.
+En los casos de baja por conducta, el Club comunicará al socio los motivos de la decisión, que podrá ser recurrida mediante escrito dirigido a soporte@elpactoclub.com en el plazo de 15 días naturales.
+9. Propiedad Intelectual e Industrial
+Todos los contenidos de la Plataforma (diseño, logotipos, textos, imágenes, código fuente y demás elementos) son propiedad del Club o de sus legítimos titulares, y están protegidos por la legislación española e internacional en materia de propiedad intelectual e industrial.
+Queda prohibida cualquier reproducción, distribución, comunicación pública o transformación de dichos contenidos sin autorización expresa y escrita del Club, salvo para uso personal y privado del socio.
+10. Limitación de Responsabilidad
+El Club no garantiza la disponibilidad ininterrumpida de la Plataforma y no será responsable de los daños o perjuicios derivados de:
+* Interrupciones, errores técnicos o fallos del servicio ajenos al Club.
+* El contenido publicado por los propios usuarios en el chat u otras funcionalidades participativas.
+* El uso indebido de la Plataforma por parte del socio.
+* Causas de fuerza mayor o circunstancias ajenas al control razonable del Club.
+11. Modificaciones de las Condiciones
+El Club se reserva el derecho a modificar las presentes Condiciones en cualquier momento, por ejemplo para adaptarlas a cambios legales, nuevas funcionalidades o modificaciones en la estructura de la membresía o los precios.
+Cualquier modificación relevante será comunicada a los socios con al menos 30 días de antelación mediante notificación en la Plataforma o por correo electrónico. El uso continuado de la Plataforma tras la entrada en vigor de las nuevas condiciones implicará su aceptación.
+12. Legislación Aplicable y Jurisdicción
+Las presentes Condiciones se rigen por la legislación española, en particular por la Ley 34/2002, de Servicios de la Sociedad de la Información (LSSI), el Real Decreto Legislativo 1/2007, de Defensa de los Consumidores y Usuarios, y el Código Civil español.
+Para la resolución de cualquier controversia derivada del uso de la Plataforma o de la relación de membresía, las partes se someten, con renuncia expresa a cualquier otro fuero que pudiera corresponderles, a la jurisdicción de los Juzgados y Tribunales de Barcelona.
+Sin perjuicio de lo anterior, si el socio tiene la condición de consumidor, podrá acudir a la Junta Arbitral de Consumo u otros mecanismos de resolución alternativa de disputas previstos por la normativa vigente.
+13. Contacto
+Para cualquier consulta relacionada con las presentes Condiciones, puede contactar con el Club en: soporte@elpactoclub.com.
+Club Bàsquet El Pacto · NIF G56373806 · soporte@elpactoclub.com

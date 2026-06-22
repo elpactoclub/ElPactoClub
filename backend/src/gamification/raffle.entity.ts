@@ -35,6 +35,9 @@ export class Raffle {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: 'all' })
+  audience: string; // 'all' | 'socios' | 'fans' — who can participate
+
   @Column({ nullable: true })
   month: string; // e.g. "2025-06"
 

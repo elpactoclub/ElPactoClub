@@ -17,6 +17,7 @@ interface UserState {
   streak: number;
   tickets: number;
   isSocio: boolean;
+  socioNumber: number | null;
   socioSince: string | null;
   referralCode: string;
   rank: number | null;
@@ -36,6 +37,8 @@ interface UserState {
   polls: Record<string, number>;
   dailyClaimed: boolean;
   ruletaSpun: boolean;
+  xpMultiplier: number;
+  xpMultiplierExpiresAt: string | null;
 
   // Actions
   addCredits: (amount: number) => void;
@@ -98,6 +101,7 @@ const initialUserState = {
   streak: 0,
   tickets: 0,
   isSocio: false,
+  socioNumber: null,
   socioSince: null,
   referralCode: "",
   rank: null,
@@ -112,6 +116,8 @@ const initialUserState = {
   reactions: {},
   polls: {},
   dailyClaimed: false,
+  xpMultiplier: 1,
+  xpMultiplierExpiresAt: null,
   ruletaSpun: typeof window !== "undefined"
     ? localStorage.getItem("el_pacto_ruleta_date") === new Date().toDateString()
     : false,
@@ -201,6 +207,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
+        socioNumber: user.socioNumber ?? null,
         socioSince: user.socioSince ?? null,
         referralCode: user.referralCode ?? "",
         role: user.role ?? "fan",
@@ -247,6 +254,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
+        socioNumber: user.socioNumber ?? null,
         socioSince: user.socioSince ?? null,
         referralCode: user.referralCode ?? "",
         role: user.role ?? "fan",
@@ -299,6 +307,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         xp: user.xp,
         streak: user.streak,
         isSocio: user.isSocio,
+        socioNumber: user.socioNumber ?? null,
         socioSince: user.socioSince ?? null,
         referralCode: user.referralCode ?? "",
         role: user.role ?? "fan",
@@ -307,6 +316,8 @@ export const useUserStore = create<UserState>((set, get) => ({
         xpProgress: getXPProgress(user.xp, computedLevel),
         isAuthenticated: true,
         token,
+        xpMultiplier: user.xpMultiplier ?? 1,
+        xpMultiplierExpiresAt: user.xpMultiplierExpiresAt ?? null,
       });
 
       api.get("/users/me/rank").then((r) => set({ rank: r.data })).catch(() => {});

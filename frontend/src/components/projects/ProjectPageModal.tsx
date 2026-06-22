@@ -7,39 +7,6 @@ import { api } from "@/services/api";
 
 type ProjectTab = "info" | "chat" | "votar";
 
-interface ProjectMeta {
-  id: "india" | "tecnificar";
-  emoji: string;
-  title: string;
-  subtitle: string;
-  color: string;
-  badgeAt: string;
-  description: string;
-}
-
-const PROJECTS: Record<string, ProjectMeta> = {
-  india: {
-    id: "india",
-    emoji: "🇮🇳",
-    title: "India · Dribble Academy",
-    subtitle: "Llevamos el baloncesto a India",
-    color: "#F59E0B",
-    badgeAt: "Dribble Spirit 🇮🇳",
-    description:
-      "Colaboramos con la Fundación Dribble Academy para llevar el baloncesto a India. Equipo conjunto Dribble Academy El Pacto, formación de community manager local, material deportivo y colaboradores estratégicos. Cada crédito donado va directo a infraestructura básica: canchas, balones y becas de entrenamiento.",
-  },
-  tecnificar: {
-    id: "tecnificar",
-    emoji: "🎓",
-    title: "Tecnificar",
-    subtitle: "Becas para jóvenes con talento",
-    color: "#A78BFA",
-    badgeAt: "Mentor 🎓",
-    description:
-      "Becas de tecnificación para jóvenes jugadores con talento que no tienen recursos para acceder a formación de élite. Material deportivo, seguimiento, mentoría y colaboradores estratégicos. El club anuncia al primer becado en exclusiva si llegamos a la misión colectiva.",
-  },
-};
-
 interface ChatMsg {
   id: string;
   userId: string;
@@ -60,30 +27,30 @@ interface VoteOption {
 }
 
 export default function ProjectPageModal() {
-  const { isProjectPageOpen, projectId, closeProjectPage, showToast } = useUIStore();
-  const { isAuthenticated, spendCredits, addXP } = useUserStore();
-  const [tab, setTab] = useState<ProjectTab>("info");
+  const { isProjectPageOpen, activeProject, closeProjectPage, showToast, openAuth, setTab } = useUIStore();
+  const { isAuthenticated, addXP } = useUserStore();
+  const [activeTab, setActiveTab] = useState<ProjectTab>("info");
   const [chatMsgs, setChatMsgs] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [votes, setVotes] = useState<VoteOption[]>([]);
   const [voted, setVoted] = useState<Record<string, string>>({});
 
-  const project = projectId ? PROJECTS[projectId] : null;
-  const channel = projectId ? `project-${projectId}` : "";
+  const project = activeProject;
+  const channel = project ? `project-${project.slug}` : "";
 
   useEffect(() => {
-    if (!isProjectPageOpen || !projectId) return;
+    if (!isProjectPageOpen || !project) return;
     api.get(`/community/messages?channel=${channel}`).then((r) => setChatMsgs(r.data)).catch(() => setChatMsgs([]));
     api.get("/gamification/votes").then((r) => {
       const list = (r.data || []).filter((v: any) => v.category === "decision");
       setVotes(list);
     }).catch(() => {});
-  }, [isProjectPageOpen, projectId, channel]);
+  }, [isProjectPageOpen, project, channel]);
 
   if (!isProjectPageOpen || !project) return null;
 
   const handleClose = () => {
-    setTab("info");
+    setActiveTab("info");
     setChatInput("");
     closeProjectPage();
   };
@@ -91,22 +58,20 @@ export default function ProjectPageModal() {
   const handleDonate = async (amount: number) => {
     if (isAuthenticated) {
       try {
-        await api.post("/donations", { projectId: project.id, amount });
+        await api.post("/donations", { projectId: project.slug, amount });
         addXP(amount);
         showToast(`¡Donación enviada! −${amount} ⚡ · +${amount} XP 🏀`);
       } catch {
-        showToast("Necesitas más créditos ⚡");
+        showToast("Necesitas más créditos ⚡"); closeProjectPage(); setTab("store");
       }
     } else {
-      if (!spendCredits(amount)) { showToast("Sin créditos suficientes"); return; }
-      addXP(amount);
-      showToast(`Donación local · −${amount} ⚡ · +${amount} XP`);
+      openAuth();
     }
   };
 
   const sendChat = async () => {
     if (!chatInput.trim()) return;
-    if (!isAuthenticated) { showToast("Inicia sesión para chatear ⚡"); return; }
+    if (!isAuthenticated) { openAuth(); return; }
     try {
       const res = await api.post("/community/messages", { channel, content: chatInput.trim() });
       setChatMsgs((m) => [...m, res.data]);
@@ -125,49 +90,61 @@ export default function ProjectPageModal() {
         setVoted((v) => ({ ...v, [voteId]: option }));
         addXP(xp);
         showToast(`¡Voto registrado! +${xp} XP`);
-      } catch { showToast("Error o créditos insuficientes ❌"); }
+      } catch (err: any) {
+        const m = err?.response?.data?.message ?? "";
+        if (m.includes("credits") || m.includes("Insufficient")) { showToast("Necesitas más créditos ⚡"); closeProjectPage(); setTab("store"); }
+        else showToast("Error al votar ❌");
+      }
     } else {
-      if (cost > 0 && !spendCredits(cost)) { showToast(`Necesitas ${cost} créditos`); return; }
-      setVoted((v) => ({ ...v, [voteId]: option }));
-      addXP(xp);
-      showToast(`+${xp} XP local`);
+      openAuth();
     }
   };
 
   return (
-    <>
-      {/* Backdrop — visible on desktop */}
+    <div
+      className="fixed inset-0 z-[300] sm:flex sm:items-center sm:justify-center sm:p-6 sm:bg-black/70 sm:backdrop-blur-sm"
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
+    >
+      {/* Panel — full screen on mobile, centered rounded card on desktop */}
       <div
-        className="fixed inset-0 z-[300] hidden sm:block"
-        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(3px)" }}
-        onClick={handleClose}
-      />
-
-      {/* Panel — full screen on mobile, centered 480px column on desktop */}
-      <div
-        className="fixed top-0 bottom-0 left-0 right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-[480px] z-[301] flex flex-col"
+        className="absolute inset-0 sm:static sm:w-[480px] sm:max-h-[88vh] sm:rounded-2xl sm:shadow-2xl flex flex-col overflow-hidden"
         style={{ background: "var(--color-gray)" }}
       >
-      {/* Hero */}
-      <div className="relative h-[180px] flex-shrink-0" style={{ background: `linear-gradient(135deg, ${project.color}22, ${project.color}11)` }}>
-        <div className="absolute inset-0 flex flex-col justify-end p-4">
-          <div className="text-[8px] font-bold tracking-[2px] px-2 py-[2px] rounded-xl w-fit mb-2 border" style={{ color: project.color, borderColor: project.color + "60", background: project.color + "15" }}>
-            🌍 PROYECTO ACTIVO
+      {/* Header */}
+      <div className="relative flex-shrink-0" style={{ borderBottom: "1px solid var(--color-border)" }}>
+        {/* Banner image (si existe) */}
+        {project.imageUrl && (
+          <div className="relative h-28 w-full overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={project.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(20,20,20,0.92) 100%)" }} />
           </div>
-          <div className="flex items-end gap-3">
-            <div className="text-[44px] leading-none">{project.emoji}</div>
-            <div>
-              <div className="font-heading text-[24px] tracking-[1px] text-white leading-tight">{project.title}</div>
-              <div className="text-[11px] text-muted mt-1">{project.subtitle}</div>
-            </div>
-          </div>
-        </div>
+        )}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white border-none cursor-pointer text-sm"
+          className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white border-none cursor-pointer text-sm z-10"
         >
           ✕
         </button>
+        {/* Título + emoji */}
+        <div
+          className="flex items-center gap-3 px-4 pb-4 relative"
+          style={{ paddingTop: project.imageUrl ? 0 : 16, marginTop: project.imageUrl ? -26 : 0 }}
+        >
+          <div
+            className="w-[52px] h-[52px] rounded-xl flex items-center justify-center text-[28px] flex-shrink-0 overflow-hidden"
+            style={{ background: project.color + "26", border: `1px solid ${project.color}66` }}
+          >
+            {project.emoji}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[8px] font-bold tracking-[2px] px-2 py-[2px] rounded-xl w-fit mb-1 border" style={{ color: project.color, borderColor: project.color + "60", background: project.color + "15" }}>
+              🌍 PROYECTO ACTIVO
+            </div>
+            <div className="font-heading text-[20px] tracking-[0.5px] text-white leading-tight" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.title}</div>
+            <div className="text-[11px] text-muted" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.subtitle}</div>
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -175,8 +152,8 @@ export default function ProjectPageModal() {
         {(["info", "chat", "votar"] as ProjectTab[]).map((t) => (
           <button
             key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-3 text-[11px] font-semibold cursor-pointer border-b-2 transition-colors bg-transparent capitalize ${tab === t ? "text-white border-accent" : "text-muted border-transparent"}`}
+            onClick={() => setActiveTab(t)}
+            className={`flex-1 py-3 text-[11px] font-semibold cursor-pointer border-b-2 transition-colors bg-transparent capitalize ${activeTab === t ? "text-white border-accent" : "text-muted border-transparent"}`}
           >
             {t === "info" ? "Info" : t === "chat" ? "💬 Chat" : "🗳 Votar"}
           </button>
@@ -185,7 +162,7 @@ export default function ProjectPageModal() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto bg-gray">
-        {tab === "info" && (
+        {activeTab === "info" && (
           <div className="p-4 flex flex-col gap-3">
             <div>
               <div className="text-[9px] font-bold tracking-[1.5px] text-muted uppercase mb-1">Sobre el proyecto</div>
@@ -193,7 +170,7 @@ export default function ProjectPageModal() {
             </div>
             <div className="bg-gray2 rounded-xl p-3">
               <div className="text-[9px] font-bold tracking-[1.5px] text-muted uppercase mb-2">Insignia al donar</div>
-              <div className="text-[13px]">Tu primera donación desbloquea: <strong className="text-accent">{project.badgeAt}</strong></div>
+              <div className="text-[13px]">Tu primera donación desbloquea: <strong className="text-accent">{project.badgeLabel}</strong></div>
             </div>
             <div className="bg-gray2 rounded-xl p-3">
               <div className="text-[9px] font-bold tracking-[1.5px] text-muted uppercase mb-2">Apoyar el proyecto</div>
@@ -213,7 +190,7 @@ export default function ProjectPageModal() {
           </div>
         )}
 
-        {tab === "chat" && (
+        {activeTab === "chat" && (
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto flex flex-col gap-[6px] px-4 py-3">
               {chatMsgs.length === 0 && (
@@ -247,7 +224,7 @@ export default function ProjectPageModal() {
           </div>
         )}
 
-        {tab === "votar" && (
+        {activeTab === "votar" && (
           <div className="p-4 flex flex-col gap-3">
             {votes.length === 0 && (
               <div className="bg-gray2 rounded-xl p-4 text-center text-[11px] text-muted">
@@ -273,6 +250,6 @@ export default function ProjectPageModal() {
         )}
       </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
@@ -18,21 +19,27 @@ function colorFor(name: string) {
 }
 
 export default function FanModal() {
-  const { isFanModalOpen, fanModalUser, fanModalData, closeFanModal, openDM, showToast } = useUIStore();
+  const { isFanModalOpen, fanModalUser, fanModalData, closeFanModal, openDM, openDMWithUser, showToast, openAuth } = useUIStore();
   const { isAuthenticated } = useUserStore();
+  const [following, setFollowing] = useState(false);
 
   if (!isFanModalOpen || !fanModalUser) return null;
 
-  const city  = fanModalData?.city  || "—";
-  const level = fanModalData?.level || "Rookie";
-  const xp    = fanModalData?.xp    ?? 0;
-  const color = LEVEL_COLORS[level] || colorFor(fanModalUser);
+  const city   = fanModalData?.city   || "—";
+  const level  = fanModalData?.level  || "Rookie";
+  const xp     = fanModalData?.xp     ?? 0;
+  const avatar = fanModalData?.avatar ?? "";
+  const color  = LEVEL_COLORS[level] || colorFor(fanModalUser);
   const initials = fanModalUser.slice(0, 2).toUpperCase();
 
   const handleDM = () => {
-    if (!isAuthenticated) { showToast("Inicia sesión para enviar mensajes ⚡"); return; }
+    if (!isAuthenticated) { openAuth(); return; }
     closeFanModal();
-    openDM();
+    if (fanModalData?.id) {
+      openDMWithUser({ id: fanModalData.id, name: fanModalUser, avatar: fanModalData.avatar, role: fanModalData.role });
+    } else {
+      openDM();
+    }
   };
 
   const content = (
@@ -43,8 +50,13 @@ export default function FanModal() {
       {/* Header gradient band */}
       <div style={{ background: `linear-gradient(135deg, ${color}18 0%, #111 100%)`, borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "28px 24px 24px", display: "flex", alignItems: "center", gap: 18 }}>
         {/* Avatar */}
-        <div style={{ width: 72, height: 72, borderRadius: "50%", background: color + "22", border: `3px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontSize: 24, color, flexShrink: 0 }}>
-          {initials}
+        <div style={{ width: 72, height: 72, borderRadius: "50%", background: color + "22", border: `3px solid ${color}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontSize: 24, color, flexShrink: 0, overflow: "hidden" }}>
+          {avatar?.startsWith("http") || avatar?.startsWith("data:")
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : avatar && avatar.length <= 2
+              ? <span style={{ fontSize: 32 }}>{avatar}</span>
+              : <span>{initials}</span>}
         </div>
         {/* Name + meta */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -89,10 +101,16 @@ export default function FanModal() {
           ✉ Enviar mensaje
         </button>
         <button
-          onClick={() => { showToast(`${fanModalUser} añadido a seguidos ⭐`); closeFanModal(); }}
-          style={{ flex: 1, background: "var(--color-accent)", color: "#000", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
+          onClick={() => {
+            if (!isAuthenticated) { openAuth(); return; }
+            if (!following) {
+              setFollowing(true);
+              showToast(`${fanModalUser} añadido a seguidos ⭐`);
+            }
+          }}
+          style={{ flex: 1, background: following ? "rgba(255,255,255,0.08)" : "var(--color-accent)", color: following ? "var(--color-muted)" : "#000", border: following ? "1px solid rgba(255,255,255,0.12)" : "none", borderRadius: 12, padding: "13px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
         >
-          ⭐ Seguir fan
+          {following ? "✓ Siguiendo" : "⭐ Seguir fan"}
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mission } from './mission.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 export const MISSION_DEFINITIONS: Array<Omit<Mission, 'current' | 'isComplete' | 'updatedAt'>> = [
   {
@@ -72,6 +73,21 @@ export class MissionsService {
     }
 
     return this.repo.findOne({ where: { code } });
+  }
+
+  // Reset weekly missions every Monday at 00:00 UTC
+  @Cron(CronExpression.EVERY_WEEK)
+  async resetWeeklyMissions(): Promise<void> {
+    const weeklyCodes = ['weekly_votes_500', 'daily_300'];
+    for (const code of weeklyCodes) {
+      await this.repo.update(code, { current: 0, isComplete: false });
+    }
+    await this.notifications.notifyAll(
+      'mission_complete',
+      '🗓 ¡Nueva semana, nuevas misiones!',
+      'Los objetivos semanales se han reiniciado. ¡A por ellos!',
+      { reset: true },
+    );
   }
 
   async seedDefinitions() {

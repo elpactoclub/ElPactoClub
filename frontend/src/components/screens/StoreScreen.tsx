@@ -1,33 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
+import Skel from "@/components/ui/Skel";
+import { useAuthLoading } from "@/hooks/useAuthLoading";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 
-const CREDIT_PACKS = {
-  "100": { credits: 100, price: "3,5€", label: "1 sorteo · 20 votos", emoji: "⚡", popular: false },
-  "200": { credits: 200, price: "6€", label: "2 sorteos · 4 charlas", emoji: "⚡⚡", popular: true },
-} as const;
+interface StoreBenefit {
+  id: string;
+  name: string;
+  description?: string;
+  discount?: string;
+  emoji?: string;
+  imageUrl?: string;
+  color?: string;
+  link?: string;
+}
 
-type PackId = keyof typeof CREDIT_PACKS;
+type PackId = "100" | "200";
+
+interface Prices {
+  socio: number;
+  credits100: number;
+  credits200: number;
+}
+
+function fmtPrice(n: number): string {
+  return n % 1 === 0 ? `${n}€` : `${n.toFixed(2).replace(".", ",")}€`;
+}
 
 export default function StoreScreen() {
   const [activeTab, setActiveTab] = useState<"sub" | "cred" | "merch">("sub");
   const [selectedPack, setSelectedPack] = useState<PackId | null>(null);
   const [buyingCredits, setBuyingCredits] = useState(false);
   const { credits, isSocio, isAuthenticated } = useUserStore();
-  const { showToast, openPayment, openCarnet } = useUIStore();
+  const { showToast, openAuth, openPayment, openCarnet } = useUIStore();
+  const authLoading = useAuthLoading();
+  const [benefits, setBenefits] = useState<StoreBenefit[] | null>(null);
+  const [prices, setPrices] = useState<Prices>({ socio: 5, credits100: 3.5, credits200: 6 });
+
+  useEffect(() => {
+    fetch(`${API}/store/benefits`)
+      .then((r) => r.json())
+      .then((d) => setBenefits(Array.isArray(d) ? d : []))
+      .catch(() => setBenefits([]));
+    fetch(`${API}/prices`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setPrices(d); })
+      .catch(() => {});
+  }, []);
+
+  const CREDIT_PACKS: Record<PackId, { credits: number; price: string; label: string; emoji: string; popular: boolean }> = {
+    "100": { credits: 100, price: fmtPrice(prices.credits100), label: "1 sorteo · 20 votos", emoji: "⚡", popular: false },
+    "200": { credits: 200, price: fmtPrice(prices.credits200), label: "2 sorteos · 4 charlas", emoji: "⚡⚡", popular: true },
+  };
 
   const handleVerCarnet = () => {
-    if (!isAuthenticated) { showToast("Inicia sesión para ver tu carnet ⚡"); return; }
+    if (!isAuthenticated) { openAuth(); return; }
     if (!isSocio) { openPayment(); return; }
     openCarnet();
   };
 
+  // Tap a benefit: open its external link if set, otherwise show the socio card.
+  const handleBenefit = (b: StoreBenefit) => {
+    if (b.link) {
+      window.open(b.link, "_blank", "noopener,noreferrer");
+      return;
+    }
+    handleVerCarnet();
+  };
+
   const handleBuyCredits = async () => {
     if (!selectedPack) return;
+    if (!isAuthenticated) { openAuth(); return; }
     setBuyingCredits(true);
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("el_pacto_token") : null;
@@ -52,7 +99,10 @@ export default function StoreScreen() {
       <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "16px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ flexShrink: 0 }}>
           <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", color: "var(--color-muted)", textTransform: "uppercase", lineHeight: 1.6 }}>TUS<br />CRÉDITOS</div>
-          <div style={{ fontFamily: "var(--font-heading)", fontSize: 48, color: "var(--color-accent)", lineHeight: 1 }}>{credits}</div>
+          {authLoading
+            ? <span style={{ display: "inline-block", width: 28, height: 28, border: "3px solid var(--color-accent)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", marginTop: 6 }} />
+            : <div style={{ fontFamily: "var(--font-heading)", fontSize: 48, color: "var(--color-accent)", lineHeight: 1 }}>{credits}</div>
+          }
         </div>
         <button
           onClick={() => setActiveTab("cred")}
@@ -96,7 +146,7 @@ export default function StoreScreen() {
                 <div style={{ fontSize: 12, color: "var(--color-muted)" }}>Todo desbloqueado</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "var(--font-heading)", fontSize: 40, color: "var(--color-accent)", lineHeight: 1 }}>5€</div>
+                <div style={{ fontFamily: "var(--font-heading)", fontSize: 40, color: "var(--color-accent)", lineHeight: 1 }}>{fmtPrice(prices.socio)}</div>
                 <div style={{ fontSize: 11, color: "var(--color-muted)" }}>/mes</div>
               </div>
             </div>
@@ -117,12 +167,20 @@ export default function StoreScreen() {
               ))}
             </div>
 
-            <button
-              onClick={() => openPayment()}
-              style={{ width: "100%", background: "var(--color-accent)", color: "#000", border: "none", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
-            >
-              Hacerme socio →
-            </button>
+            {isSocio ? (
+              <div
+                style={{ width: "100%", background: "rgba(240,224,64,0.12)", color: "var(--color-accent)", border: "1px solid rgba(240,224,64,0.35)", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 800, textAlign: "center", fontFamily: "var(--font-body)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              >
+                ✓ Ya eres socio
+              </div>
+            ) : (
+              <button
+                onClick={() => openPayment()}
+                style={{ width: "100%", background: "var(--color-accent)", color: "#000", border: "none", padding: "16px", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "var(--font-body)" }}
+              >
+                Hacerme socio →
+              </button>
+            )}
           </div>
 
           {/* Benefits label */}
@@ -130,33 +188,43 @@ export default function StoreScreen() {
             BENEFICIOS EXCLUSIVOS PARA SOCIOS
           </div>
 
-          {/* Basketball Emotion */}
-          <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={handleVerCarnet}>
-            <div style={{ width: 52, height: 52, borderRadius: 12, background: "linear-gradient(135deg,#FF6B1A,#FF8C42)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🏀</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Basketball Emotion</div>
-              <div style={{ fontSize: 12, color: "var(--color-muted)" }}>La mayor tienda de basket de España</div>
+          {benefits === null ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ background: "#1a1a1a", borderRadius: 10, padding: "16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 16 }}>
+                  <Skel w={56} h={56} r={14} />
+                  <div style={{ flex: 1 }}>
+                    <Skel w="55%" h={15} style={{ marginBottom: 8 }} />
+                    <Skel w="75%" h={12} r={4} />
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <Skel w={44} h={24} r={4} style={{ marginBottom: 6 }} />
+                    <Skel w={80} h={12} r={4} />
+                  </div>
+                </div>
+              ))}
             </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 32, color: "var(--color-accent)", lineHeight: 1 }}>5%</div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "1px", color: "var(--color-muted)", textTransform: "uppercase", marginTop: 2 }}>DESCUENTO</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", marginTop: 4 }}>Ver carnet →</div>
+          ) : benefits.length === 0 ? (
+            <div style={{ fontSize: 12, color: "var(--color-muted)", padding: "8px 2px" }}>Pronto habrá beneficios disponibles.</div>
+          ) : benefits.map((b) => (
+            <div key={b.id} style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={() => handleBenefit(b)}>
+              <div style={{ width: 52, height: 52, borderRadius: 12, background: b.imageUrl ? "#222" : `linear-gradient(135deg, ${b.color || "#F0E040"}, ${b.color || "#F0E040"}cc)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0, overflow: "hidden" }}>
+                {b.imageUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={b.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : (b.emoji || "🏀")}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>{b.name}</div>
+                {b.description && <div style={{ fontSize: 12, color: "var(--color-muted)" }}>{b.description}</div>}
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                {b.discount && <div style={{ fontFamily: "var(--font-heading)", fontSize: 32, color: "var(--color-accent)", lineHeight: 1 }}>{b.discount}</div>}
+                {b.discount && <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "1px", color: "var(--color-muted)", textTransform: "uppercase", marginTop: 2 }}>DESCUENTO</div>}
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", marginTop: 4 }}>{b.link ? "Ir a la tienda →" : "Ver carnet →"}</div>
+              </div>
             </div>
-          </div>
-
-          {/* Hoops */}
-          <div style={{ background: "#1a1a1a", borderRadius: 10, padding: "14px 16px", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }} onClick={handleVerCarnet}>
-            <div style={{ width: 52, height: 52, borderRadius: 12, background: "linear-gradient(135deg,#d4c800,#F0E040)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>⚡</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>Hoops</div>
-              <div style={{ fontSize: 12, color: "var(--color-muted)" }}>Material deportivo oficial del club</div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 32, color: "var(--color-accent)", lineHeight: 1 }}>10%</div>
-              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "1px", color: "var(--color-muted)", textTransform: "uppercase", marginTop: 2 }}>DESCUENTO</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--color-accent)", marginTop: 4 }}>Ver carnet →</div>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
@@ -217,15 +285,14 @@ export default function StoreScreen() {
             <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>¿Para qué sirven los créditos?</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
               {[
-                ["Votación del club", "5 ⚡"],
-                ["Apuesta grupal", "20 ⚡"],
-                ["Mensaje a creador", "50 ⚡"],
-                ["Charla exclusiva", "50 ⚡"],
-                ["Sorteo del mes", "75 ⚡"],
-              ].map(([label, cost], i, arr) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, padding: "12px 0", borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                "Votación del club",
+                "Apuesta grupal",
+                "Mensaje a creador",
+                "Charla exclusiva",
+                "Sorteo del mes",
+              ].map((label, i, arr) => (
+                <div key={label} style={{ fontSize: 13, padding: "12px 0", borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
                   <span style={{ color: "var(--color-muted)" }}>{label}</span>
-                  <span style={{ fontWeight: 700, color: "var(--color-accent)" }}>{cost}</span>
                 </div>
               ))}
             </div>

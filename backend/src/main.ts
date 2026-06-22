@@ -1,14 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
+import { ThrottlerExceptionFilter } from './common/throttler-exception.filter';
 import { join } from 'path';
 import * as express from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  // Serve uploaded files (before global prefix)
+  // Dev only: serve files saved to disk by the local fallback in TigrisService
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // Global prefix
@@ -20,10 +22,15 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://localhost:3001',
       'https://elpactoclub-frontend.fly.dev',
+      'https://elpactoclub.com',
+      'https://www.elpactoclub.com',
       process.env.FRONTEND_URL ?? '',
     ].filter(Boolean),
     credentials: true,
   });
+
+  // Custom error messages for rate limiting
+  app.useGlobalFilters(new ThrottlerExceptionFilter());
 
   // Global validation
   app.useGlobalPipes(
@@ -43,6 +50,8 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);

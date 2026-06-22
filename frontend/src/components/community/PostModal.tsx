@@ -8,7 +8,7 @@ import { api } from "@/services/api";
 type PostType = "text" | "poll" | "challenge";
 
 export default function PostModal() {
-  const { isPostModalOpen, closePostModal, showToast } = useUIStore();
+  const { isPostModalOpen, closePostModal, showToast, refreshPosts } = useUIStore();
   const { isAuthenticated, name, avatar, addXP } = useUserStore();
   const [type, setType] = useState<PostType>("text");
   const [content, setContent] = useState("");
@@ -72,6 +72,7 @@ export default function PostModal() {
         addXP(5);
         showToast("Publicado localmente · +5 XP 🏀");
       }
+      refreshPosts();
       handleClose();
     } catch {
       showToast("Error al publicar ❌");
@@ -84,6 +85,10 @@ export default function PostModal() {
     const opts = [...pollOptions];
     opts[i] = val;
     setPollOptions(opts);
+  };
+
+  const removeOption = (i: number) => {
+    setPollOptions(pollOptions.filter((_, idx) => idx !== i));
   };
 
   const TYPE_TABS: { id: PostType; label: string }[] = [
@@ -118,10 +123,13 @@ export default function PostModal() {
         {/* Header — fixed */}
         <div className="flex items-center gap-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "14px 20px" }}>
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center text-[18px] flex-shrink-0"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[18px] flex-shrink-0 overflow-hidden"
             style={{ background: "#252525", border: "2px solid rgba(240,224,64,0.3)" }}
           >
-            {avatar}
+            {avatar?.startsWith("http") || avatar?.startsWith("data:")
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+              : avatar}
           </div>
           <div className="flex-1 min-w-0">
             <div style={{ fontSize: 13, fontWeight: 700 }}>{name || "elpactoclub"}</div>
@@ -197,19 +205,26 @@ export default function PostModal() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", color: "var(--color-muted)", textTransform: "uppercase" }}>Opciones</div>
               {pollOptions.map((opt, i) => (
-                <input
-                  key={i}
-                  value={opt}
-                  onChange={(e) => updateOption(i, e.target.value)}
-                  placeholder={`Opción ${i + 1}`}
-                  style={{
-                    width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fff",
-                    fontFamily: "inherit", outline: "none", boxSizing: "border-box",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
-                />
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <input
+                    value={opt}
+                    onChange={(e) => updateOption(i, e.target.value)}
+                    placeholder={`Opción ${i + 1}`}
+                    style={{
+                      flex: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#fff",
+                      fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-accent)")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)")}
+                  />
+                  {pollOptions.length > 2 && (
+                    <button
+                      onClick={() => removeOption(i)}
+                      style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#888", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                    >✕</button>
+                  )}
+                </div>
               ))}
               {pollOptions.length < 4 && (
                 <button

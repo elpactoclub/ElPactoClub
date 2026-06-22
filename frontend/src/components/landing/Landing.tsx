@@ -1,9 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 
 export default function Landing() {
-  const { openPayment } = useUIStore();
+  const { openAuthForPayment } = useUIStore();
+  const [stats, setStats] = useState<{ fans: number; decisions: number } | null>(null);
+  const [socioPrice, setSocioPrice] = useState("5€");
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    fetch(`${apiUrl}/api/v1/stats`)
+      .then((r) => r.json())
+      .then((d) => setStats({ fans: d.fans ?? 0, decisions: d.decisions ?? 0 }))
+      .catch(() => setStats({ fans: 0, decisions: 0 }));
+    fetch(`${apiUrl}/api/v1/prices`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.socio) { const n = d.socio; setSocioPrice(n % 1 === 0 ? `${n}€` : `${n.toFixed(2).replace(".", ",")}€`); } })
+      .catch(() => {});
+  }, []);
 
   const handleExplorar = () => {
     useUIStore.setState({ isOnboardingOpen: true, isLandingOpen: false });
@@ -76,12 +91,14 @@ export default function Landing() {
             {/* Stats */}
             <div className="flex gap-8">
               {[
-                { val: "1,247", lbl: "Fans activos", c: "var(--color-accent)" },
-                { val: "38",    lbl: "Decisiones",   c: "var(--color-white)" },
-                { val: "5€",    lbl: "Al mes",        c: "var(--color-green)" },
+                { val: stats?.fans.toLocaleString("es"), lbl: "Fans activos", c: "var(--color-accent)" },
+                { val: stats ? String(stats.decisions) : undefined, lbl: "Decisiones", c: "var(--color-white)" },
+                { val: socioPrice, lbl: "Al mes", c: "var(--color-green)" },
               ].map((s) => (
                 <div key={s.lbl}>
-                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: s.c, lineHeight: 1 }}>{s.val}</div>
+                  <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: s.c, lineHeight: 1, minWidth: 24 }}>
+                    {s.val !== undefined ? s.val : <span style={{ display: "inline-block", width: 18, height: 18, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", verticalAlign: "middle" }} />}
+                  </div>
                   <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--color-muted)", marginTop: 3 }}>{s.lbl}</div>
                 </div>
               ))}
@@ -91,11 +108,11 @@ export default function Landing() {
           {/* CTAs */}
           <div className="flex flex-col gap-3" style={{ maxWidth: 340 }}>
             <button
-              onClick={openPayment}
+              onClick={openAuthForPayment}
               className="btn-y"
               style={{ fontSize: 13, fontWeight: 800, padding: "13px" }}
             >
-              Hacerme socio — 5€/mes
+              Hacerme socio — {socioPrice}/mes
             </button>
             <button
               onClick={handleExplorar}
@@ -197,12 +214,14 @@ export default function Landing() {
         {/* Stats bar */}
         <div style={{ display: "flex", borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)", margin: "0 -22px" }}>
           {[
-            { val: "1,247", lbl: "Fans activos", c: "var(--color-accent)" },
-            { val: "38",    lbl: "Decisiones",   c: "var(--color-white)" },
-            { val: "5€",    lbl: "Al mes",        c: "var(--color-green)" },
+            { val: stats?.fans.toLocaleString("es"), lbl: "Fans activos", c: "var(--color-accent)" },
+            { val: stats ? String(stats.decisions) : undefined, lbl: "Decisiones", c: "var(--color-white)" },
+            { val: socioPrice, lbl: "Al mes", c: "var(--color-green)" },
           ].map((s, i) => (
             <div key={s.lbl} style={{ flex: 1, padding: "12px 6px", textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.07)" : "none" }}>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: s.c, lineHeight: 1 }}>{s.val}</div>
+              <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: s.c, lineHeight: 1, minHeight: 22 }}>
+                {s.val !== undefined ? s.val : <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", verticalAlign: "middle" }} />}
+              </div>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: "var(--color-muted)", marginTop: 3 }}>{s.lbl}</div>
             </div>
           ))}
@@ -210,7 +229,7 @@ export default function Landing() {
 
         {/* CTAs */}
         <div style={{ display: "flex", flexDirection: "column", gap: 9, padding: "18px 0 32px" }}>
-          <button onClick={openPayment} className="btn-y">Hacerme socio — 5€/mes</button>
+          <button onClick={openAuthForPayment} className="btn-y">Hacerme socio — {socioPrice}/mes</button>
           <button onClick={handleExplorar} className="btn-o">Explorar gratis</button>
           <p style={{ textAlign: "center", fontSize: 10, color: "#444", margin: 0 }}>
             Sin tarjeta de crédito · Cancela cuando quieras

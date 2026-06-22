@@ -1,8 +1,14 @@
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
 export class UpdateUserAdminDto {
   @IsOptional() @IsString()
   name?: string;
+
+  @IsOptional() @IsEmail({}, { message: 'Email inválido' })
+  email?: string;
+
+  @IsOptional() @IsString() @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  password?: string;
 
   @IsOptional() @IsString()
   city?: string;

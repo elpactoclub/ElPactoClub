@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
+import AnimatedBar from "@/components/ui/AnimatedBar";
+import Skel from "@/components/ui/Skel";
+import { useAuthLoading } from "@/hooks/useAuthLoading";
 
 interface Badge {
   code: string;
@@ -53,17 +56,28 @@ function formatSocioDate(iso: string | null): string {
   return d.toLocaleDateString("es-ES", { month: "short", year: "numeric" });
 }
 
+interface FollowUser { id: string; name: string; avatar: string; level: string; xp: number; city?: string; isSocio: boolean; role: string; }
+
 export default function ProfileModal({ inline = false }: { inline?: boolean } = {}) {
-  const { isProfileOpen, closeProfile, openCarnet, openPersonalize, showToast } = useUIStore();
+  const authLoading = useAuthLoading();
+  const { isProfileOpen, closeProfile, openCarnet, openPersonalize, showToast, openUserProfile } = useUIStore();
   const {
-    name, avatar, city, credits, xp, level, xpProgress,
+    id: myId, name, avatar, city, credits, xp, level, xpProgress,
     tickets, streak, referralCode, isAuthenticated, isSocio,
-    socioSince, rank, logout,
+    socioSince, rank, logout, fetchProfile,
   } = useUserStore();
 
   const [catalog, setCatalog] = useState<Badge[]>(BADGE_CATALOG);
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
   const [adminRole, setAdminRole] = useState<"admin" | "creator" | null>(null);
+  const [followCounts, setFollowCounts] = useState({ followers: 0, following: 0 });
+  const [activity, setActivity] = useState<{ id: string; type: string; title: string; body: string; createdAt: string }[]>([]);
+  const [followList, setFollowList] = useState<FollowUser[] | null>(null);
+  const [followListTitle, setFollowListTitle] = useState("");
+  const [followListType, setFollowListType] = useState<"followers" | "following" | "blocked">("followers");
+  const [followSearch, setFollowSearch] = useState("");
+  const [blockedCount, setBlockedCount] = useState(0);
+  const [countsLoading, setCountsLoading] = useState(true);
 
   const isActive = inline || isProfileOpen;
 
@@ -77,6 +91,12 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
       setAdminRole(payload?.role === "admin" || payload?.role === "creator" ? payload.role : null);
     } catch { setAdminRole(null); }
   }, [isActive]);
+
+  // Refrescar datos del perfil (socioSince, rank, créditos…) al abrir
+  useEffect(() => {
+    if (isActive && isAuthenticated) fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, isAuthenticated]);
 
   // Fetch badge catalog + user badges
   useEffect(() => {
@@ -93,6 +113,39 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
       setUnlocked(new Set());
     }
   }, [isActive, isAuthenticated]);
+
+  // Fetch follow counts + activity
+  useEffect(() => {
+    if (!isActive || !isAuthenticated || !myId) return;
+    setCountsLoading(true);
+    Promise.allSettled([
+      api.get(`/users/${myId}/profile`).then((r) => setFollowCounts({ followers: r.data.followersCount ?? 0, following: r.data.followingCount ?? 0 })),
+      api.get("/users/me/blocked").then((r) => setBlockedCount(Array.isArray(r.data) ? r.data.length : 0)),
+    ]).finally(() => setCountsLoading(false));
+    api.get("/users/me/activity")
+      .then((r) => setActivity(Array.isArray(r.data) ? r.data.slice(0, 8) : []))
+      .catch(() => {});
+  }, [isActive, isAuthenticated, myId]);
+
+  const openFollowList = async (type: "followers" | "following" | "blocked") => {
+    setFollowList(null);
+    setFollowSearch("");
+    setFollowListType(type);
+    setFollowListTitle(type === "followers" ? "Seguidores" : type === "following" ? "Siguiendo" : "Bloqueados");
+    try {
+      const r = await api.get(`/users/me/${type}`);
+      setFollowList(Array.isArray(r.data) ? r.data : []);
+    } catch { setFollowList([]); }
+  };
+
+  const handleUnblock = async (id: string) => {
+    try {
+      await api.delete(`/users/${id}/block`);
+      setFollowList((prev) => (prev ? prev.filter((u) => u.id !== id) : prev));
+      setBlockedCount((c) => Math.max(0, c - 1));
+      showToast("Usuario desbloqueado");
+    } catch { showToast("No se pudo desbloquear"); }
+  };
 
   if (!inline && !isProfileOpen) return null;
 
@@ -137,9 +190,12 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
 
       {/* ── Header ─────────────────────────────────── */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "0 16px 16px" }}>
-        <button onClick={openPersonalize} style={{ position: "relative", flexShrink: 0, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-          <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#FF6B1A33", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, border: "2px solid rgba(255,107,26,0.4)" }}>
-            {avatar}
+        <button onClick={isAuthenticated ? openPersonalize : openAuth} style={{ position: "relative", flexShrink: 0, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+          <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#FF6B1A33", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, border: "2px solid rgba(255,107,26,0.4)", overflow: "hidden" }}>
+            {avatar?.startsWith("http") || avatar?.startsWith("data:")
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+              : avatar}
           </div>
           <div style={{ position: "absolute", bottom: 0, right: 0, width: 20, height: 20, borderRadius: "50%", background: "var(--color-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, border: "2px solid #181818" }}>✎</div>
         </button>
@@ -168,7 +224,7 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
             )}
           </div>
           <button
-            onClick={openPersonalize}
+            onClick={isAuthenticated ? openPersonalize : openAuth}
             style={{ fontSize: 10, fontWeight: 700, color: "var(--color-accent)", background: "rgba(240,224,64,0.08)", border: "1px solid rgba(240,224,64,0.25)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontFamily: "var(--font-body)" }}
           >
             ✎ Editar perfil
@@ -203,13 +259,15 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
       {/* ── Stats grid ──────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: isAuthenticated ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 6, padding: "0 16px 12px" }}>
         {[
-          { value: credits,  label: "Créditos", color: "var(--color-accent)" },
-          { value: xp.toLocaleString("es"), label: "XP", color: "#A78BFA" },
-          { value: rankDisplay, label: "Ranking", color: "#fff" },
-          ...(isAuthenticated ? [{ value: tickets, label: "Sorteo", color: "#fff" }] : []),
+          { value: credits,  label: "Créditos", color: "var(--color-accent)", loading: authLoading },
+          { value: xp.toLocaleString("es"), label: "XP", color: "#A78BFA", loading: authLoading },
+          { value: rankDisplay, label: "Ranking", color: "#fff", loading: authLoading || (isAuthenticated && rank == null) },
+          ...(isAuthenticated ? [{ value: tickets, label: "Sorteo", color: "#fff", loading: authLoading }] : []),
         ].map((s, i) => (
           <div key={i} style={{ background: "#222", borderRadius: 8, textAlign: "center", padding: "10px 4px" }}>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: 20, color: s.color, lineHeight: 1.1 }}>{s.value}</div>
+            {s.loading
+              ? <Skel h={22} style={{ width: "55%", margin: "0 auto", borderRadius: 5 }} />
+              : <div style={{ fontFamily: "var(--font-heading)", fontSize: 20, color: s.color, lineHeight: 1.1 }}>{s.value}</div>}
             <div style={{ fontSize: 9, color: "var(--color-muted)", marginTop: 2 }}>{s.label}</div>
           </div>
         ))}
@@ -218,13 +276,40 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
       {/* ── XP bar ──────────────────────────────────── */}
       <div style={{ padding: "0 16px 2px" }}>
         <div style={{ height: 5, background: "#2a2a2a", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ height: "100%", background: "linear-gradient(90deg,var(--color-accent),#22C55E)", width: `${xpProgress}%`, borderRadius: 3, transition: "width 0.4s" }} />
+          <AnimatedBar pct={xpProgress} background="linear-gradient(90deg,var(--color-accent),#22C55E)" />
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 16px 14px", fontSize: 9, color: "var(--color-muted)" }}>
         <span>{xp.toLocaleString("es")} XP · {level}</span>
         <span>{next.xp.toLocaleString("es")} → {next.label}</span>
       </div>
+
+      {/* ── Seguidores / Siguiendo ──────────────────── */}
+      {isAuthenticated && (
+        <div style={{ display: "flex", gap: 8, padding: "0 16px 14px" }}>
+          <button
+            onClick={() => openFollowList("followers")}
+            style={{ flex: 1, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "10px 8px", cursor: "pointer", textAlign: "center" }}
+          >
+            {countsLoading ? <Skel w={28} h={22} style={{ margin: "0 auto", borderRadius: 5 }} /> : <div style={{ fontFamily: "var(--font-heading)", fontSize: 20, color: "#fff", lineHeight: 1.1 }}>{followCounts.followers}</div>}
+            <div style={{ fontSize: 9, color: "var(--color-muted)", marginTop: 2 }}>Seguidores</div>
+          </button>
+          <button
+            onClick={() => openFollowList("following")}
+            style={{ flex: 1, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "10px 8px", cursor: "pointer", textAlign: "center" }}
+          >
+            {countsLoading ? <Skel w={28} h={22} style={{ margin: "0 auto", borderRadius: 5 }} /> : <div style={{ fontFamily: "var(--font-heading)", fontSize: 20, color: "#fff", lineHeight: 1.1 }}>{followCounts.following}</div>}
+            <div style={{ fontSize: 9, color: "var(--color-muted)", marginTop: 2 }}>Siguiendo</div>
+          </button>
+          <button
+            onClick={() => openFollowList("blocked")}
+            style={{ flex: 1, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "10px 8px", cursor: "pointer", textAlign: "center" }}
+          >
+            {countsLoading ? <Skel w={28} h={22} style={{ margin: "0 auto", borderRadius: 5 }} /> : <div style={{ fontFamily: "var(--font-heading)", fontSize: 20, color: "#fff", lineHeight: 1.1 }}>{blockedCount}</div>}
+            <div style={{ fontSize: 9, color: "var(--color-muted)", marginTop: 2 }}>Bloqueados</div>
+          </button>
+        </div>
+      )}
 
       {/* ── Carnet shortcut ─────────────────────────── */}
       {isSocio && (
@@ -371,15 +456,27 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
           ACTIVIDAD RECIENTE
         </div>
         {isAuthenticated ? (
-          xp === 0 && credits === 0 ? (
+          activity.length === 0 ? (
             <div style={{ textAlign: "center", padding: "20px 0", color: "#444" }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
               <div style={{ fontSize: 12, marginBottom: 4 }}>Sin actividad todavía</div>
               <div style={{ fontSize: 11, color: "#333" }}>Vota, chatea o gira la ruleta para empezar</div>
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: "16px 0", color: "#444", fontSize: 11 }}>
-              Historial disponible próximamente
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
+              {activity.map((item) => {
+                const iconMap: Record<string, string> = { badge_unlock: "🏅", bet_result: "🎲", mission_complete: "🎯", post_creator: "📝", new_vote: "🗳", new_follow: "👤" };
+                return (
+                  <div key={item.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 12px", background: "#1a1a1a", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{iconMap[item.type] ?? "⚡"}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#ddd", marginBottom: 2 }}>{item.title}</div>
+                      <div style={{ fontSize: 11, color: "#666", lineHeight: 1.3 }}>{item.body}</div>
+                    </div>
+                    <div style={{ fontSize: 9, color: "#444", flexShrink: 0, whiteSpace: "nowrap" }}>{new Date(item.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div>
+                  </div>
+                );
+              })}
             </div>
           )
         ) : (
@@ -403,15 +500,75 @@ export default function ProfileModal({ inline = false }: { inline?: boolean } = 
     </div>
   );
 
+  const followListModal = followListTitle ? (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px" }}
+      onClick={() => { setFollowList(null); setFollowListTitle(""); }}
+    >
+      <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, width: "100%", maxWidth: 400, overflow: "hidden", display: "flex", flexDirection: "column", maxHeight: "80vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{followListTitle}</span>
+          <button onClick={() => { setFollowList(null); setFollowListTitle(""); setFollowSearch(""); }} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 18, padding: 0, lineHeight: 1 }}>✕</button>
+        </div>
+        {followList !== null && followList.length > 0 && (
+          <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+            <input
+              value={followSearch}
+              onChange={(e) => setFollowSearch(e.target.value)}
+              placeholder="Buscar..."
+              style={{ width: "100%", background: "#1e1e1e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#fff", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
+            />
+          </div>
+        )}
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+          {followList === null && <div style={{ textAlign: "center", color: "#666", padding: 24, fontSize: 13 }}>Cargando...</div>}
+          {followList?.length === 0 && <div style={{ textAlign: "center", color: "#555", padding: 24, fontSize: 13 }}>{followListType === "blocked" ? "No has bloqueado a nadie" : "Nadie todavía"}</div>}
+          {followList?.filter((u) => !followSearch || u.name.toLowerCase().includes(followSearch.toLowerCase())).map((u) => (
+            <div key={u.id}
+              onClick={() => { if (followListType === "blocked") return; setFollowList(null); setFollowListTitle(""); closeProfile(); openUserProfile(u.id); }}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: followListType === "blocked" ? "default" : "pointer", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, overflow: "hidden" }}>
+                {u.avatar?.startsWith("http") || u.avatar?.startsWith("data:") ? <img src={u.avatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>{u.avatar}</span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{u.name}</span>
+                  {u.role === "creator" && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: "rgba(167,139,250,0.2)", color: "#A78BFA" }}>CREADOR</span>}
+                  {u.isSocio && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 3, background: "rgba(240,224,64,0.15)", color: "#F0E040" }}>SOCIO</span>}
+                </div>
+                <div style={{ fontSize: 11, color: "#666" }}>{u.level} · {(u.xp ?? 0).toLocaleString("es")} XP{u.city ? ` · ${u.city}` : ""}</div>
+              </div>
+              {followListType === "blocked" ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleUnblock(u.id); }}
+                  style={{ flexShrink: 0, background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#aaa", fontSize: 12, fontWeight: 600, padding: "6px 12px", borderRadius: 8, cursor: "pointer" }}
+                >
+                  Desbloquear
+                </button>
+              ) : (
+                <span style={{ fontSize: 16, color: "#444" }}>›</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (inline) {
-    return <div style={{ width: "100%", paddingTop: 24, paddingBottom: 32 }}>{content}</div>;
+    return <>{followListModal}<div style={{ width: "100%", paddingTop: 24, paddingBottom: 32 }}>{content}</div></>;
   }
 
   return (
     <>
+      {followListModal}
       {/* Backdrop */}
       <div
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 300, backdropFilter: "blur(2px)" }}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 300 }}
         onClick={closeProfile}
       />
 

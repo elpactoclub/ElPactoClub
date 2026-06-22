@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
+import { CITIES_BY_COUNTRY, COUNTRIES } from "@/data/locations";
 
 const AVATAR_OPTIONS = [
   "🏀", "⚡", "🔥", "🏆", "👑", "💪", "🎯", "🎤",
@@ -11,30 +12,57 @@ const AVATAR_OPTIONS = [
   "🏅", "🎽", "🥊", "🎮", "🦅", "🐝", "🦊", "🎭",
 ];
 
-const CITIES_BY_COUNTRY: Record<string, string[]> = {
-  España: ["Barcelona", "Madrid", "Valencia", "Sevilla", "Bilbao", "Málaga", "Zaragoza", "Murcia", "Palma", "Otra"],
-  Argentina: ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata", "Mar del Plata", "Otra"],
-  México: ["Ciudad de México", "Guadalajara", "Monterrey", "Cancún", "Puebla", "Querétaro", "Otra"],
-  Colombia: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Otra"],
-  Perú: ["Lima", "Arequipa", "Trujillo", "Cusco", "Piura", "Otra"],
-  Chile: ["Santiago", "Valparaíso", "Concepción", "La Serena", "Temuco", "Otra"],
-  Brasil: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Fortaleza", "Outra"],
-  Uruguay: ["Montevideo", "Salto", "Paysandú", "Maldonado", "Outra"],
-  Paraguay: ["Asunción", "Ciudad del Este", "Encarnación", "Outra"],
-  Otro: ["Otra"],
-};
-
-const COUNTRIES = Object.keys(CITIES_BY_COUNTRY);
+function resizeImageToBase64(file: File, maxPx = 300): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.75));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 
 export default function PersonalizeModal() {
   const { isPersonalizeOpen, closePersonalize, showToast } = useUIStore();
-  const { name, avatar, city, country, setName, setAvatar, setCity, setCountry, isAuthenticated } = useUserStore();
+  const { name, avatar, city, country, email, setName, setAvatar, setCity, setCountry, fetchProfile, isAuthenticated } = useUserStore();
 
   const [localName, setLocalName] = useState(name);
   const [localAvatar, setLocalAvatar] = useState(avatar);
   const [localCountry, setLocalCountry] = useState(country || "España");
   const [localCity, setLocalCity] = useState(city);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Cuenta: email + contraseña ──
+  const [localEmail, setLocalEmail] = useState(email ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  // ── Crop / reposition ──
+  const FRAME = 240;
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropDims, setCropDims] = useState({ nw: 1, nh: 1 });
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+
+  const cover = Math.max(FRAME / cropDims.nw, FRAME / cropDims.nh);
+  const dispW = cropDims.nw * cover * zoom;
+  const dispH = cropDims.nh * cover * zoom;
+  const clampOffset = (x: number, y: number) => ({
+    x: Math.min(0, Math.max(FRAME - dispW, x)),
+    y: Math.min(0, Math.max(FRAME - dispH, y)),
+  });
 
   useEffect(() => {
     if (isPersonalizeOpen) {
@@ -42,10 +70,68 @@ export default function PersonalizeModal() {
       setLocalAvatar(avatar);
       setLocalCountry(country || "España");
       setLocalCity(city);
+      setLocalEmail(email ?? "");
+      setCurrentPassword("");
+      setNewPassword("");
+      setCropSrc(null);
     }
   }, [isPersonalizeOpen]);
 
-  if (!isPersonalizeOpen) return null;
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizeImageToBase64(file, 700);
+      const img = new Image();
+      img.onload = () => {
+        const nw = img.naturalWidth, nh = img.naturalHeight;
+        const c = Math.max(FRAME / nw, FRAME / nh);
+        setCropDims({ nw, nh });
+        setZoom(1);
+        setOffset({ x: (FRAME - nw * c) / 2, y: (FRAME - nh * c) / 2 });
+        setCropSrc(dataUrl);
+      };
+      img.src = dataUrl;
+    } catch { showToast("Error al procesar la imagen"); }
+    e.target.value = "";
+  };
+
+  const onZoomChange = (z: number) => {
+    const w = cropDims.nw * cover * z, h = cropDims.nh * cover * z;
+    setZoom(z);
+    setOffset({ x: (FRAME - w) / 2, y: (FRAME - h) / 2 });
+  };
+
+  const onCropPointerDown = (e: React.PointerEvent) => {
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragRef.current = { sx: e.clientX, sy: e.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onCropPointerMove = (e: React.PointerEvent) => {
+    if (!dragRef.current) return;
+    const { sx, sy, ox, oy } = dragRef.current;
+    setOffset(clampOffset(ox + (e.clientX - sx), oy + (e.clientY - sy)));
+  };
+  const onCropPointerUp = () => { dragRef.current = null; };
+
+  const confirmCrop = () => {
+    if (!cropSrc) return;
+    const O = 320;
+    const ratio = O / FRAME;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = O; canvas.height = O;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.fillStyle = "#1a1a1a"; ctx.fillRect(0, 0, O, O);
+      ctx.drawImage(img, offset.x * ratio, offset.y * ratio, dispW * ratio, dispH * ratio);
+      setLocalAvatar(canvas.toDataURL("image/jpeg", 0.82));
+      setCropSrc(null);
+    };
+    img.src = cropSrc;
+  };
+
+  if (!isPersonalizeOpen || !isAuthenticated) return null;
 
   const handleCountryChange = (c: string) => {
     setLocalCountry(c);
@@ -77,6 +163,29 @@ export default function PersonalizeModal() {
     }
   };
 
+  const handleSaveAccount = async () => {
+    const emailChanged = localEmail.trim() && localEmail.trim().toLowerCase() !== (email ?? "").toLowerCase();
+    const wantsPassword = !!newPassword;
+    if (!emailChanged && !wantsPassword) { showToast("No hay cambios en tu cuenta"); return; }
+    if (wantsPassword && newPassword.length < 8) { showToast("La nueva contraseña debe tener al menos 8 caracteres"); return; }
+    if (wantsPassword && !currentPassword) { showToast("Introduce tu contraseña actual"); return; }
+    setSavingAccount(true);
+    try {
+      const payload: { email?: string; currentPassword?: string; newPassword?: string } = {};
+      if (emailChanged) payload.email = localEmail.trim();
+      if (wantsPassword) { payload.currentPassword = currentPassword; payload.newPassword = newPassword; }
+      await api.patch("/users/me/credentials", payload);
+      await fetchProfile();
+      setCurrentPassword("");
+      setNewPassword("");
+      showToast("Cuenta actualizada ✅");
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || "No se pudo actualizar la cuenta ❌");
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   const inner = (
     <div style={{ display: "flex", flexDirection: "column", gap: 0, position: "relative" }}>
       {/* Handle — mobile only */}
@@ -91,17 +200,56 @@ export default function PersonalizeModal() {
         >✕</button>
       </div>
 
-      {/* Avatar preview */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-        <div style={{ width: 80, height: 80, borderRadius: "50%", border: "2px solid var(--color-accent)", background: "var(--color-gray2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>
-          {localAvatar}
+      {/* Avatar preview / crop editor */}
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoSelect} />
+      {cropSrc ? (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20, gap: 12, padding: "0 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--color-muted)" }}>Arrastra para acomodar · usa el zoom</div>
+          <div
+            onPointerDown={onCropPointerDown}
+            onPointerMove={onCropPointerMove}
+            onPointerUp={onCropPointerUp}
+            onPointerCancel={onCropPointerUp}
+            style={{ width: FRAME, height: FRAME, maxWidth: "100%", borderRadius: "50%", overflow: "hidden", position: "relative", border: "2px solid var(--color-accent)", background: "#1a1a1a", cursor: "grab", touchAction: "none" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={cropSrc} alt="" draggable={false} style={{ position: "absolute", left: offset.x, top: offset.y, width: dispW, height: dispH, maxWidth: "none", pointerEvents: "none", userSelect: "none" }} />
+          </div>
+          <input type="range" min={1} max={3} step={0.01} value={zoom} onChange={(e) => onZoomChange(Number(e.target.value))} style={{ width: FRAME, maxWidth: "100%", accentColor: "var(--color-accent)" }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setCropSrc(null)} style={{ fontSize: 12, fontWeight: 600, color: "var(--color-muted)", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontFamily: "var(--font-body)" }}>Cancelar</button>
+            <button onClick={confirmCrop} className="btn-y" style={{ fontSize: 12, fontWeight: 800, padding: "8px 18px" }}>Usar foto ✓</button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20, gap: 10 }}>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", border: "2px solid var(--color-accent)", background: "var(--color-gray2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, overflow: "hidden", flexShrink: 0 }}>
+            {localAvatar?.startsWith("data:") || localAvatar?.startsWith("http")
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={localAvatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }} />
+              : localAvatar}
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{ fontSize: 11, fontWeight: 700, color: "#A78BFA", background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)", borderRadius: 8, padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font-body)" }}
+          >
+            {(localAvatar?.startsWith("data:") || localAvatar?.startsWith("http")) ? "📷 Cambiar / acomodar foto" : "📷 Subir foto"}
+          </button>
+          {(localAvatar?.startsWith("data:") || localAvatar?.startsWith("http")) && (
+            <button
+              onClick={() => setLocalAvatar("🏀")}
+              style={{ fontSize: 10, fontWeight: 600, color: "var(--color-muted)", background: "transparent", border: "none", cursor: "pointer", fontFamily: "var(--font-body)" }}
+            >
+              Quitar foto
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Avatar picker */}
       <div style={{ padding: "0 20px 20px" }}>
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", marginBottom: 10 }}>
-          ELIGE TU AVATAR
+          O ELIGE UN EMOJI
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 6 }}>
           {AVATAR_OPTIONS.map((emoji) => (
@@ -161,29 +309,15 @@ export default function PersonalizeModal() {
       {/* City */}
       <div style={{ padding: "0 20px 24px" }}>
         <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", display: "block", marginBottom: 8 }}>
-          TU CIUDAD
+          TU PROVINCIA / REGIÓN
         </label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {(CITIES_BY_COUNTRY[localCountry] ?? ["Otra"]).map((c) => (
-            <button
-              key={c}
-              onClick={() => setLocalCity(c)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: 20,
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: "pointer",
-                background: localCity === c ? "var(--color-accent)" : "var(--color-gray2)",
-                color: localCity === c ? "#000" : "var(--color-muted)",
-                border: localCity === c ? "none" : "1px solid rgba(255,255,255,0.08)",
-                transition: "background 0.15s",
-              }}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
+        <select
+          value={localCity}
+          onChange={(e) => setLocalCity(e.target.value)}
+          style={{ width: "100%", background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: "#fff", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-body)", cursor: "pointer" }}
+        >
+          {(CITIES_BY_COUNTRY[localCountry] ?? ["Otra"]).map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
 
       {/* Save */}
@@ -195,6 +329,50 @@ export default function PersonalizeModal() {
           style={{ width: "100%", fontSize: 13, fontWeight: 800, padding: "13px", opacity: saving ? 0.6 : 1 }}
         >
           {saving ? "Guardando…" : "GUARDAR CAMBIOS →"}
+        </button>
+      </div>
+
+      {/* ── Cuenta: email + contraseña ── */}
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", margin: "22px 0 0", padding: "20px 20px 4px" }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, letterSpacing: 1, marginBottom: 4 }}>CUENTA</div>
+        <div style={{ fontSize: 11, color: "var(--color-muted)", marginBottom: 16 }}>Cambia tu correo o contraseña de acceso.</div>
+
+        <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", display: "block", marginBottom: 8 }}>CORREO</label>
+        <input
+          type="email"
+          value={localEmail}
+          onChange={(e) => setLocalEmail(e.target.value)}
+          autoComplete="email"
+          placeholder="tu@email.com"
+          style={{ width: "100%", background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: "#fff", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-body)", marginBottom: 14 }}
+        />
+
+        <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", display: "block", marginBottom: 8 }}>CONTRASEÑA ACTUAL</label>
+        <input
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          autoComplete="current-password"
+          placeholder="Solo si cambias la contraseña"
+          style={{ width: "100%", background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: "#fff", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-body)", marginBottom: 14 }}
+        />
+
+        <label style={{ fontSize: 9, fontWeight: 800, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--color-muted)", display: "block", marginBottom: 8 }}>NUEVA CONTRASEÑA</label>
+        <input
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          autoComplete="new-password"
+          placeholder="Mínimo 8 caracteres (déjalo vacío para no cambiar)"
+          style={{ width: "100%", background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "11px 14px", fontSize: 13, color: "#fff", outline: "none", boxSizing: "border-box", fontFamily: "var(--font-body)", marginBottom: 16 }}
+        />
+
+        <button
+          onClick={handleSaveAccount}
+          disabled={savingAccount}
+          style={{ width: "100%", fontSize: 13, fontWeight: 800, padding: "13px", borderRadius: 10, cursor: "pointer", border: "1px solid rgba(255,255,255,0.15)", background: "var(--color-gray2)", color: "#fff", fontFamily: "var(--font-body)", opacity: savingAccount ? 0.6 : 1 }}
+        >
+          {savingAccount ? "Actualizando…" : "Actualizar cuenta"}
         </button>
       </div>
     </div>

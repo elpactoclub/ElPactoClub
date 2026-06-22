@@ -5,7 +5,10 @@ export type NotificationType =
   | 'new_vote'
   | 'bet_result'
   | 'badge_unlock'
-  | 'mission_complete';
+  | 'mission_complete'
+  | 'new_follow'
+  | 'raffle_win'
+  | 'admin_broadcast';
 
 @Entity('notifications')
 export class Notification {
@@ -16,7 +19,7 @@ export class Notification {
   @Column()
   userId: string;
 
-  @Column({ type: 'enum', enum: ['post_creator', 'new_vote', 'bet_result', 'badge_unlock', 'mission_complete'] })
+  @Column({ type: 'enum', enum: ['post_creator', 'new_vote', 'bet_result', 'badge_unlock', 'mission_complete', 'new_follow', 'raffle_win', 'admin_broadcast'] })
   type: NotificationType;
 
   @Column()

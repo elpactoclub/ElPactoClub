@@ -21,7 +21,7 @@ export default function BottomNav() {
         display: "flex",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
         flexShrink: 0,
-        zIndex: 200,
+        touchAction: "none",
       }}
     >
       {tabs.map((tab) => {

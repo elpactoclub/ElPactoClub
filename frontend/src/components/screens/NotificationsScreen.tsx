@@ -73,6 +73,7 @@ export default function NotificationsScreen() {
     setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
     setNotifUnreadCount(0);
     showToast("Todas las notificaciones leídas ✓");
+    api.post("/notifications/read-all").catch(() => {});
   };
 
   return (

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { DirectMessage } from './direct-message.entity';
@@ -6,9 +6,9 @@ import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { BadgesService } from '../badges/badges.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AppGateway } from '../gateway/app.gateway';
+import { SettingsService } from '../settings/settings.service';
 
-const CREATOR_DM_COST = 50;
-const CREATOR_DM_XP = 30;
 const CREATOR_DM_MAX_LEN = 100;
 
 @Injectable()
@@ -19,7 +19,13 @@ export class DmService {
     private readonly users: UsersService,
     private readonly badges: BadgesService,
     private readonly notifications: NotificationsService,
+    private readonly settings: SettingsService,
+    @Optional() private readonly gateway?: AppGateway,
   ) {}
+
+  /** Coste/XP del DM a creador, configurables desde el panel (Precios). */
+  private get creatorDmCost(): number { return this.settings.getNumber('dm_creator_cost_credits') || 50; }
+  private get creatorDmXp(): number { return this.settings.getNumber('dm_creator_xp_reward') || 30; }
 
   /** Lista de conversaciones del usuario: último mensaje + no leídos por interlocutor */
   async getConversations(userId: string) {
@@ -101,7 +107,7 @@ export class DmService {
         avatar: partner.avatar,
         role: partner.role,
         isCreator: partner.role === 'creator',
-        costPerMsg: partner.role === 'creator' ? CREATOR_DM_COST : 0,
+        costPerMsg: partner.role === 'creator' ? this.creatorDmCost : 0,
       },
       messages: messages.map((m) => ({
         id: m.id,
@@ -119,20 +125,25 @@ export class DmService {
     if (!content) throw new BadRequestException('Mensaje vacío');
     if (senderId === recipientId) throw new BadRequestException('No puedes enviarte mensajes a ti mismo');
 
-    const recipient = await this.userRepo.findOne({ where: { id: recipientId } });
+    const [sender, recipient] = await Promise.all([
+      this.userRepo.findOne({ where: { id: senderId } }),
+      this.userRepo.findOne({ where: { id: recipientId } }),
+    ]);
     if (!recipient) throw new NotFoundException('Destinatario no encontrado');
 
-    const isCreatorDM = recipient.role === 'creator';
+    const senderIsCreator = sender?.role === 'creator' || sender?.role === 'admin';
+    // Solo cobra créditos cuando un FAN le escribe a un CREATOR, nunca al revés
+    const isCreatorDM = !senderIsCreator && recipient.role === 'creator';
     if (isCreatorDM && content.length > CREATOR_DM_MAX_LEN) {
       throw new BadRequestException(`Máximo ${CREATOR_DM_MAX_LEN} caracteres para mensajes a creadores`);
     }
 
+    const dmCost = this.creatorDmCost;
+    const dmXp = this.creatorDmXp;
     if (isCreatorDM) {
-      // Cobra créditos (lanza ConflictException si insuficientes) y da XP
-      await this.users.spendCredits(senderId, CREATOR_DM_COST);
-      await this.users.addXP(senderId, CREATOR_DM_XP);
+      await this.users.spendCredits(senderId, dmCost);
+      await this.users.addXP(senderId, dmXp);
 
-      // Badge fan_directo en el primer DM a creador
       const previousCreatorDMs = await this.dmRepo.count({
         where: { senderId, recipientId: In(await this.creatorIds()) },
       });
@@ -143,14 +154,71 @@ export class DmService {
 
     const saved = await this.dmRepo.save(this.dmRepo.create({ senderId, recipientId, content, readAt: null }));
 
+    // Real-time: push to recipient's personal room
+    if (this.gateway) {
+      this.gateway.emitNewDM(recipientId, {
+        id: saved.id,
+        content: saved.content,
+        isMe: false,
+        senderId,
+        senderName: sender?.name ?? 'Fan',
+        senderAvatar: sender?.avatar ?? '🏀',
+        senderRole: sender?.role ?? 'fan',
+        createdAt: saved.createdAt,
+      });
+    }
+
     return {
       id: saved.id,
       content: saved.content,
       isMe: true,
       createdAt: saved.createdAt,
-      chargedCredits: isCreatorDM ? CREATOR_DM_COST : 0,
-      xpGained: isCreatorDM ? CREATOR_DM_XP : 0,
+      chargedCredits: isCreatorDM ? dmCost : 0,
+      xpGained: isCreatorDM ? dmXp : 0,
     };
+  }
+
+  /**
+   * Envía un DM desde `senderId` (admin) a varios usuarios a la vez.
+   * Si `userIds` viene vacío/ausente, se envía a TODOS los usuarios.
+   * Gratis (el emisor es admin). Aparece en la bandeja de DMs de cada uno.
+   */
+  async broadcast(senderId: string, rawContent: string, userIds?: string[]) {
+    const content = (rawContent ?? '').trim();
+    if (!content) throw new BadRequestException('Mensaje vacío');
+
+    let recipientIds: string[];
+    if (userIds && userIds.length > 0) {
+      recipientIds = [...new Set(userIds)].filter((id) => id && id !== senderId);
+    } else {
+      const all = await this.userRepo.find({ select: ['id'] });
+      recipientIds = all.map((u) => u.id).filter((id) => id !== senderId);
+    }
+    if (recipientIds.length === 0) return { sent: 0 };
+
+    const sender = await this.userRepo.findOne({ where: { id: senderId } });
+    const rows = recipientIds.map((rid) =>
+      this.dmRepo.create({ senderId, recipientId: rid, content, readAt: null }),
+    );
+    const saved = await this.dmRepo.save(rows, { chunk: 200 });
+
+    // Real-time push to each recipient (best-effort)
+    if (this.gateway) {
+      for (const m of saved) {
+        this.gateway.emitNewDM(m.recipientId, {
+          id: m.id,
+          content: m.content,
+          isMe: false,
+          senderId,
+          senderName: sender?.name ?? 'El Pacto',
+          senderAvatar: sender?.avatar ?? '🏀',
+          senderRole: sender?.role ?? 'admin',
+          createdAt: m.createdAt,
+        });
+      }
+    }
+
+    return { sent: saved.length };
   }
 
   /** Marca como leídos todos los mensajes de un interlocutor */
@@ -179,7 +247,7 @@ export class DmService {
       avatar: c.avatar,
       role: c.role,
       isCreator: true,
-      costPerMsg: CREATOR_DM_COST,
+      costPerMsg: this.creatorDmCost,
     }));
   }
 

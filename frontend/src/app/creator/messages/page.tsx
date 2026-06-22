@@ -8,7 +8,8 @@ interface Conversation {
   partnerId: string;
   name: string;
   avatar: string;
-  isCreator: boolean;
+  role?: string;
+  isCreator?: boolean;
   lastMsg?: string;
   lastMsgIsMe?: boolean;
   time?: string;
@@ -58,7 +59,13 @@ export default function CreatorMessagesPage() {
     setLoading(true);
     fetch(`${API}/dm/conversations`, { headers: authHeader() })
       .then((r) => r.json())
-      .then((data) => setConversations(Array.isArray(data) ? data : []))
+      .then((data: Conversation[]) => {
+        // Solo mostrar fans (no otros creadores ni admins)
+        const fans = (Array.isArray(data) ? data : []).filter(
+          (c) => c.role !== "creator" && c.role !== "admin"
+        );
+        setConversations(fans);
+      })
       .catch(() => setConversations([]))
       .finally(() => setLoading(false));
   }, []);
@@ -148,7 +155,7 @@ export default function CreatorMessagesPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>{partner.name}</div>
-                  <div style={{ fontSize: 11, color: "#666" }}>Fan · Conversación privada</div>
+                  <div style={{ fontSize: 11, color: "#666" }}>Fan · Mensaje privado</div>
                 </div>
               </div>
 

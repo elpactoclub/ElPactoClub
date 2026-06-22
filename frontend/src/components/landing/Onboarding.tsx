@@ -72,7 +72,7 @@ export default function Onboarding() {
   );
 
   const StepContent = () => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
+    <div key={step} className="animate-step-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
       {/* Avatar */}
       <div
         style={{
@@ -217,6 +217,7 @@ export default function Onboarding() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
+            key={step}
             src={current.bgImg}
             alt=""
             fetchPriority={step === 0 ? "high" : "auto"}
@@ -226,7 +227,7 @@ export default function Onboarding() {
               width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top",
               opacity: 0.6,
-              transition: "opacity 0.4s",
+              animation: "fadeIn 0.4s ease both",
             }}
           />
           {/* Gradiente lateral para fundir con el contenido */}

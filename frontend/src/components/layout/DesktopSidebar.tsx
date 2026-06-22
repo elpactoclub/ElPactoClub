@@ -14,8 +14,14 @@ const tabs = [
 ];
 
 export default function DesktopSidebar() {
-  const { xp, credits, isAuthenticated, name, avatar, city, level } = useUserStore();
+  const { xp, credits, isAuthenticated, token, name, avatar, city, level } = useUserStore();
+  const { openAuth } = useUIStore();
   const [dmUnread, setDmUnread] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  // Hay token guardado pero fetchProfile aún no confirmó la sesión → mostrar esqueleto
+  useEffect(() => setMounted(true), []);
+  const authLoading = mounted && !!token && !isAuthenticated;
 
   useEffect(() => {
     if (!isAuthenticated) { setDmUnread(0); return; }
@@ -50,35 +56,56 @@ export default function DesktopSidebar() {
         <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, letterSpacing: 3, lineHeight: 1 }}>EL PACTO</div>
       </div>
 
-      {/* Stats pill */}
-      <button
-        onClick={() => setTab("profile")}
-        style={{
-          background: "var(--color-gray2)",
-          border: "1px solid rgba(255,255,255,0.12)",
-          padding: "10px 14px",
-          borderRadius: 12,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 6,
-          cursor: "pointer",
-          fontFamily: "var(--font-sans)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ fontSize: 13, color: "#F0E040" }}>★</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{xp.toLocaleString()}</span>
+      {/* Stats pill — autenticado, o esqueleto mientras se confirma la sesión */}
+      {isAuthenticated ? (
+        <button
+          onClick={() => setTab("profile")}
+          style={{
+            background: "var(--color-gray2)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            padding: "10px 14px",
+            borderRadius: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 6,
+            cursor: "pointer",
+            fontFamily: "var(--font-sans)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#F0E040", letterSpacing: "0.5px", textTransform: "uppercase" }}>exp:</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{xp.toLocaleString()}</span>
+          </div>
+          <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.16)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 13, color: "var(--color-accent)" }}>⚡</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-accent)" }}>{credits}</span>
+          </div>
+        </button>
+      ) : authLoading ? (
+        <div
+          style={{
+            background: "var(--color-gray2)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            padding: "10px 14px",
+            borderRadius: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 6,
+            height: 38,
+            boxSizing: "border-box",
+          }}
+        >
+          <div style={{ width: 64, height: 13, borderRadius: 4, background: "rgba(255,255,255,0.08)", animation: "pulse 1.4s ease-in-out infinite" }} />
+          <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.16)" }} />
+          <div style={{ width: 36, height: 13, borderRadius: 4, background: "rgba(255,255,255,0.08)", animation: "pulse 1.4s ease-in-out infinite" }} />
         </div>
-        <div style={{ width: 1, height: 14, background: "rgba(255,255,255,0.16)" }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <span style={{ fontSize: 13, color: "var(--color-accent)" }}>⚡</span>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--color-accent)" }}>{credits}</span>
-        </div>
-      </button>
+      ) : null}
 
       {/* Nav items */}
-      <nav style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+      <nav style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
         {tabs.map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -89,7 +116,7 @@ export default function DesktopSidebar() {
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                padding: "10px 12px",
+                padding: "16px 12px",
                 borderRadius: 10,
                 background: active ? "rgba(240,224,64,0.08)" : "transparent",
                 border: active ? "1px solid rgba(240,224,64,0.25)" : "1px solid transparent",
@@ -116,9 +143,9 @@ export default function DesktopSidebar() {
       <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "4px 0" }} />
 
       {/* Quick actions — abren como pantallas */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {([
-          { id: "notifications" as const, icon: "🔔", label: "Notificaciones", badge: notifUnreadCount > 0 ? (notifUnreadCount > 9 ? "9+" : String(notifUnreadCount)) : null, badgeBg: "#F59E0B", badgeColor: "#000" },
+          { id: "notifications" as const, icon: "🔔", label: "Notificaciones", badge: isAuthenticated && notifUnreadCount > 0 ? (notifUnreadCount > 9 ? "9+" : String(notifUnreadCount)) : null, badgeBg: "#F59E0B", badgeColor: "#000" },
           { id: "messages" as const, icon: "✉️", label: "Mensajes", badge: dmUnread > 0 ? (dmUnread > 9 ? "9+" : String(dmUnread)) : null, badgeBg: "#EC4899", badgeColor: "#fff" },
         ]).map((q) => {
           const active = activeTab === q.id;
@@ -130,7 +157,7 @@ export default function DesktopSidebar() {
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                padding: "10px 12px",
+                padding: "16px 12px",
                 borderRadius: 10,
                 background: active ? "rgba(240,224,64,0.08)" : "transparent",
                 border: active ? "1px solid rgba(240,224,64,0.25)" : "1px solid transparent",
@@ -154,41 +181,73 @@ export default function DesktopSidebar() {
         })}
       </div>
 
-      {/* Bottom: profile */}
-      <button
-        onClick={() => setTab("profile")}
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "10px 12px",
-          borderRadius: 10,
-          background: activeTab === "profile" ? "rgba(240,224,64,0.08)" : "var(--color-gray2)",
-          border: activeTab === "profile" ? "1px solid rgba(240,224,64,0.25)" : "1px solid rgba(255,255,255,0.08)",
-          cursor: "pointer",
-          fontFamily: "var(--font-sans)",
-          textAlign: "left",
-        }}
-      >
-        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--color-gray3)", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-          {avatar && avatar.length <= 2
-            ? <span>{avatar}</span>
-            : /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={avatar || "/imagenes/violeta.jpg"} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-          }
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {name || "Mi perfil"}
+      {/* Bottom: perfil o login */}
+      {isAuthenticated ? (
+        <button
+          onClick={() => setTab("profile")}
+          style={{
+            marginTop: "auto",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: activeTab === "profile" ? "rgba(240,224,64,0.08)" : "var(--color-gray2)",
+            border: activeTab === "profile" ? "1px solid rgba(240,224,64,0.25)" : "1px solid rgba(255,255,255,0.08)",
+            cursor: "pointer",
+            fontFamily: "var(--font-sans)",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--color-gray3)", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
+            {avatar && avatar.length <= 2
+              ? <span>{avatar}</span>
+              : /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={avatar || "/imagenes/violeta.jpg"} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+            }
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            {city && <span style={{ fontSize: 10, color: "var(--color-muted)" }}>📍 {city}</span>}
-            <span style={{ fontSize: 9, fontWeight: 800, color: "#000", background: "var(--color-accent)", borderRadius: 4, padding: "1px 5px" }}>{level}</span>
-            <span style={{ fontSize: 10, color: "var(--color-accent)", fontWeight: 700 }}>⚡{xp}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {name || "Mi perfil"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              {city && <span style={{ fontSize: 10, color: "var(--color-muted)" }}>📍 {city}</span>}
+              <span style={{ fontSize: 9, fontWeight: 800, color: "#000", background: "var(--color-accent)", borderRadius: 4, padding: "1px 5px" }}>{level}</span>
+              <span style={{ fontSize: 10, color: "var(--color-accent)", fontWeight: 700 }}>⚡{xp}</span>
+            </div>
+          </div>
+        </button>
+      ) : authLoading ? (
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: "var(--color-gray2)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.07)", flexShrink: 0, animation: "pulse 1.4s ease-in-out infinite" }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 12, borderRadius: 4, background: "rgba(255,255,255,0.07)", marginBottom: 6, width: "60%", animation: "pulse 1.4s ease-in-out infinite" }} />
+            <div style={{ height: 10, borderRadius: 4, background: "rgba(255,255,255,0.07)", width: "40%", animation: "pulse 1.4s ease-in-out infinite" }} />
           </div>
         </div>
-      </button>
+      ) : (
+        <button
+          onClick={openAuth}
+          style={{
+            marginTop: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "12px",
+            borderRadius: 10,
+            background: "var(--color-accent)",
+            border: "none",
+            cursor: "pointer",
+            fontFamily: "var(--font-sans)",
+            fontSize: 13,
+            fontWeight: 800,
+            color: "#000",
+          }}
+        >
+          Inicia sesión
+        </button>
+      )}
     </aside>
   );
 }

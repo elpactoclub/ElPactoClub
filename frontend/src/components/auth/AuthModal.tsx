@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
+import { CITIES_BY_COUNTRY as citiesByCountry, COUNTRIES } from "@/data/locations";
 
 export default function AuthModal() {
-  const isAuthOpen = useUIStore((s: any) => s.isAuthOpen || false);
-  const closeAuth = () => useUIStore.setState({ isAuthOpen: false } as any);
-  const { showToast } = useUIStore();
+  const { isAuthOpen, authSuccessAction, closeAuth, openPayment, showToast } = useUIStore();
   const { login, registerUser } = useUserStore();
 
   const [isLogin, setIsLogin] = useState(true);
+
+  useEffect(() => {
+    if (isAuthOpen) setIsLogin(true);
+  }, [isAuthOpen]);
   const [emailInput, setEmailInput]       = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [nameInput, setNameInput]         = useState("");
@@ -23,15 +26,26 @@ export default function AuthModal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Registro: la contraseña debe tener al menos 8 caracteres (lo exige el servidor)
+    if (!isLogin && passwordInput.length < 8) {
+      showToast("La contraseña debe tener al menos 8 caracteres 🔒");
+      return;
+    }
     setLoading(true);
     if (isLogin) {
       const ok = await login(emailInput, passwordInput);
-      if (ok) { showToast("¡Sesión iniciada! 🏀"); closeAuth(); }
-      else showToast("Credenciales incorrectas ❌");
+      if (ok) {
+        showToast("¡Sesión iniciada! 🏀");
+        closeAuth();
+        if (authSuccessAction === "payment") openPayment();
+      } else showToast("Credenciales incorrectas ❌");
     } else {
       const ok = await registerUser(emailInput, passwordInput, nameInput, countryInput, cityInput, referredByInput);
-      if (ok) { showToast("¡Bienvenido a El Pacto! ⚡"); closeAuth(); }
-      else showToast("Error al crear cuenta ❌");
+      if (ok) {
+        showToast("¡Bienvenido a El Pacto! ⚡");
+        closeAuth();
+        if (authSuccessAction === "payment") openPayment();
+      } else showToast("No se pudo crear la cuenta. ¿El email ya está registrado? ❌");
     }
     setLoading(false);
   };
@@ -116,18 +130,6 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 
-const citiesByCountry: Record<string, string[]> = {
-  España: ["Barcelona", "Madrid", "Valencia", "Sevilla", "Bilbao", "Zaragoza", "Málaga", "Otra"],
-  Argentina: ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata", "San Miguel de Tucumán", "Mar del Plata", "Otra"],
-  México: ["Ciudad de México", "Guadalajara", "Monterrey", "Cancún", "Playa del Carmen", "Puebla", "Querétaro", "Otra"],
-  Colombia: ["Bogotá", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga", "Santa Marta", "Otra"],
-  Perú: ["Lima", "Arequipa", "Trujillo", "Chiclayo", "Cusco", "Piura", "Ica", "Otra"],
-  Chile: ["Santiago", "Valparaíso", "Concepción", "La Serena", "Temuco", "Valdivia", "Puerto Montt", "Otra"],
-  Brasil: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador", "Fortaleza", "Belo Horizonte", "Manaus", "Outra"],
-  Uruguay: ["Montevideo", "Salto", "Paysandú", "Las Piedras", "Rivera", "Maldonado", "Tacuarembó", "Outra"],
-  Paraguay: ["Asunción", "Ciudad del Este", "Encarnación", "Caaguazú", "Coronel Oviedo", "Pedro Juan Caballero", "Villarrica", "Outra"],
-  Otro: ["Otra"],
-};
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -221,12 +223,12 @@ function FormContent({
                   }}
                   style={{ ...inputStyle, cursor: "pointer" }}
                 >
-                  {["España","Argentina","México","Colombia","Perú","Chile","Brasil","Uruguay","Paraguay","Otro"].map(c => (
+                  {COUNTRIES.map(c => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </Field>
-              <Field label="Ciudad">
+              <Field label="Provincia / Región">
                 <select
                   value={cityInput}
                   onChange={(e) => setCityInput(e.target.value)}
@@ -256,6 +258,7 @@ function FormContent({
               <input
                 type={showPassword ? "text" : "password"} required
                 autoComplete={isLogin ? "current-password" : "new-password"}
+                minLength={isLogin ? undefined : 8}
                 placeholder="••••••••"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
@@ -281,6 +284,9 @@ function FormContent({
                 )}
               </button>
             </div>
+            {!isLogin && (
+              <div style={{ fontSize: 11, color: "var(--color-muted)", marginTop: 6 }}>Mínimo 8 caracteres.</div>
+            )}
           </Field>
 
           {!isLogin && (
