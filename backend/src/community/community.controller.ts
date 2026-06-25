@@ -186,6 +186,13 @@ export class CommunityController {
 
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
+  @Delete('messages/:id')
+  deleteMessage(@Param('id') id: string, @Req() req: any) {
+    return this.svc.deleteMessage(id, req.user.id, req.user.role);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Throttle({ default: { ttl: 10000, limit: 1 } })
   @Post('dm-creator')
   dmCreator(

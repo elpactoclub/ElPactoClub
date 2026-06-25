@@ -47,6 +47,22 @@ body {
 .hide-scrollbar { scrollbar-width: none; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 
+/* Chat: delete button only on hover (desktop); always visible on touch */
+.chat-del-btn { opacity: 0; transition: opacity 0.12s; }
+.chat-bubble:hover .chat-del-btn { opacity: 1; }
+.chat-del-btn:hover { background: rgba(239,68,68,0.85) !important; color: #fff !important; }
+@media (hover: none) {
+  .chat-del-btn { opacity: 0.55; }
+}
+
+/* Event chat: same hover-to-delete behaviour */
+.ev-chat-del { opacity: 0; transition: opacity 0.12s; }
+.ev-chat-bubble:hover .ev-chat-del { opacity: 1; }
+.ev-chat-del:hover { background: rgba(239,68,68,0.85) !important; color: #fff !important; }
+@media (hover: none) {
+  .ev-chat-del { opacity: 0.6; }
+}
+
 /* ── Fan app shell (desktop + mobile) ─────────────────────── */
 .fan-shell {
   width: 100%;

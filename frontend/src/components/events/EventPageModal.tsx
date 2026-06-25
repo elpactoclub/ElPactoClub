@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
+import { getSocket } from "@/services/socket";
+
+interface EventChatMsg {
+  id: string;
+  userId?: string;
+  content: string;
+  authorName: string;
+  authorRole: string;
+  createdAt: string;
+}
 
 interface EventData {
   id: string;
@@ -30,16 +40,16 @@ type EventTab = "info" | "chat" | "votar";
 
 export default function EventPageModal() {
   const { isEventPageOpen, closeEventPage, showToast, openAuth, setTab } = useUIStore();
-  const { isAuthenticated, addXP, spendCredits } = useUserStore();
+  const { isAuthenticated, addXP, spendCredits, name: myName, id: myId, role } = useUserStore();
   const [activeTab, setActiveTab] = useState<EventTab>("info");
   const [chatInput, setChatInput] = useState("");
-  const [chatMsgs, setChatMsgs] = useState([
-    { user: "Herson", text: "¡Os esperamos a todos en Vilanova! 🏀", creator: true },
-    { user: "BasketQueen", text: "¡Cuento los días! 🔥", creator: false },
-    { user: "MikelFan23", text: "¿Hay parking cerca del recinto?", creator: false },
-  ]);
+  const [chatMsgs, setChatMsgs] = useState<EventChatMsg[]>([]);
+  const [chatLoading, setChatLoading] = useState(true);
   const [registered, setRegistered] = useState(false);
   const [pollVotes, setPollVotes] = useState<Record<number, { counts: Record<string, number>; myVote?: string }>>({});
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const channel = selectedEvent ? `event-${selectedEvent.id}` : "";
 
   useEffect(() => {
     if (!isEventPageOpen) { setPollVotes({}); return; }
@@ -59,18 +69,95 @@ export default function EventPageModal() {
       .catch(() => {});
   }, [activeTab, isEventPageOpen]);
 
+  // Cargar historial del chat real del evento
+  useEffect(() => {
+    if (!isEventPageOpen || !channel) return;
+    setChatLoading(true);
+    api.get(`/community/messages?channel=${channel}`)
+      .then((r) => setChatMsgs(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setChatMsgs([]))
+      .finally(() => setChatLoading(false));
+  }, [isEventPageOpen, channel]);
+
+  // Tiempo real: suscripción al canal del evento
+  useEffect(() => {
+    if (!isEventPageOpen || !channel) return;
+    let sock: ReturnType<typeof getSocket> | null = null;
+    try {
+      sock = getSocket();
+      sock.emit("join_channel", channel);
+      const handleMsg = ({ channel: ch, message }: { channel: string; message: EventChatMsg }) => {
+        if (ch !== channel) return;
+        setChatMsgs((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          if (message.userId && message.userId === myId) return prev; // propio: ya mostrado
+          return [...prev, message];
+        });
+      };
+      const handleDeleted = ({ channel: ch, messageId }: { channel: string; messageId: string }) => {
+        if (ch !== channel) return;
+        setChatMsgs((prev) => prev.filter((m) => m.id !== messageId));
+      };
+      sock.on("new_message", handleMsg);
+      sock.on("deleted_message", handleDeleted);
+      return () => {
+        sock?.off("new_message", handleMsg);
+        sock?.off("deleted_message", handleDeleted);
+        sock?.emit("leave_channel", channel);
+      };
+    } catch {}
+  }, [isEventPageOpen, channel, myId]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMsgs]);
+
   if (!isEventPageOpen) return null;
 
   const ev = selectedEvent;
   if (!ev) return null;
 
-  const sendChat = () => {
-    if (!chatInput.trim()) return;
+  const sendChat = async () => {
+    const trimmed = chatInput.trim();
+    if (!trimmed) return;
     if (!isAuthenticated) { openAuth(); return; }
     if (selectedEvent?.type === "charla" && !registered) { showToast("Reserva tu plaza para participar en la charla"); return; }
-    setChatMsgs([...chatMsgs, { user: "Tú", text: chatInput.trim(), creator: false }]);
-    addXP(1);
     setChatInput("");
+    const tempId = `opt-${Date.now()}`;
+    const optimistic: EventChatMsg = {
+      id: tempId,
+      userId: myId ?? undefined,
+      content: trimmed,
+      authorName: myName,
+      authorRole: role,
+      createdAt: new Date().toISOString(),
+    };
+    setChatMsgs((prev) => [...prev, optimistic]);
+    try {
+      const r = await api.post("/community/messages", { content: trimmed, channel });
+      addXP(1);
+      setChatMsgs((prev) => prev.map((m) => m.id === tempId ? { ...optimistic, id: r.data.id } : m));
+    } catch {
+      setChatMsgs((prev) => prev.filter((m) => m.id !== tempId));
+    }
+  };
+
+  const canDeleteMsg = (m: EventChatMsg) => {
+    if (!isAuthenticated || m.id.startsWith("opt-")) return false;
+    if (role === "admin") return true;
+    if (role === "creator" && m.authorRole !== "admin") return true;
+    return !!myId && m.userId === myId;
+  };
+
+  const deleteMsg = async (id: string) => {
+    const prev = chatMsgs;
+    setChatMsgs((p) => p.filter((m) => m.id !== id));
+    try {
+      await api.delete(`/community/messages/${id}`);
+    } catch {
+      setChatMsgs(prev);
+      showToast("No se pudo eliminar ❌");
+    }
   };
 
   const handleRegister = async () => {
@@ -150,11 +237,11 @@ export default function EventPageModal() {
           <div className="absolute top-[-30px] right-[-30px] w-[160px] h-[160px] rounded-full" style={{ background: "var(--color-accent)", opacity: 0.06 }} />
           <div className="absolute bottom-[-20px] left-[-20px] w-[100px] h-[100px] rounded-full" style={{ background: "var(--color-accent)", opacity: 0.04 }} />
 
-          <div className="absolute inset-0 flex flex-col justify-end p-5">
+          <div className="absolute inset-0 flex flex-col justify-end" style={{ padding: "24px 28px" }}>
             <div className="text-[8px] font-bold tracking-[2px] w-fit mb-2 px-2 py-[2px] rounded-xl" style={{ color: "var(--color-accent)", background: "rgba(240,224,64,0.1)", border: "1px solid rgba(240,224,64,0.3)" }}>
               {ev.type === "tour" ? "🏀 TOUR 3x3" : ev.type === "charla" ? "🎙 CHARLA EXCLUSIVA" : "📅 EVENTO"}
             </div>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: 30, letterSpacing: 2, lineHeight: 1.1 }}>{ev.title}</div>
+            <div style={{ fontFamily: "var(--font-heading)", fontSize: 30, letterSpacing: 2, lineHeight: 1.1, paddingRight: 40 }}>{ev.title}</div>
             <div className="text-[11px] mt-1" style={{ color: "var(--color-muted)" }}>📍 {ev.location} · {ev.city}</div>
           </div>
           <button
@@ -228,20 +315,39 @@ export default function EventPageModal() {
           {activeTab === "chat" && (
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, padding: "12px 20px" }}>
-                {chatMsgs.map((m, i) => {
-                  const isMe = m.user === "Tú";
+                {chatLoading ? (
+                  <div style={{ padding: "32px 0", textAlign: "center", color: "var(--color-muted)", fontSize: 12 }}>Cargando chat…</div>
+                ) : chatMsgs.length === 0 ? (
+                  <div style={{ padding: "40px 24px", textAlign: "center" }}>
+                    <div style={{ fontSize: 30, marginBottom: 8 }}>💬</div>
+                    <div style={{ fontSize: 12.5, color: "#555" }}>Sé el primero en escribir en el chat del evento</div>
+                  </div>
+                ) : chatMsgs.map((m) => {
+                  const isMe = !!myId && m.userId === myId;
+                  const isCreator = m.authorRole === "creator";
                   return (
-                    <div key={i} style={{ display: "flex", gap: 8, flexDirection: isMe ? "row-reverse" : "row" }}>
-                      <div style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, background: m.creator ? "#22C55E22" : "#60A5FA22", color: m.creator ? "#22C55E" : "#60A5FA" }}>
-                        {m.user[0]}
+                    <div key={m.id} style={{ display: "flex", gap: 8, flexDirection: isMe ? "row-reverse" : "row" }}>
+                      <div style={{ width: 24, height: 24, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, background: isCreator ? "#22C55E22" : "#60A5FA22", color: isCreator ? "#22C55E" : "#60A5FA" }}>
+                        {(m.authorName || "?")[0]}
                       </div>
-                      <div style={{ maxWidth: "75%", borderRadius: 10, padding: "7px 10px", fontSize: 12, background: isMe ? "var(--color-accent)" : "var(--color-gray2)", color: isMe ? "#000" : "#ddd", ...(m.creator && !isMe ? { borderLeft: "2px solid #22C55E" } : {}) }}>
-                        {!isMe && <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 2, color: m.creator ? "#22C55E" : "#aaa" }}>{m.user}{m.creator && " · CREADOR"}</div>}
-                        {m.text}
+                      <div className="ev-chat-bubble" style={{ position: "relative", maxWidth: "75%", borderRadius: 10, padding: "7px 10px", fontSize: 12, background: isMe ? "var(--color-accent)" : "var(--color-gray2)", color: isMe ? "#000" : "#ddd", ...(isCreator && !isMe ? { borderLeft: "2px solid #22C55E" } : {}) }}>
+                        {!isMe && <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 2, color: isCreator ? "#22C55E" : "#aaa" }}>{m.authorName || "Fan"}{isCreator && " · CREADOR"}</div>}
+                        {m.content}
+                        {canDeleteMsg(m) && (
+                          <button
+                            className="ev-chat-del"
+                            onClick={() => deleteMsg(m.id)}
+                            aria-label="Eliminar mensaje"
+                            style={{ position: "absolute", top: -7, [isMe ? "left" : "right"]: -7, width: 20, height: 20, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.6)", color: "#bbb", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, lineHeight: 1, padding: 0 } as React.CSSProperties}
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
                 })}
+                <div ref={chatEndRef} />
               </div>
               {locked ? (
                 <div style={{ padding: "14px 20px", borderTop: "1px solid var(--color-border)", display: "flex", alignItems: "center", gap: 10, justifyContent: "center", color: "var(--color-muted)", fontSize: 12 }}>

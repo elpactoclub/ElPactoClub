@@ -861,7 +861,7 @@ function getAuthorColor(name: string | undefined, role: string) {
 }
 
 function ChatTab() {
-  const { addXP, name: myName, id: myId, avatar: myAvatar, isAuthenticated } = useUserStore();
+  const { addXP, name: myName, id: myId, avatar: myAvatar, role, isAuthenticated } = useUserStore();
   const { showToast, openAuth } = useUIStore();
   const [activeChannel, setActiveChannel] = useState<Channel>("general");
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -895,9 +895,15 @@ function ChatTab() {
           return [...prev, message];
         });
       };
+      const handleDeleted = ({ channel, messageId }: { channel: string; messageId: string }) => {
+        if (channel !== activeChannelRef.current) return;
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      };
       sock.on("new_message", handleMsg);
+      sock.on("deleted_message", handleDeleted);
       return () => {
         sock?.off("new_message", handleMsg);
+        sock?.off("deleted_message", handleDeleted);
         sock?.emit("leave_channel", activeChannel);
       };
     } catch {}
@@ -931,6 +937,25 @@ function ChatTab() {
       setMessages((prev) => prev.map((m) => m.id === tempId ? { ...optimistic, id: r.data.id } : m));
     } catch {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    }
+  };
+
+  const canDeleteMsg = (m: ChatMsg) => {
+    if (!isAuthenticated) return false;
+    if (m.id.startsWith("opt-")) return false; // aún sin ID de servidor
+    if (role === "admin") return true;
+    if (role === "creator" && m.authorRole !== "admin") return true;
+    return !!myId && m.userId === myId;
+  };
+
+  const deleteMsg = async (id: string) => {
+    const prev = messages;
+    setMessages((p) => p.filter((m) => m.id !== id)); // optimista
+    try {
+      await api.delete(`/community/messages/${id}`);
+    } catch {
+      setMessages(prev); // revertir
+      showToast("No se pudo eliminar ❌");
     }
   };
 
@@ -996,13 +1021,23 @@ function ChatTab() {
                   {m.authorAvatar || m.authorName?.[0] || "?"}
                 </div>
               )}
-              <div style={{ flex: 1, background: "#1a1a1a", borderRadius: 10, padding: "10px 14px", ...(isCreator ? { borderLeft: `2px solid ${color}` } : {}) }}>
+              <div className="chat-bubble" style={{ flex: 1, position: "relative", background: "#1a1a1a", borderRadius: 10, padding: "10px 14px", ...(isCreator ? { borderLeft: `2px solid ${color}` } : {}) }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color }}>{m.authorName || "Anónimo"}</span>
                   {isCreator && <span style={{ fontSize: 7, fontWeight: 900, background: color + "22", color, padding: "2px 5px", borderRadius: 4 }}>CREADOR</span>}
                   {m.authorRole === "socio" && <span style={{ fontSize: 7, fontWeight: 900, background: "rgba(255,255,255,0.08)", color: "#888", padding: "2px 5px", borderRadius: 4 }}>SOCIO</span>}
                 </div>
                 <div style={{ fontSize: 13, lineHeight: 1.45, color: "#ddd" }}>{m.content}</div>
+                {canDeleteMsg(m) && (
+                  <button
+                    className="chat-del-btn"
+                    onClick={() => deleteMsg(m.id)}
+                    aria-label="Eliminar mensaje"
+                    style={{ position: "absolute", top: 6, right: 6, width: 22, height: 22, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.4)", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, lineHeight: 1, padding: 0 }}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
           );

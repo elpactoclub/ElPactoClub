@@ -73,6 +73,10 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(`channel:${channel}`).emit('new_message', { channel, message });
   }
 
+  emitDeletedMessage(channel: string, messageId: string) {
+    this.server.to(`channel:${channel}`).emit('deleted_message', { channel, messageId });
+  }
+
   emitNewDM(recipientId: string, dm: object) {
     this.server.to(`user:${recipientId}`).emit('new_dm', dm);
   }

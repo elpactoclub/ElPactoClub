@@ -431,6 +431,19 @@ export class CommunityService {
     return saved;
   }
 
+  async deleteMessage(messageId: string, userId: string, role: string) {
+    const msg = await this.messageRepo.findOneBy({ id: messageId });
+    if (!msg) throw new NotFoundException('Mensaje no encontrado');
+    // El autor puede borrar el suyo; admin y creator pueden borrar cualquiera (moderación)
+    if (msg.userId !== userId && role !== 'admin' && role !== 'creator') {
+      throw new ForbiddenException('No tienes permiso para eliminar este mensaje');
+    }
+    const { channel } = msg;
+    await this.messageRepo.remove(msg);
+    this.gateway?.emitDeletedMessage(channel, messageId);
+    return { ok: true };
+  }
+
   async dmToCreator(userId: string, creatorName: string, content: string) {
     // 50 créditos / +30 XP / canal privado dm-creator-<creator>
     await this.users.spendCredits(userId, 50);
