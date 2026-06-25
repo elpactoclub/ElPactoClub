@@ -2,13 +2,32 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { ThrottlerExceptionFilter } from './common/throttler-exception.filter';
 import { join } from 'path';
 import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
+
+  // Security headers (HSTS, CSP, X-Frame-Options, etc.)
+  app.use(
+    helmet({
+      // CSP off por ahora: el frontend es una app separada; Swagger UI necesita inline scripts.
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+
+  // Ocultar la cabecera que revela el stack tecnológico
+  app.disable('x-powered-by');
+
+  // Límite de tamaño del body — bloquea payloads abusivos (imágenes base64 incluidas).
+  // NestFactory.create({ rawBody: true }) preserva req.rawBody para la firma del webhook de Stripe.
+  app.useBodyParser('json', { limit: '8mb' });
+  app.useBodyParser('urlencoded', { limit: '8mb', extended: true });
 
   // Dev only: serve files saved to disk by the local fallback in TigrisService
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
