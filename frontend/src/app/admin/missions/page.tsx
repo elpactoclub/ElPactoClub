@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Admin missions page for viewing, creating, editing and deleting weekly gamification missions.
+// ES: Página de misiones del admin para ver, crear, editar y eliminar misiones semanales de gamificación.
+
 import { useEffect, useState, useCallback } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 
+// EN: Shape of a single gamification mission stored in the backend.
+// ES: Forma de una misión de gamificación individual almacenada en el backend.
 interface Mission {
   id?: string;
   code: string;
@@ -40,6 +45,8 @@ function SkeletonMissionCard() {
   );
 }
 
+// EN: Missions admin page component listing missions and providing a modal form to create or update them.
+// ES: Componente de página de misiones del admin que lista las misiones y provee un formulario modal para crearlas o actualizarlas.
 export default function MissionsPage() {
   const { confirm, ConfirmUI } = useConfirm();
   const [missions, setMissions] = useState<Mission[]>([]);

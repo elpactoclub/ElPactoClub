@@ -1,3 +1,5 @@
+// EN: NestJS module wiring the admin panel: registers entities, services and the admin controller.
+// ES: Módulo NestJS del panel de administración: registra entidades, servicios y el controlador admin.
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/user.entity';
@@ -16,6 +18,8 @@ import { DmModule } from '../dm/dm.module';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 
+// EN: Admin feature module aggregating all administration capabilities.
+// ES: Módulo de funcionalidad admin que agrupa todas las capacidades de administración.
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Event, EventAttendee, Vote, UserVote, Raffle, RaffleEntry, Mission, Post, StoreBenefit, Project, ClubCreator]),

@@ -1,5 +1,8 @@
 "use client";
 
+// EN: User's own profile modal/page: stats, XP bar, follow lists, badges, referral code, recent activity and admin/creator shortcuts.
+// ES: Modal/página del propio perfil del usuario: estadísticas, barra de XP, listas de seguidos, insignias, código de referido, actividad reciente y accesos de admin/creador.
+
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -8,6 +11,8 @@ import AnimatedBar from "@/components/ui/AnimatedBar";
 import Skel from "@/components/ui/Skel";
 import { useAuthLoading } from "@/hooks/useAuthLoading";
 
+// EN: Definition of a badge in the catalog.
+// ES: Definición de una insignia en el catálogo.
 interface Badge {
   code: string;
   name: string;
@@ -16,6 +21,8 @@ interface Badge {
   isSecret: boolean;
 }
 
+// EN: A badge the user has unlocked, identified by its code.
+// ES: Una insignia que el usuario ha desbloqueado, identificada por su código.
 interface UserBadge { badgeCode: string; }
 
 // All 14 badge definitions — mirrors backend BADGE_DEFINITIONS
@@ -50,14 +57,20 @@ const LEVEL_NEXT: Record<string, { label: string; xp: number }> = {
   Leyenda: { label: "MAX",     xp: 9999 },
 };
 
+// EN: Formats a membership start date as a short month + year string in Spanish.
+// ES: Formatea la fecha de alta de socio como mes corto + año en español.
 function formatSocioDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   return d.toLocaleDateString("es-ES", { month: "short", year: "numeric" });
 }
 
+// EN: Shape of a user shown in the followers/following/blocked lists.
+// ES: Forma de un usuario mostrado en las listas de seguidores/siguiendo/bloqueados.
 interface FollowUser { id: string; name: string; avatar: string; level: string; xp: number; city?: string; isSocio: boolean; role: string; }
 
+// EN: Own-profile modal component (also usable inline) that loads badges, follow counts and activity.
+// ES: Componente de modal del propio perfil (también usable en línea) que carga insignias, conteos de seguidos y actividad.
 export default function ProfileModal({ inline = false }: { inline?: boolean } = {}) {
   const authLoading = useAuthLoading();
   const { isProfileOpen, closeProfile, openCarnet, openPersonalize, showToast, openUserProfile } = useUIStore();

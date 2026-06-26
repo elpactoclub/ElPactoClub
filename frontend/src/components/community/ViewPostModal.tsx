@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Modal showing a single community post in detail with reactions, poll voting, likes and comments.
+// ES: Modal que muestra una publicación de comunidad en detalle con reacciones, votación de encuesta, me gusta y comentarios.
+
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -8,6 +11,8 @@ import Skel from "@/components/ui/Skel";
 
 const REACTION_EMOJIS = ["🔥", "🏀", "💪", "🎉", "👏"];
 
+// EN: Shape of a community post fetched for the detail view.
+// ES: Forma de una publicación de comunidad obtenida para la vista de detalle.
 interface Post {
   id: string;
   authorName: string;
@@ -24,6 +29,8 @@ interface Post {
   createdAt: string;
 }
 
+// EN: Shape of a comment returned by the API for a post.
+// ES: Forma de un comentario devuelto por la API para una publicación.
 interface ApiComment {
   id: string;
   content: string;
@@ -36,6 +43,8 @@ interface ApiComment {
   createdAt: string;
 }
 
+// EN: Formats an ISO timestamp into a short relative "time ago" label in Spanish.
+// ES: Formatea una marca de tiempo ISO en una etiqueta corta de "hace X" en español.
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -46,6 +55,8 @@ function timeAgo(iso: string) {
   return `Hace ${Math.floor(h / 24)}d`;
 }
 
+// EN: Post detail modal component that loads a post and its comments and handles likes/reactions/votes/comments.
+// ES: Componente de modal de detalle de publicación que carga una publicación y sus comentarios y gestiona me gusta/reacciones/votos/comentarios.
 export default function ViewPostModal() {
   const { viewPostId, closeViewPost, showToast, openAuth } = useUIStore();
   const { liked, toggleLike, isAuthenticated, name: myName, role } = useUserStore();

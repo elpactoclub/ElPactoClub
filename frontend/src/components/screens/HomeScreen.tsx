@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Home screen showing the user's streak/XP, season progress, daily roulette, next events, team missions, contribution and monthly raffle.
+// ES: Pantalla de inicio que muestra racha/XP del usuario, progreso de temporada, ruleta diaria, próximos eventos, misiones de equipo, contribución y sorteo mensual.
+
 import { useUserStore } from "@/stores/userStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useRef, useState, useEffect } from "react";
@@ -9,7 +12,8 @@ import AnimatedBar from "@/components/ui/AnimatedBar";
 import Skel from "@/components/ui/Skel";
 import { useAuthLoading } from "@/hooks/useAuthLoading";
 
-// .sec equivalent
+// EN: Section header helper rendering a small label with optional right-side caption.
+// ES: Auxiliar de encabezado de sección que renderiza una etiqueta pequeña con subtítulo derecho opcional.
 function Sec({ left, right, rightGreen }: { left: string; right?: string; rightGreen?: boolean }) {
   return (
     <div
@@ -28,6 +32,8 @@ function Sec({ left, right, rightGreen }: { left: string; right?: string; rightG
 // ==========================================
 // STREAK + XP CARD
 // ==========================================
+// EN: Displays the user's current daily streak, XP progress bar and weekly dot tracker.
+// ES: Muestra la racha diaria actual del usuario, barra de progreso de XP y el rastreador de puntos semanal.
 function StreakXPCard() {
   const authLoading = useAuthLoading();
   const { streak, xp, level, nextLevel, xpProgress } = useUserStore();
@@ -101,6 +107,8 @@ function StreakXPCard() {
 // ==========================================
 // SEASON CARD
 // ==========================================
+// EN: Shows the current season's XP goal and the user's progress toward the exclusive season badge.
+// ES: Muestra el objetivo de XP de la temporada actual y el progreso del usuario hacia el badge exclusivo de temporada.
 function SeasonCard() {
   const { xp } = useUserStore();
   const SEASON_GOAL = 1000;
@@ -134,6 +142,8 @@ function SeasonCard() {
 // ==========================================
 // DAILY REWARD (ROULETTE) — v2 premium
 // ==========================================
+// EN: Canvas-drawn prize wheel that the user can spin once per day for XP, credits or tickets.
+// ES: Ruleta de premios dibujada en canvas que el usuario puede girar una vez al día para obtener XP, créditos o tickets.
 const SPIN_DURATION = 3200;
 const WHEEL_SIZE = 248;
 
@@ -148,6 +158,8 @@ const SEGMENTS = [
   { label: "🎁 Sorpresa", color: "#EF4444", tc: "#fff", key: "🎁 Sorpresa" },
 ];
 
+// EN: Draws all wheel segments and the center basketball icon onto a HiDPI canvas.
+// ES: Dibuja todos los segmentos de la ruleta y el icono de baloncesto central en un canvas HiDPI.
 function drawWheel(canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -212,6 +224,8 @@ function drawWheel(canvas: HTMLCanvasElement) {
   ctx.fillText("🏀", cx, cy);
 }
 
+// EN: Daily reward component rendering the spin wheel, result banner and CTA button.
+// ES: Componente de recompensa diaria que renderiza la ruleta, el banner de resultado y el botón CTA.
 function DailyReward() {
   const { ruletaSpun, spinRuletaApi, isAuthenticated } = useUserStore();
   const { showToast, openAuth } = useUIStore();
@@ -371,12 +385,16 @@ function DailyReward() {
 // ==========================================
 // NEXT EVENT
 // ==========================================
+// EN: Shape of an upcoming event shown on the home screen card.
+// ES: Forma de un evento próximo mostrado en la tarjeta de la pantalla de inicio.
 interface UpcomingEvent {
   id: string; title: string; description?: string; type: string; date: string;
   location?: string; city?: string; creditsCost: number; maxAttendees?: number;
   attendeesCount: number; imageUrl?: string; showOnHome?: boolean; polls?: { question: string; options: string[] }[];
 }
 
+// EN: Renders a single upcoming event card with title, date, city and countdown days.
+// ES: Renderiza una tarjeta de evento próximo con título, fecha, ciudad y días de cuenta atrás.
 function NextEventCard({ event, onOpen }: { event: UpcomingEvent | null; onOpen: () => void }) {
   const days = event ? Math.max(0, Math.ceil((new Date(event.date).getTime() - Date.now()) / 86400000)) : 0;
   const dateLabel = event
@@ -432,6 +450,8 @@ function NextEventCard({ event, onOpen }: { event: UpcomingEvent | null; onOpen:
   );
 }
 
+// EN: Fetches admin-featured upcoming events and renders them in an auto-rotating carousel.
+// ES: Obtiene los próximos eventos destacados por el admin y los muestra en un carrusel de rotación automática.
 function NextEvent() {
   const { setTab, openEventPage } = useUIStore();
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
@@ -529,6 +549,8 @@ function NextEvent() {
 // ==========================================
 // TEAM MISSION
 // ==========================================
+// EN: Shape of a team mission record including progress and reward info.
+// ES: Forma de un registro de misión de equipo incluyendo progreso e información de recompensa.
 interface MissionData {
   code: string;
   title: string;
@@ -539,6 +561,8 @@ interface MissionData {
   isComplete: boolean;
 }
 
+// EN: Renders a single team mission with progress bar and optional completion message.
+// ES: Renderiza una misión de equipo individual con barra de progreso y mensaje de completado opcional.
 function MissionCard({ m }: { m: MissionData }) {
   const pct = Math.min(100, Math.round((m.current / m.target) * 100));
   return (
@@ -560,6 +584,8 @@ function MissionCard({ m }: { m: MissionData }) {
   );
 }
 
+// EN: Loads active team missions from the API and displays them in an auto-rotating carousel.
+// ES: Carga las misiones de equipo activas desde la API y las muestra en un carrusel de rotación automática.
 function TeamMission() {
   const [missions, setMissions] = useState<MissionData[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -646,6 +672,8 @@ function TeamMission() {
 // ==========================================
 // MY CONTRIBUTION
 // ==========================================
+// EN: Shows the authenticated user's weekly vote count and their percentage share of total club votes.
+// ES: Muestra el conteo de votos semanales del usuario autenticado y su porcentaje del total de votos del club.
 function MyContribution() {
   const [weekVotes, setWeekVotes] = useState(0);
   const [clubPct, setClubPct] = useState("0.0");
@@ -703,6 +731,8 @@ function MyContribution() {
 // ==========================================
 // MONTHLY RAFFLE
 // ==========================================
+// EN: Shape of the active raffle returned by the backend, including audience restriction and winner info.
+// ES: Forma del sorteo activo devuelto por el backend, incluyendo restricción de audiencia e información del ganador.
 interface ActiveRaffle {
   id: string;
   title: string;
@@ -718,6 +748,8 @@ interface ActiveRaffle {
   audience?: string;
 }
 
+// EN: Monthly raffle component that loads the active raffle, handles entry purchase and shows a detail modal.
+// ES: Componente del sorteo mensual que carga el sorteo activo, gestiona la compra de entrada y muestra un modal de detalle.
 function MonthlyRaffle() {
   const { addTicket, addXP, spendCredits, credits, isAuthenticated, role, isSocio } = useUserStore();
   const { showToast, openAuth, setTab } = useUIStore();
@@ -916,6 +948,8 @@ function MonthlyRaffle() {
 // ==========================================
 // HOME SCREEN
 // ==========================================
+// EN: Home screen root component composing all home widgets in a vertical stack.
+// ES: Componente raíz de la pantalla de inicio que compone todos los widgets del inicio en una pila vertical.
 export default function HomeScreen() {
   return (
     <div className="home-screen" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px", paddingBottom: "20px" }}>

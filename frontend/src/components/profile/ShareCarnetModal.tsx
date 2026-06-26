@@ -1,8 +1,13 @@
 "use client";
 
+// EN: Modal for sharing the member carnet via WhatsApp/Twitter/copy/Instagram or downloading it as an image.
+// ES: Modal para compartir el carnet de socio por WhatsApp/Twitter/copiar/Instagram o descargarlo como imagen.
+
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
+// EN: Share-carnet modal component rendering a mini member card and share/download options.
+// ES: Componente de modal de compartir carnet que renderiza una mini tarjeta de socio y opciones de compartir/descargar.
 export default function ShareCarnetModal() {
   const { isShareCarnetOpen, closeShareCarnet, showToast } = useUIStore();
   const { name, level, credits, avatar, socioNumber } = useUserStore();

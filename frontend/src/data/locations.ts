@@ -1,8 +1,13 @@
+// EN: First-level administrative divisions per country used in the profile location selector.
+// ES: Divisiones administrativas de primer nivel por país usadas en el selector de ubicación del perfil.
+
 // Divisiones administrativas de primer nivel por país (cubren todo el territorio).
 // Argentina → provincias, España → provincias, México/Brasil → estados,
 // Colombia/Perú/Uruguay/Paraguay → departamentos, Chile → regiones.
 // La última opción ("Otra"/"Outra") permite a quien no encuentre su zona.
 
+// EN: Map from country name to its list of provinces, states or regions.
+// ES: Mapa del nombre del país a su lista de provincias, estados o regiones.
 export const CITIES_BY_COUNTRY: Record<string, string[]> = {
   España: [
     "Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz",
@@ -73,4 +78,6 @@ export const CITIES_BY_COUNTRY: Record<string, string[]> = {
   Otro: ["Otra"],
 };
 
+// EN: Ordered list of supported countries derived from the CITIES_BY_COUNTRY keys.
+// ES: Lista ordenada de países soportados derivada de las claves de CITIES_BY_COUNTRY.
 export const COUNTRIES = Object.keys(CITIES_BY_COUNTRY);

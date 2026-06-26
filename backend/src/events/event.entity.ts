@@ -1,7 +1,11 @@
+// EN: TypeORM entities for the events feature: events, their attendees and per-user poll votes.
+// ES: Entidades TypeORM de la funcionalidad de eventos: eventos, sus asistentes y los votos de encuesta por usuario.
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index, Unique } from 'typeorm';
 
 export type EventType = 'partido' | 'charla' | 'tour' | 'sorteo' | 'reto';
 
+// EN: An event with schedule, location, capacity, cost, media, polls and approval status.
+// ES: Un evento con horario, ubicación, aforo, coste, multimedia, encuestas y estado de aprobación.
 @Entity('events')
 export class Event {
   @PrimaryGeneratedColumn('uuid')
@@ -65,6 +69,8 @@ export class Event {
   createdAt: Date;
 }
 
+// EN: Join record marking that a user is registered for an event (unique per event/user).
+// ES: Registro que indica que un usuario está inscrito en un evento (único por evento/usuario).
 @Entity('event_attendees')
 @Index(['eventId', 'userId'], { unique: true })
 export class EventAttendee {
@@ -81,6 +87,8 @@ export class EventAttendee {
   createdAt: Date;
 }
 
+// EN: A user's vote on a specific poll within an event (unique per event/user/poll).
+// ES: El voto de un usuario en una encuesta concreta de un evento (único por evento/usuario/encuesta).
 @Entity('event_poll_votes')
 @Unique(['eventId', 'userId', 'pollIndex'])
 export class EventPollVote {

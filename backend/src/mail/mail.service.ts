@@ -1,6 +1,10 @@
+// EN: Mail service: sends contact-form emails via SMTP (nodemailer), logging only when SMTP is unset.
+// ES: Servicio de correo: envía emails del formulario de contacto por SMTP (nodemailer), solo registra si no hay SMTP.
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
+// EN: Injectable mail service that lazily builds the SMTP transporter from env vars.
+// ES: Servicio de correo inyectable que construye el transporte SMTP a partir de variables de entorno.
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -23,6 +27,8 @@ export class MailService {
     }
   }
 
+  // EN: Sends a contact-form email (or logs it if SMTP is not configured).
+  // ES: Envía un email del formulario de contacto (o lo registra si SMTP no está configurado).
   async sendContact(opts: {
     fromName: string;
     fromEmail: string;

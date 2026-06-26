@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Root fan page that handles auth token bootstrap, URL param side-effects (shared posts, payment callbacks) and switches between Landing, Onboarding and AppShell.
+// ES: Página raíz del fan que gestiona el arranque del token de autenticación, efectos secundarios de parámetros URL (posts compartidos, callbacks de pago) y cambia entre Landing, Onboarding y AppShell.
+
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -7,6 +10,8 @@ import Landing from "@/components/landing/Landing";
 import Onboarding from "@/components/landing/Onboarding";
 import AppShell from "@/components/layout/AppShell";
 
+// EN: Home page component — bootstraps auth, handles payment/post redirects, then renders the appropriate screen.
+// ES: Componente de página de inicio — arranca la autenticación, gestiona redirecciones de pago/posts y luego renderiza la pantalla apropiada.
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const { isLandingOpen, isOnboardingOpen, showToast } = useUIStore();

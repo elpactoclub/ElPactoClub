@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Store tab screen with subscription plans, member benefits, credit packs (Stripe checkout) and a merch placeholder.
+// ES: Pantalla de la pestaña tienda con planes de suscripción, beneficios de socio, paquetes de créditos (checkout de Stripe) y un placeholder de merch.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -8,6 +11,8 @@ import { useAuthLoading } from "@/hooks/useAuthLoading";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 
+// EN: Shape of a store benefit (discount/perk) shown to members.
+// ES: Forma de un beneficio de tienda (descuento/ventaja) mostrado a los socios.
 interface StoreBenefit {
   id: string;
   name: string;
@@ -19,18 +24,26 @@ interface StoreBenefit {
   link?: string;
 }
 
+// EN: Identifier of a purchasable credit pack.
+// ES: Identificador de un paquete de créditos comprable.
 type PackId = "100" | "200";
 
+// EN: Current pricing for subscription and credit packs from the backend.
+// ES: Precios actuales de la suscripción y los paquetes de créditos provenientes del backend.
 interface Prices {
   socio: number;
   credits100: number;
   credits200: number;
 }
 
+// EN: Formats a numeric price into a euro string, using a comma for decimals.
+// ES: Formatea un precio numérico en una cadena en euros, usando coma para los decimales.
 function fmtPrice(n: number): string {
   return n % 1 === 0 ? `${n}€` : `${n.toFixed(2).replace(".", ",")}€`;
 }
 
+// EN: Store screen component that loads benefits/prices and handles subscription, credit purchases and carnet access.
+// ES: Componente de la pantalla tienda que carga beneficios/precios y gestiona la suscripción, compra de créditos y acceso al carnet.
 export default function StoreScreen() {
   const [activeTab, setActiveTab] = useState<"sub" | "cred" | "merch">("sub");
   const [selectedPack, setSelectedPack] = useState<PackId | null>(null);

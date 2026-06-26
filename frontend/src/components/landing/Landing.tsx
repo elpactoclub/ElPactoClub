@@ -1,8 +1,13 @@
 "use client";
 
+// EN: Marketing landing page with hero, live stats, member pricing and CTAs to sign up or explore.
+// ES: Página de aterrizaje de marketing con hero, estadísticas en vivo, precio de socio y CTAs para registrarse o explorar.
+
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 
+// EN: Landing component that fetches public stats/prices and routes users to auth or onboarding.
+// ES: Componente de landing que obtiene estadísticas/precios públicos y dirige a los usuarios a auth u onboarding.
 export default function Landing() {
   const { openAuthForPayment } = useUIStore();
   const [stats, setStats] = useState<{ fans: number; decisions: number } | null>(null);

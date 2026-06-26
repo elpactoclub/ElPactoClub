@@ -1,6 +1,11 @@
+// EN: Pulsing placeholder block used to build loading skeletons.
+// ES: Bloque pulsante usado para construir esqueletos de carga.
+
 import type { CSSProperties } from "react";
 
 /** Bloque pulsante para esqueletos de carga. */
+// EN: Renders a pulsing skeleton block with configurable size and radius.
+// ES: Renderiza un bloque esqueleto pulsante con tamaño y radio configurables.
 export default function Skel({
   w,
   h,

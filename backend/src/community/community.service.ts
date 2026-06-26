@@ -1,3 +1,5 @@
+// EN: Business logic for the community: posts, comments, reactions, polls, stories, chat and creator DMs.
+// ES: Lógica de negocio de la comunidad: posts, comentarios, reacciones, encuestas, historias, chat y DMs a creadores.
 import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +12,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { AppGateway } from '../gateway/app.gateway';
 
+// EN: Service holding all community operations against the post/message/comment/story repositories.
+// ES: Servicio con todas las operaciones de comunidad sobre los repositorios de post/mensaje/comentario/historia.
 @Injectable()
 export class CommunityService {
   constructor(
@@ -24,6 +28,8 @@ export class CommunityService {
     @Optional() private readonly gateway?: AppGateway,
   ) {}
 
+  // EN: Returns the personalized feed (creators/admins + followed users + own posts, minus blocked).
+  // ES: Devuelve el feed personalizado (creadores/admins + usuarios seguidos + posts propios, menos bloqueados).
   async getPosts(userId?: string) {
     const posts = await this.postRepo.find({
       where: { isVisible: true },
@@ -51,6 +57,8 @@ export class CommunityService {
     return this.enrichPosts(visible, userId);
   }
 
+  // EN: Adds author info, comment counts, like/reaction state to a list of posts.
+  // ES: Añade datos del autor, recuento de comentarios y estado de like/reacción a una lista de posts.
   /** Adds author info, comment counts, like/reaction state to a list of posts. */
   private async enrichPosts(posts: Post[], userId?: string) {
     if (posts.length === 0) return [];
@@ -83,6 +91,8 @@ export class CommunityService {
     }));
   }
 
+  // EN: Posts authored by a specific user (their profile).
+  // ES: Posts escritos por un usuario concreto (su perfil).
   /** Posts authored by a specific user (their profile). */
   async getPostsByUser(authorId: string, viewerId?: string) {
     const posts = await this.postRepo.find({
@@ -93,6 +103,8 @@ export class CommunityService {
     return this.enrichPosts(posts, viewerId);
   }
 
+  // EN: Posts a specific user has liked.
+  // ES: Posts a los que un usuario concreto ha dado like.
   /** Posts a specific user has liked. */
   async getLikedPostsByUser(userId: string, viewerId?: string) {
     const posts = await this.postRepo
@@ -105,6 +117,8 @@ export class CommunityService {
     return this.enrichPosts(posts, viewerId);
   }
 
+  // EN: A single post by id (enriched). Used for shared links and profile views.
+  // ES: Un único post por id (enriquecido). Se usa para enlaces compartidos y vistas de perfil.
   /** A single post by id (enriched). Used for shared links and profile views. */
   async getPostById(id: string, viewerId?: string) {
     const post = await this.postRepo.findOne({ where: { id, isVisible: true } });
@@ -113,7 +127,8 @@ export class CommunityService {
     return enriched ?? null;
   }
 
-  /** Lista de comentarios de un post con datos de autor y si el usuario les dio like. */
+  // EN: List of a post's comments with author data and whether the user liked each one.
+  // ES: Lista de comentarios de un post con datos de autor y si el usuario les dio like.
   async getComments(postId: string, userId?: string) {
     const comments = await this.commentRepo.find({
       where: { postId },
@@ -136,7 +151,8 @@ export class CommunityService {
     }));
   }
 
-  /** Crea un comentario. +1 XP al autor del comentario. Notifica al autor del post. */
+  // EN: Creates a comment on a post and returns it enriched with author info.
+  // ES: Crea un comentario. +1 XP al autor del comentario. Notifica al autor del post.
   async addComment(postId: string, userId: string, rawContent: string) {
     const content = (rawContent ?? '').trim();
     if (!content) throw new ForbiddenException('Comentario vacío');
@@ -160,6 +176,8 @@ export class CommunityService {
     };
   }
 
+  // EN: Toggles the current user's like on a comment and returns the new count.
+  // ES: Alterna el like del usuario actual en un comentario y devuelve el nuevo recuento.
   async likeComment(commentId: string, userId: string) {
     const comment = await this.commentRepo.findOneBy({ id: commentId });
     if (!comment) return { ok: false };
@@ -171,6 +189,8 @@ export class CommunityService {
     return { liked: !wasLiked, likesCount: newCount };
   }
 
+  // EN: Deletes a comment if the requester is its author or an admin.
+  // ES: Borra un comentario si quien lo pide es su autor o un admin.
   async deleteComment(commentId: string, userId: string, role: string) {
     const comment = await this.commentRepo.findOneBy({ id: commentId });
     if (!comment) throw new NotFoundException('Comentario no encontrado');
@@ -181,12 +201,15 @@ export class CommunityService {
     return { ok: true };
   }
 
+  // EN: Creates a new ephemeral story for a user.
+  // ES: Crea una nueva historia efímera para un usuario.
   async createStory(userId: string, imageUrl: string, caption?: string) {
     const story = this.storyRepo.create({ userId, imageUrl, caption: caption ?? undefined });
     return this.storyRepo.save(story);
   }
 
-  /** Borra de la base las historias con más de 24h. Corre cada hora. */
+  // EN: Scheduled job that deletes stories older than 24h from the database. Runs hourly.
+  // ES: Borra de la base las historias con más de 24h. Corre cada hora.
   @Cron(CronExpression.EVERY_HOUR)
   async purgeExpiredStories() {
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -194,6 +217,8 @@ export class CommunityService {
     if (result.affected) console.log(`🧹 ${result.affected} historias expiradas eliminadas`);
   }
 
+  // EN: Deletes a story if the requester is its owner or an admin.
+  // ES: Borra una historia si quien lo pide es su dueño o un admin.
   async deleteStory(storyId: string, userId: string, role: string) {
     const story = await this.storyRepo.findOne({ where: { id: storyId } });
     if (!story) throw new Error('Story not found');
@@ -202,6 +227,8 @@ export class CommunityService {
     return { ok: true };
   }
 
+  // EN: Builds the story bar: own story first, then creators/admins (always), then followed users.
+  // ES: Construye la barra de historias: la propia primero, luego creadores/admins (siempre) y usuarios seguidos.
   /** Story bar: own story first, then creators/admins (always), then followed users. */
   async getStoryAuthors(userId?: string) {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);

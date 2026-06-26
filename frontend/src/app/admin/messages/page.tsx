@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin messages page for sending direct broadcast messages or individual DMs to users from the admin panel.
+// ES: Página de mensajes del admin para enviar mensajes directos broadcast o DMs individuales a usuarios desde el panel de administración.
+
 import { useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -18,6 +21,8 @@ function authHeader() {
   return { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}` };
 }
 
+// EN: Admin messages page component for composing and sending direct messages to any user or all users at once.
+// ES: Componente de página de mensajes del admin para redactar y enviar mensajes directos a cualquier usuario o a todos a la vez.
 export default function AdminMessagesPage() {
   const { alert, ConfirmUI } = useConfirm();
   const [mode, setMode] = useState<"all" | "select">("all");

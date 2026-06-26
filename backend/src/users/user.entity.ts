@@ -1,3 +1,5 @@
+// EN: TypeORM User entity: account, gamification, membership, referrals and social data.
+// ES: Entidad User de TypeORM: cuenta, gamificación, membresía, referidos y datos sociales.
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,6 +12,8 @@ import {
 export type UserLevel = 'Rookie' | 'Starter' | 'MVP' | 'Leyenda';
 export type UserRole = 'fan' | 'socio' | 'creator' | 'admin';
 
+// EN: Database model representing a registered fan/user.
+// ES: Modelo de base de datos que representa a un fan/usuario registrado.
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')

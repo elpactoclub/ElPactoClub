@@ -1,11 +1,16 @@
 "use client";
 
+// EN: Full-screen event page modal with info, real-time event chat and polls, plus registration (credit-cost) and attendee gating for talks.
+// ES: Modal de página de evento a pantalla completa con info, chat de evento en tiempo real y encuestas, además de inscripción (coste en créditos) y restricción de asistentes en charlas.
+
 import { useState, useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 import { getSocket } from "@/services/socket";
 
+// EN: Shape of a chat message in the event channel.
+// ES: Forma de un mensaje de chat en el canal del evento.
 interface EventChatMsg {
   id: string;
   userId?: string;
@@ -15,6 +20,8 @@ interface EventChatMsg {
   createdAt: string;
 }
 
+// EN: Shape of the event being displayed (details, capacity, media and polls).
+// ES: Forma del evento mostrado (detalles, aforo, multimedia y encuestas).
 interface EventData {
   id: string;
   title: string;
@@ -33,11 +40,19 @@ interface EventData {
 
 // Global event data shared from EventsScreen
 let selectedEvent: EventData | null = null;
+// EN: Sets the module-level event that the modal will display (shared from EventsScreen).
+// ES: Establece el evento a nivel de módulo que el modal mostrará (compartido desde EventsScreen).
 export function setSelectedEvent(e: EventData | null) { selectedEvent = e; }
+// EN: Returns the currently selected event shared with the modal.
+// ES: Devuelve el evento actualmente seleccionado compartido con el modal.
 export function getSelectedEvent() { return selectedEvent; }
 
+// EN: The active tab within the event page.
+// ES: La pestaña activa dentro de la página del evento.
 type EventTab = "info" | "chat" | "votar";
 
+// EN: Event page modal component managing registration, real-time chat and poll voting.
+// ES: Componente de modal de página de evento que gestiona la inscripción, el chat en tiempo real y la votación de encuestas.
 export default function EventPageModal() {
   const { isEventPageOpen, closeEventPage, showToast, openAuth, setTab } = useUIStore();
   const { isAuthenticated, addXP, spendCredits, name: myName, id: myId, role } = useUserStore();

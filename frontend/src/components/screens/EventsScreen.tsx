@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Events tab screen listing club events (tours, talks) with filters, registration and a notifications opt-in.
+// ES: Pantalla de la pestaña de eventos que lista los eventos del club (tours, charlas) con filtros, inscripción y activación de notificaciones.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -7,6 +10,8 @@ import Skel from "@/components/ui/Skel";
 import { api } from "@/services/api";
 import { setSelectedEvent } from "@/components/events/EventPageModal";
 
+// EN: Shape of an event list item, including optional static display enrichment fields.
+// ES: Forma de un elemento de la lista de eventos, incluyendo campos opcionales de enriquecimiento visual estático.
 interface EventItem {
   id: string;
   title: string;
@@ -58,6 +63,8 @@ const STATIC_EVENTS: EventItem[] = [
   },
 ];
 
+// EN: Events screen component that loads events, handles registration and manages browser notification permissions.
+// ES: Componente de la pantalla de eventos que carga eventos, gestiona la inscripción y administra los permisos de notificaciones del navegador.
 export default function EventsScreen() {
   const { showToast, openEventPage, openAuth, setTab } = useUIStore();
   const { isAuthenticated, addXP, spendCredits } = useUserStore();

@@ -1,3 +1,5 @@
+// EN: DM service: conversations, threads, sending (with creator credit cost) and admin broadcasts.
+// ES: Servicio de DM: conversaciones, hilos, envío (con coste en créditos a creadores) y difusiones de admin.
 import { BadRequestException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
@@ -11,6 +13,8 @@ import { SettingsService } from '../settings/settings.service';
 
 const CREATOR_DM_MAX_LEN = 100;
 
+// EN: Injectable DM service with repositories, gateway and dependent services.
+// ES: Servicio de DM inyectable con repositorios, gateway y servicios dependientes.
 @Injectable()
 export class DmService {
   constructor(
@@ -23,10 +27,16 @@ export class DmService {
     @Optional() private readonly gateway?: AppGateway,
   ) {}
 
+  // EN: Credit cost charged for messaging a creator (configurable from the pricing panel).
+  // ES: Coste en créditos por enviar mensaje a un creador (configurable desde el panel de precios).
   /** Coste/XP del DM a creador, configurables desde el panel (Precios). */
   private get creatorDmCost(): number { return this.settings.getNumber('dm_creator_cost_credits') || 50; }
+  // EN: XP rewarded for messaging a creator (configurable from the pricing panel).
+  // ES: XP otorgado por enviar mensaje a un creador (configurable desde el panel de precios).
   private get creatorDmXp(): number { return this.settings.getNumber('dm_creator_xp_reward') || 30; }
 
+  // EN: Returns the user's conversations: last message and unread count per partner.
+  // ES: Devuelve las conversaciones del usuario: último mensaje y no leídos por interlocutor.
   /** Lista de conversaciones del usuario: último mensaje + no leídos por interlocutor */
   async getConversations(userId: string) {
     const msgs = await this.dmRepo.find({
@@ -78,6 +88,8 @@ export class DmService {
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
   }
 
+  // EN: Returns the message thread between the user and a partner, marking received messages as read.
+  // ES: Devuelve el hilo de mensajes entre el usuario y un interlocutor, marcando como leídos los recibidos.
   /** Hilo entre el usuario y un interlocutor. Marca como leídos los recibidos. */
   async getThread(userId: string, partnerId: string) {
     const partner = await this.userRepo.findOne({ where: { id: partnerId } });
@@ -119,6 +131,8 @@ export class DmService {
     };
   }
 
+  // EN: Sends a DM; if the recipient is a creator, charges credits and grants XP to the sender, plus first-DM badge.
+  // ES: Envía un DM; si el destinatario es creador, cobra créditos y da XP al emisor, más la insignia del primer DM.
   /** Envía un DM. Si el destinatario es creador: cobra 50⚡ + da 30XP al emisor. */
   async send(senderId: string, recipientId: string, rawContent: string) {
     const content = (rawContent ?? '').trim();
@@ -178,6 +192,8 @@ export class DmService {
     };
   }
 
+  // EN: Broadcasts a DM from an admin sender to many users (or all if no ids), free of charge.
+  // ES: Difunde un DM desde un emisor admin a varios usuarios (o a todos si no hay ids), de forma gratuita.
   /**
    * Envía un DM desde `senderId` (admin) a varios usuarios a la vez.
    * Si `userIds` viene vacío/ausente, se envía a TODOS los usuarios.
@@ -221,6 +237,8 @@ export class DmService {
     return { sent: saved.length };
   }
 
+  // EN: Marks all messages from a given partner as read.
+  // ES: Marca como leídos todos los mensajes de un interlocutor dado.
   /** Marca como leídos todos los mensajes de un interlocutor */
   async markRead(userId: string, partnerId: string) {
     await this.dmRepo
@@ -232,12 +250,16 @@ export class DmService {
     return { ok: true };
   }
 
+  // EN: Returns the user's total unread DM count.
+  // ES: Devuelve el total de DMs no leídos del usuario.
   /** Total de DMs no leídos del usuario (para badge en TopNav) */
   async unreadCount(userId: string) {
     const count = await this.dmRepo.count({ where: { recipientId: userId, readAt: IsNull() } });
     return { count };
   }
 
+  // EN: Lists creators available to start a conversation with, including the per-message cost.
+  // ES: Lista los creadores disponibles para iniciar conversación, incluyendo el coste por mensaje.
   /** Lista de creadores disponibles para iniciar conversación (id real para DMs) */
   async getCreators() {
     const creators = await this.userRepo.find({ where: { role: 'creator' as any } });
@@ -251,6 +273,8 @@ export class DmService {
     }));
   }
 
+  // EN: Returns all creator user ids (or a sentinel when none) for query filtering.
+  // ES: Devuelve los ids de usuarios creadores (o un centinela si no hay) para filtrar consultas.
   private async creatorIds(): Promise<string[]> {
     const creators = await this.userRepo.find({ where: { role: 'creator' as any }, select: ['id'] });
     const ids = creators.map((c) => c.id);

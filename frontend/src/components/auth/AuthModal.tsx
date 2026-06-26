@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Login/registration modal toggling between sign-in and sign-up, with optional post-auth payment flow.
+// ES: Modal de inicio de sesión/registro que alterna entre entrar y crear cuenta, con flujo de pago opcional tras autenticarse.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { CITIES_BY_COUNTRY as citiesByCountry, COUNTRIES } from "@/data/locations";
 
+// EN: Auth modal component managing form state and submitting login/registration.
+// ES: Componente de modal de autenticación que gestiona el estado del formulario y envía inicio de sesión/registro.
 export default function AuthModal() {
   const { isAuthOpen, authSuccessAction, closeAuth, openPayment, showToast } = useUIStore();
   const { login, registerUser } = useUserStore();
@@ -131,6 +136,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 
+// EN: Small labeled form-field wrapper.
+// ES: Pequeño envoltorio de campo de formulario con etiqueta.
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -140,6 +147,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+// EN: Shared auth form body (login/register fields, password toggle) used by both mobile and desktop layouts.
+// ES: Cuerpo compartido del formulario de auth (campos de login/registro, alternar contraseña) usado por los diseños móvil y de escritorio.
 function FormContent({
   isLogin, loading,
   emailInput, setEmailInput,

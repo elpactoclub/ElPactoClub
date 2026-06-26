@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Creator posts page for composing and publishing feed posts (text or poll) with optional image upload and managing existing ones.
+// ES: Página de posts del creador para redactar y publicar posts en el feed (texto o encuesta) con subida de imagen opcional y gestión de los existentes.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import Skel from "@/components/ui/Skel";
 
@@ -52,6 +55,8 @@ function timeAgo(iso: string) {
 const TYPE_COLOR: Record<string, string> = { text: "#60A5FA", poll: "#F0E040", image: "#22C55E", challenge: "#F59E0B" };
 const TYPE_LABEL: Record<string, string> = { text: "Texto", poll: "Encuesta", image: "Imagen", challenge: "Reto" };
 
+// EN: Creator posts page component loading the creator's posts, handling image resize, form state for new posts and delete actions.
+// ES: Componente de página de posts del creador que carga los posts del creador, gestiona el redimensionado de imágenes, el estado del formulario para nuevos posts y las acciones de eliminación.
 export default function CreatorPostsPage() {
   const [posts, setPosts] = useState<MyPost[]>([]);
   const [loading, setLoading] = useState(true);

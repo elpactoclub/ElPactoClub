@@ -1,5 +1,8 @@
 "use client";
 
+// EN: "El Pacto" about screen with club intro, creators, community ranking, impact projects, sponsors, contact and legal modals.
+// ES: Pantalla "El Pacto" con introducción del club, creadores, ranking de la comunidad, proyectos de impacto, patrocinadores, contacto y modales legales.
+
 import { useUIStore, type ProjectData } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { useState, useEffect } from "react";
@@ -100,6 +103,8 @@ soporte@elpactoclub.com
 
 Club Bàsquet El Pacto · NIF G56373806 · soporte@elpactoclub.com`;
 
+// EN: Shape of a single leaderboard entry returned by the backend.
+// ES: Forma de una entrada individual del ranking devuelta por el backend.
 interface LeaderboardEntry {
   id: string;
   name: string;
@@ -122,11 +127,15 @@ const COUNTRY_FLAGS: Record<string, string> = {
   "Italia": "🇮🇹", "Portugal": "🇵🇹", "Alemania": "🇩🇪", "Reino Unido": "🇬🇧",
   "India": "🇮🇳", "Brasil": "🇧🇷", "Brazil": "🇧🇷", "Marruecos": "🇲🇦", "Andorra": "🇦🇩",
 };
+// EN: Returns the flag emoji for a country name, defaulting to a globe.
+// ES: Devuelve el emoji de bandera para un nombre de país, con globo por defecto.
 function flagFor(country: string): string {
   return COUNTRY_FLAGS[country] ?? "🌍";
 }
 
 
+// EN: About screen component that loads leaderboard/projects/creators and handles donations and contact.
+// ES: Componente de la pantalla "Acerca de" que carga ranking/proyectos/creadores y gestiona donaciones y contacto.
 export default function AboutScreen() {
   const { showToast, openAuth, setTab, openFanModal, openProjectPage, openDMWithUser } = useUIStore();
   const { spendCredits, addXP, name: myName, xp: myXP, city: myCity, id: myId, isAuthenticated } = useUserStore();

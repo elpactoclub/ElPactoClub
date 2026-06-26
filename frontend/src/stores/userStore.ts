@@ -1,9 +1,14 @@
 "use client";
 
+// EN: Zustand store holding all authenticated user state: profile data, XP/credits, gamification flags and async API actions.
+// ES: Store de Zustand que contiene todo el estado del usuario autenticado: datos de perfil, XP/créditos, flags de gamificación y acciones API asíncronas.
+
 import { create } from "zustand";
 import { UserLevel, LEVEL_THRESHOLDS } from "@/types";
 import { api } from "@/services/api";
 
+// EN: Full shape of the user store state including profile fields, computed level values, interaction tracking and all action methods.
+// ES: Forma completa del estado del store de usuario, incluyendo campos de perfil, valores de nivel computados, seguimiento de interacciones y todos los métodos de acción.
 interface UserState {
   // User data
   id: string | null;
@@ -67,6 +72,8 @@ interface UserState {
   becomeSocioApi: () => Promise<boolean>;
 }
 
+// EN: Derives the user's level label from their total XP.
+// ES: Obtiene la etiqueta de nivel del usuario a partir de su XP total.
 function getLevel(xp: number): UserLevel {
   if (xp >= LEVEL_THRESHOLDS.Leyenda) return "Leyenda";
   if (xp >= LEVEL_THRESHOLDS.MVP) return "MVP";
@@ -74,12 +81,16 @@ function getLevel(xp: number): UserLevel {
   return "Rookie";
 }
 
+// EN: Returns the next level above the given one, or null if already at maximum.
+// ES: Devuelve el siguiente nivel por encima del dado, o null si ya está en el máximo.
 function getNextLevel(level: UserLevel): UserLevel | null {
   const order: UserLevel[] = ["Rookie", "Starter", "MVP", "Leyenda"];
   const idx = order.indexOf(level);
   return idx < order.length - 1 ? order[idx + 1] : null;
 }
 
+// EN: Calculates the percentage progress toward the next level threshold (0–100).
+// ES: Calcula el porcentaje de progreso hacia el umbral del siguiente nivel (0–100).
 function getXPProgress(xp: number, level: UserLevel): number {
   const next = getNextLevel(level);
   if (!next) return 100;
@@ -125,6 +136,8 @@ const initialUserState = {
   token: typeof window !== "undefined" ? localStorage.getItem("el_pacto_token") : null,
 };
 
+// EN: The main user Zustand store exported for consumption throughout the app.
+// ES: El store de Zustand de usuario principal exportado para su uso en toda la aplicación.
 export const useUserStore = create<UserState>((set, get) => ({
   ...initialUserState,
 

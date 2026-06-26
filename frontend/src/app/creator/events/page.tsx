@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Creator events page for submitting new events for admin approval and viewing the creator's own event list.
+// ES: Página de eventos del creador para enviar nuevos eventos para aprobación del admin y ver la lista de eventos propios del creador.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
@@ -80,6 +83,8 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`admin-badge ${c.cls}`}>{c.label}</span>;
 }
 
+// EN: Creator events page component that lists the creator's events and allows submitting new ones for approval.
+// ES: Componente de página de eventos del creador que lista los eventos del creador y permite enviar nuevos para aprobación.
 export default function CreatorEventsPage() {
   const [events, setEvents] = useState<CreatorEvent[]>([]);
   const [showForm, setShowForm] = useState(false);

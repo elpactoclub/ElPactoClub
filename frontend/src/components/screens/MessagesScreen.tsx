@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Full-page messages screen with a conversation list and chat threads (creator chats charge credits), plus a locked preview when logged out.
+// ES: Pantalla de mensajes a página completa con lista de conversaciones e hilos de chat (los chats con creadores cobran créditos), más una vista bloqueada al no haber sesión.
+
 import { useState, useEffect, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -7,6 +10,8 @@ import { api } from "@/services/api";
 import Skel from "@/components/ui/Skel";
 import { useAuthLoading } from "@/hooks/useAuthLoading";
 
+// EN: A single DM conversation entry (partner info and last-message preview).
+// ES: Una entrada individual de conversación DM (info del interlocutor y vista previa del último mensaje).
 interface Conversation {
   partnerId: string;
   name: string;
@@ -20,6 +25,8 @@ interface Conversation {
   costPerMsg?: number;
 }
 
+// EN: A single message within an open conversation thread.
+// ES: Un mensaje individual dentro de un hilo de conversación abierto.
 interface ThreadMsg {
   id: string;
   content: string;
@@ -28,15 +35,21 @@ interface ThreadMsg {
 }
 
 const COLORS = ["#22C55E", "#60A5FA", "#A78BFA", "#F472B6", "#F59E0B", "#34D399"];
+// EN: Deterministically derives an avatar color from an id via a simple hash.
+// ES: Deriva de forma determinista un color de avatar a partir de un id mediante un hash simple.
 function colorFor(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
   return COLORS[Math.abs(h) % COLORS.length];
 }
+// EN: Builds a two-letter initials string from a display name.
+// ES: Construye una cadena de iniciales de dos letras a partir de un nombre.
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
   return (parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "");
 }
+// EN: Formats an ISO timestamp into a compact relative "time ago" label.
+// ES: Formatea una marca de tiempo ISO en una etiqueta compacta de "hace X".
 function timeAgo(iso?: string) {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -48,6 +61,8 @@ function timeAgo(iso?: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
+// EN: Messages screen component managing conversation loading, thread opening and message sending.
+// ES: Componente de pantalla de mensajes que gestiona la carga de conversaciones, la apertura de hilos y el envío de mensajes.
 export default function MessagesScreen() {
   const { showToast, setTab } = useUIStore();
   const { isAuthenticated, credits } = useUserStore();

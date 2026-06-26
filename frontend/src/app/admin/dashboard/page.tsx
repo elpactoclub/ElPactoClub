@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin dashboard page showing club-wide stats (users, socios, content counts) and a broadcast notification form.
+// ES: Página de dashboard del administrador que muestra estadísticas globales del club (usuarios, socios, conteos de contenido) y un formulario de notificación broadcast.
+
 import { useEffect, useState } from "react";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
@@ -27,6 +30,8 @@ interface StatCardProps {
   color: string;
 }
 
+// EN: Single stat tile with a colored stripe, icon and numeric value.
+// ES: Tarjeta de estadística individual con franja de color, icono y valor numérico.
 function StatCard({ label, value, sub, icon, color }: StatCardProps) {
   return (
     <div
@@ -67,6 +72,8 @@ function StatCard({ label, value, sub, icon, color }: StatCardProps) {
   );
 }
 
+// EN: Skeleton placeholder rendered while dashboard stats are loading.
+// ES: Marcador de posición esqueleto renderizado mientras se cargan las estadísticas del dashboard.
 function SkeletonStatCard() {
   return (
     <div style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 18px 16px", position: "relative", overflow: "hidden" }}>
@@ -81,6 +88,8 @@ function SkeletonStatCard() {
   );
 }
 
+// EN: Section heading component with an optional subtitle for dashboard sections.
+// ES: Componente de encabezado de sección con subtítulo opcional para las secciones del dashboard.
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div style={{ marginBottom: 14, display: "flex", alignItems: "baseline", gap: 10 }}>
@@ -90,6 +99,8 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
   );
 }
 
+// EN: Dashboard page component fetching stats and handling the broadcast notification form submission.
+// ES: Componente de página del dashboard que obtiene estadísticas y gestiona el envío del formulario de notificación broadcast.
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");

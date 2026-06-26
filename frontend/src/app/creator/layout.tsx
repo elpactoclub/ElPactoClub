@@ -1,9 +1,14 @@
 "use client";
 
+// EN: Creator panel layout with JWT role guard (creator or admin only), responsive sidebar and sticky topbar.
+// ES: Layout del panel de creador con guardia de rol JWT (solo creador o admin), barra lateral responsiva y topbar fija.
+
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
+// EN: Decodes a JWT payload (client-side, no verification) to extract role and name claims.
+// ES: Decodifica el payload de un JWT (lado cliente, sin verificación) para extraer los claims de rol y nombre.
 function decodeToken(token: string): { role?: string; name?: string } | null {
   try {
     const payload = token.split(".")[1];
@@ -23,6 +28,8 @@ const NAV_ITEMS = [
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 const isImg = (a?: string) => !!a && (a.startsWith("http") || a.startsWith("data:"));
 
+// EN: Creator layout component that guards access, renders the sidebar with links to dashboard/events/posts/messages, and loads the profile.
+// ES: Componente de layout del creador que guarda el acceso, renderiza la barra lateral con enlaces a dashboard/eventos/posts/mensajes y carga el perfil.
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();

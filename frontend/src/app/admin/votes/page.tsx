@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin votes page for creating, editing and settling community vote/poll/bet decisions and viewing individual vote records.
+// ES: Página de votaciones del admin para crear, editar y resolver decisiones de votos/encuestas/apuestas de la comunidad y ver registros individuales de votos.
+
 import { useEffect, useState, useCallback } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -58,6 +61,8 @@ function SkeletonHistRow() {
 
 const EMPTY_FORM = { title: "", description: "", category: "pregunta" as typeof CATEGORIES[number], votationType: "encuesta" as typeof VOTE_TYPES[number], options: ["", ""], creditsCost: 5, xpReward: 10, closesAt: "", isActive: true };
 
+// EN: Votes admin page component managing the full lifecycle of club decisions (create, update, settle, delete).
+// ES: Componente de página de votaciones del admin que gestiona el ciclo de vida completo de las decisiones del club (crear, actualizar, resolver, eliminar).
 export default function VotesPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [tab, setTab] = useState<"gestionar" | "historial">("gestionar");

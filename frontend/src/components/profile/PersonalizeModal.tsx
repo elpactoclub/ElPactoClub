@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Profile personalization modal: edit name/avatar (emoji or cropped photo), location, and account email/password.
+// ES: Modal de personalización de perfil: editar nombre/avatar (emoji o foto recortada), ubicación y email/contraseña de la cuenta.
+
 import { useState, useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -12,6 +15,8 @@ const AVATAR_OPTIONS = [
   "🏅", "🎽", "🥊", "🎮", "🦅", "🐝", "🦊", "🎭",
 ];
 
+// EN: Loads an image file, downscales it to fit maxPx and returns a JPEG data URL.
+// ES: Carga un archivo de imagen, lo reduce para caber en maxPx y devuelve una data URL JPEG.
 function resizeImageToBase64(file: File, maxPx = 300): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -31,6 +36,8 @@ function resizeImageToBase64(file: File, maxPx = 300): Promise<string> {
   });
 }
 
+// EN: Personalize modal component managing avatar crop/zoom, profile fields and credential updates.
+// ES: Componente de modal de personalización que gestiona el recorte/zoom del avatar, los campos del perfil y la actualización de credenciales.
 export default function PersonalizeModal() {
   const { isPersonalizeOpen, closePersonalize, showToast } = useUIStore();
   const { name, avatar, city, country, email, setName, setAvatar, setCity, setCountry, fetchProfile, isAuthenticated } = useUserStore();

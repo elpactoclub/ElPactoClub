@@ -1,11 +1,16 @@
 "use client";
 
+// EN: Admin panel layout with JWT-based role guard, collapsible sidebar navigation, and a sticky topbar.
+// ES: Layout del panel de administración con guardia de rol basada en JWT, navegación de barra lateral plegable y topbar fija.
+
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 type AdminRole = "admin" | "creator";
 
+// EN: Decodes a JWT payload (without verification) to read the role claim.
+// ES: Decodifica el payload de un JWT (sin verificación) para leer el claim de rol.
 function decodeToken(token: string): { role?: string } | null {
   try {
     const payload = token.split(".")[1];
@@ -30,6 +35,8 @@ const NAV_ITEMS = [
   { href: "/admin/pricing",   label: "Precios",     icon: "💰", roles: ["admin"] },
 ];
 
+// EN: Admin layout component guarding access by role, rendering sidebar nav and routing creators to their own panel.
+// ES: Componente de layout del admin que guarda el acceso por rol, renderiza la navegación lateral y redirige a los creadores a su propio panel.
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();

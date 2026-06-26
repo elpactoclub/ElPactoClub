@@ -1,5 +1,9 @@
+// EN: DTO validating the fields an admin may update on a user (profile, role, credits, XP).
+// ES: DTO que valida los campos que un admin puede actualizar de un usuario (perfil, rol, créditos, XP).
 import { IsBoolean, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from 'class-validator';
 
+// EN: Payload shape for the admin "update user" endpoint; all fields optional.
+// ES: Forma del payload del endpoint admin "actualizar usuario"; todos los campos opcionales.
 export class UpdateUserAdminDto {
   @IsOptional() @IsString()
   name?: string;

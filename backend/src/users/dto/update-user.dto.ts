@@ -1,6 +1,10 @@
+// EN: DTO validating the body for updating a user's editable profile fields.
+// ES: DTO que valida el cuerpo para actualizar los campos editables del perfil de usuario.
 import { IsString, IsOptional, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
+// EN: Optional profile fields a user may update.
+// ES: Campos opcionales de perfil que un usuario puede actualizar.
 export class UpdateUserDto {
   @ApiPropertyOptional()
   @IsOptional()

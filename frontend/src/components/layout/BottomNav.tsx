@@ -1,7 +1,12 @@
 "use client";
 
+// EN: Mobile bottom navigation bar that switches between the main app tabs.
+// ES: Barra de navegación inferior móvil que alterna entre las pestañas principales de la app.
+
 import { useUIStore } from "@/stores/uiStore";
 
+// EN: Static list of main navigation tabs (id, icon, label).
+// ES: Lista estática de las pestañas de navegación principales (id, icono, etiqueta).
 const tabs = [
   { id: "home" as const, icon: "🏠", label: "Inicio" },
   { id: "comunidad" as const, icon: "💬", label: "Comunidad" },
@@ -10,6 +15,8 @@ const tabs = [
   { id: "about" as const, icon: "⚡", label: "El Pacto" },
 ];
 
+// EN: Renders the bottom tab bar and highlights the active tab from the UI store.
+// ES: Renderiza la barra de pestañas inferior y resalta la pestaña activa del store de UI.
 export default function BottomNav() {
   const { activeTab, setTab } = useUIStore();
 

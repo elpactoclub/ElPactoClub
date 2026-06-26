@@ -1,3 +1,5 @@
+// EN: Users module wiring user entities, the users service and controller.
+// ES: Módulo de usuarios que conecta las entidades, el servicio y el controlador de usuarios.
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user.entity';
@@ -15,4 +17,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
   controllers: [UsersController],
   exports: [UsersService],
 })
+// EN: NestJS module bundling user management features.
+// ES: Módulo NestJS que agrupa las funcionalidades de gestión de usuarios.
 export class UsersModule {}

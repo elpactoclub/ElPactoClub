@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin users page for listing, searching, editing roles/credits/XP and deleting fan accounts.
+// ES: Página de usuarios del admin para listar, buscar, editar roles/créditos/XP y eliminar cuentas de fans.
+
 import { useEffect, useState, useCallback } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { CITIES_BY_COUNTRY, COUNTRIES } from "@/data/locations";
@@ -37,6 +40,8 @@ function SkeletonRow() {
   );
 }
 
+// EN: Users admin page component with paginated list, search, inline credit adjustments and role changes.
+// ES: Componente de página de usuarios del admin con lista paginada, búsqueda, ajustes de créditos en línea y cambios de rol.
 export default function UsersPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [users, setUsers] = useState<User[]>([]);

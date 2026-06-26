@@ -1,5 +1,9 @@
+// EN: TypeORM entity for impact/social projects (slug, title, media, donation badge, order).
+// ES: Entidad TypeORM de proyectos de impacto/sociales (slug, título, multimedia, insignia de donación, orden).
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
+// EN: Project record; slug links the chat channel and donations to this project.
+// ES: Registro de proyecto; el slug vincula el canal de chat y las donaciones a este proyecto.
 @Entity('projects')
 export class Project {
   @PrimaryGeneratedColumn('uuid')

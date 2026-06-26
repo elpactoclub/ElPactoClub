@@ -1,3 +1,5 @@
+// EN: Database seeding service — on app bootstrap, populates initial data (creators, events, raffles, votes, projects, store benefits) and backfills socio numbers.
+// ES: Servicio de sembrado de base de datos — al arrancar la app, rellena datos iniciales (creadores, eventos, sorteos, votaciones, proyectos, beneficios de tienda) y completa los números de socio.
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,6 +21,8 @@ const CREATORS = [
   { name: 'Elvis Ude',     email: 'elvis@elpacto.com',   avatar: '⚡', city: 'Barcelona' },
 ];
 
+// EN: Service that seeds the database with default content once the application has bootstrapped.
+// ES: Servicio que siembra la base de datos con contenido por defecto una vez que la aplicación ha arrancado.
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
   constructor(
@@ -35,6 +39,8 @@ export class SeedService implements OnApplicationBootstrap {
     private readonly missions: MissionsService,
   ) {}
 
+  // EN: Lifecycle hook run on bootstrap — orchestrates all seeding steps in order.
+  // ES: Hook de ciclo de vida ejecutado al arrancar — orquesta todos los pasos de sembrado en orden.
   async onApplicationBootstrap() {
     console.log('🌱 Seeding database...');
 

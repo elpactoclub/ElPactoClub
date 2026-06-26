@@ -1,8 +1,13 @@
 "use client";
 
+// EN: Member carnet modal showing the digital membership card (front/back) and rendering it to a downloadable PNG via canvas.
+// ES: Modal del carnet de socio que muestra la tarjeta de membresía digital (anverso/reverso) y la renderiza a un PNG descargable mediante canvas.
+
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
+// EN: Draws a rounded-rectangle path on the canvas context.
+// ES: Dibuja una ruta de rectángulo redondeado en el contexto del canvas.
 function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -13,6 +18,8 @@ function rrect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h
   ctx.closePath();
 }
 
+// EN: Renders the full member carnet onto an off-screen canvas (logo, avatar, name, level, number, credits).
+// ES: Renderiza el carnet de socio completo en un canvas fuera de pantalla (logo, avatar, nombre, nivel, número, créditos).
 async function generateCarnetCanvas(name: string, avatar: string, level: string, credits: number, socioNumber: number | null, desde: string): Promise<HTMLCanvasElement> {
   const SCALE = 2;
   const W = 360, H = 230;
@@ -184,10 +191,14 @@ async function generateCarnetCanvas(name: string, avatar: string, level: string,
 }
 
 const MESES_ABBR = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+// EN: Formats a date as an abbreviated month + year string in Spanish (e.g. "JUN 2026").
+// ES: Formatea una fecha como mes abreviado + año en español (p.ej. "JUN 2026").
 function fmtMesAnio(d: Date): string {
   return `${MESES_ABBR[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+// EN: Carnet modal component rendering the membership card and handling PNG download.
+// ES: Componente de modal de carnet que renderiza la tarjeta de socio y gestiona la descarga en PNG.
 export default function CarnetModal() {
   const { isCarnetOpen, closeCarnet, openShareCarnet, showToast } = useUIStore();
   const { name, avatar, credits, level, socioNumber, socioSince } = useUserStore();

@@ -1,3 +1,5 @@
+// EN: Root application module — wires up config, database (TypeORM), global rate limiting, and all feature modules.
+// ES: Módulo raíz de la aplicación — conecta la configuración, la base de datos (TypeORM), el rate limiting global y todos los módulos de funcionalidad.
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -101,4 +103,6 @@ import { ContactController } from './contact.controller';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
+// EN: Root module class assembled by the @Module decorator above.
+// ES: Clase del módulo raíz ensamblada por el decorador @Module de arriba.
 export class AppModule {}

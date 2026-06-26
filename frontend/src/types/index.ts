@@ -1,6 +1,11 @@
+// EN: Shared TypeScript type definitions for users, credits, XP, events, community objects and more.
+// ES: Definiciones de tipos TypeScript compartidos para usuarios, créditos, XP, eventos, objetos de comunidad y más.
+
 // ==========================================
 // User Types
 // ==========================================
+// EN: Core user record returned by the API.
+// ES: Registro de usuario principal devuelto por la API.
 export interface User {
   id: string;
   name: string;
@@ -17,6 +22,8 @@ export interface User {
   createdAt: string;
 }
 
+// EN: The four progression levels a fan can reach based on their XP.
+// ES: Los cuatro niveles de progresión que un fan puede alcanzar según su XP.
 export type UserLevel = "Rookie" | "Starter" | "MVP" | "Leyenda";
 
 export const LEVEL_THRESHOLDS: Record<UserLevel, number> = {
@@ -36,6 +43,8 @@ export const LEVEL_COLORS: Record<UserLevel, string> = {
 // ==========================================
 // Credits & XP
 // ==========================================
+// EN: A single credit debit or earn transaction logged for a user.
+// ES: Una transacción individual de débito o ganancia de créditos registrada para un usuario.
 export interface CreditTransaction {
   id: string;
   userId: string;
@@ -67,6 +76,8 @@ export const XP_REWARDS = {
 // ==========================================
 // Events
 // ==========================================
+// EN: A club event (match or talk) displayed in the events tab.
+// ES: Un evento del club (partido o charla) mostrado en la pestaña de eventos.
 export interface Event {
   id: string;
   title: string;
@@ -83,6 +94,8 @@ export interface Event {
 // ==========================================
 // Community
 // ==========================================
+// EN: A post in the community feed (text, poll, or challenge).
+// ES: Una publicación en el feed de la comunidad (texto, encuesta o reto).
 export interface FeedPost {
   id: string;
   authorId: string;
@@ -130,6 +143,8 @@ export interface Poll {
 // ==========================================
 // Badges
 // ==========================================
+// EN: An achievement badge that can be unlocked by the user.
+// ES: Una insignia de logro que el usuario puede desbloquear.
 export interface Badge {
   id: string;
   name: string;
@@ -142,6 +157,8 @@ export interface Badge {
 // ==========================================
 // Notifications
 // ==========================================
+// EN: A single in-app notification shown in the notification panel.
+// ES: Una notificación individual en la app mostrada en el panel de notificaciones.
 export interface Notification {
   id: string;
   title: string;
@@ -156,6 +173,8 @@ export interface Notification {
 // ==========================================
 // Social Projects
 // ==========================================
+// EN: A social project fans can donate credits to and vote on.
+// ES: Un proyecto social al que los fans pueden donar créditos y votar.
 export interface SocialProject {
   id: string;
   name: string;
@@ -169,6 +188,8 @@ export interface SocialProject {
 // ==========================================
 // Raffle
 // ==========================================
+// EN: A raffle entry fans can enter by spending credits.
+// ES: Una rifa a la que los fans pueden inscribirse gastando créditos.
 export interface Raffle {
   id: string;
   title: string;
@@ -182,6 +203,8 @@ export interface Raffle {
 // ==========================================
 // Creator
 // ==========================================
+// EN: A content creator whose DMs fans can pay credits to access.
+// ES: Un creador de contenido cuyos DMs los fans pueden pagar con créditos para acceder.
 export interface Creator {
   id: string;
   name: string;

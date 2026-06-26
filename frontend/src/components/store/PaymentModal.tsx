@@ -1,15 +1,22 @@
 "use client";
 
+// EN: Membership payment modal listing socio benefits and starting a Stripe checkout session.
+// ES: Modal de pago de membresía que lista los beneficios de socio e inicia una sesión de checkout de Stripe.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 
+// EN: Formats a numeric price into a euro string, using a comma for decimals.
+// ES: Formatea un precio numérico en una cadena en euros, usando coma para los decimales.
 function fmtPrice(n: number): string {
   return n % 1 === 0 ? `${n}€` : `${n.toFixed(2).replace(".", ",")}€`;
 }
 
+// EN: Payment modal component that fetches the current socio price and launches Stripe checkout.
+// ES: Componente de modal de pago que obtiene el precio actual de socio y lanza el checkout de Stripe.
 export default function PaymentModal() {
   const { isPaymentOpen, closePayment, showToast } = useUIStore();
   const { isAuthenticated } = useUserStore();
@@ -122,6 +129,8 @@ export default function PaymentModal() {
   );
 }
 
+// EN: Shared payment modal body (plan card, benefits, Stripe CTA) for mobile and desktop layouts.
+// ES: Cuerpo compartido del modal de pago (tarjeta del plan, beneficios, CTA de Stripe) para los diseños móvil y de escritorio.
 function ModalContent({
   benefits,
   loading,

@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Quick-look modal for a fan/leaderboard user showing avatar, level, stats and follow/message actions.
+// ES: Modal de vista rápida de un fan/usuario del ranking que muestra avatar, nivel, estadísticas y acciones de seguir/mensaje.
+
 import { useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -11,6 +14,8 @@ const LEVEL_COLORS: Record<string, string> = {
   Rookie: "#777",
 };
 
+// EN: Deterministically derives an accent color from a name via a simple hash.
+// ES: Deriva de forma determinista un color de acento a partir de un nombre mediante un hash simple.
 function colorFor(name: string) {
   const palette = ["#22C55E", "#60A5FA", "#A78BFA", "#F472B6", "#F59E0B", "#34D399", "#F97316"];
   let h = 0;
@@ -18,6 +23,8 @@ function colorFor(name: string) {
   return palette[Math.abs(h) % palette.length];
 }
 
+// EN: Fan modal component rendering a fan's summary as a mobile bottom-sheet or desktop dialog.
+// ES: Componente de modal de fan que renderiza el resumen de un fan como hoja inferior móvil o diálogo de escritorio.
 export default function FanModal() {
   const { isFanModalOpen, fanModalUser, fanModalData, closeFanModal, openDM, openDMWithUser, showToast, openAuth } = useUIStore();
   const { isAuthenticated } = useUserStore();

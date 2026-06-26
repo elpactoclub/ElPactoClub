@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Mobile top navigation bar showing logo, XP/credits stats, notifications, DMs and avatar.
+// ES: Barra de navegación superior móvil que muestra logo, estadísticas de XP/créditos, notificaciones, DMs y avatar.
+
 import { useEffect, useState } from "react";
 import { useUserStore } from "@/stores/userStore";
 import { useUIStore } from "@/stores/uiStore";
 import { api } from "@/services/api";
 
+// EN: Top navigation component that polls unread DM count and exposes profile/notif/DM actions.
+// ES: Componente de navegación superior que consulta el conteo de DMs sin leer y expone acciones de perfil/notif/DM.
 export default function TopNav() {
   const { xp, credits, isAuthenticated, avatar, xpMultiplier, xpMultiplierExpiresAt } = useUserStore();
   const multiplierActive = xpMultiplier > 1 && !!xpMultiplierExpiresAt && new Date(xpMultiplierExpiresAt) > new Date();

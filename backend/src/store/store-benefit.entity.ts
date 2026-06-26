@@ -1,5 +1,9 @@
+// EN: TypeORM entity for store benefits (partner discounts shown in the store section).
+// ES: Entidad TypeORM de beneficios de la tienda (descuentos de socios mostrados en la sección de tienda).
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
+// EN: Store benefit record: discount card with name, logo, link and display order.
+// ES: Registro de beneficio: tarjeta de descuento con nombre, logo, enlace y orden de visualización.
 @Entity('store_benefits')
 export class StoreBenefit {
   @PrimaryGeneratedColumn('uuid')

@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Modal for searching users (fans/creators) with debounced live results that open the user profile.
+// ES: Modal para buscar usuarios (fans/creadores) con resultados en vivo con debounce que abren el perfil del usuario.
+
 import { useState, useEffect, useRef } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 
+// EN: Shape of a user result returned by the search endpoint.
+// ES: Forma de un resultado de usuario devuelto por el endpoint de búsqueda.
 interface SearchUser {
   id: string;
   name: string;
@@ -24,6 +29,8 @@ const LEVEL_COLOR: Record<string, string> = {
   Leyenda: "#F0E040",
 };
 
+// EN: User search modal component that debounces the query and lists matching users.
+// ES: Componente de modal de búsqueda de usuarios que aplica debounce a la consulta y lista los usuarios coincidentes.
 export default function UserSearchModal() {
   const { isUserSearchOpen, closeUserSearch, openUserProfile } = useUIStore();
   const { isAuthenticated } = useUserStore();

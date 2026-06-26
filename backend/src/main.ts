@@ -1,3 +1,5 @@
+// EN: Application entry point — bootstraps the NestJS app (security, CORS, validation, Swagger, WebSockets) and starts the HTTP server.
+// ES: Punto de entrada de la aplicación — arranca la app NestJS (seguridad, CORS, validación, Swagger, WebSockets) e inicia el servidor HTTP.
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -9,6 +11,8 @@ import { ThrottlerExceptionFilter } from './common/throttler-exception.filter';
 import { join } from 'path';
 import * as express from 'express';
 
+// EN: Bootstraps and configures the Nest application, then listens on the configured port.
+// ES: Arranca y configura la aplicación Nest, y luego escucha en el puerto configurado.
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
 

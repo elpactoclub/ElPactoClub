@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Slide-up bottom-sheet notifications panel (overlay variant) with read/mark-all and a login CTA when logged out.
+// ES: Panel de notificaciones tipo hoja inferior deslizante (variante overlay) con leer/marcar-todo y CTA de inicio de sesión al no haber sesión.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -7,6 +10,8 @@ import { api } from "@/services/api";
 import Skel from "@/components/ui/Skel";
 import { useAuthLoading } from "@/hooks/useAuthLoading";
 
+// EN: Shape of a single notification record from the backend.
+// ES: Forma de un registro individual de notificación del backend.
 interface Notification {
   id: string;
   type: "post_creator" | "new_vote" | "bet_result" | "badge_unlock" | "mission_complete";
@@ -31,6 +36,8 @@ const STATIC_NOTIFS: Notification[] = [
   { id: "4", type: "badge_unlock", title: "Badge desbloqueado 👑",       readAt: "past", createdAt: new Date(Date.now() - 86400000).toISOString() },
 ];
 
+// EN: Formats an ISO timestamp into a short relative "time ago" label in Spanish.
+// ES: Formatea una marca de tiempo ISO en una etiqueta corta de "hace X" en español.
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -40,6 +47,8 @@ function timeAgo(iso: string) {
   return "Ayer";
 }
 
+// EN: Notification panel component shown as an overlay; loads notifications when opened and handles read actions.
+// ES: Componente de panel de notificaciones mostrado como overlay; carga notificaciones al abrirse y gestiona las acciones de leído.
 export default function NotificationPanel() {
   const { isNotifOpen, closeNotif, showToast, setNotifUnreadCount, openAuth } = useUIStore();
   const { isAuthenticated } = useUserStore();

@@ -1,7 +1,12 @@
 "use client";
 
+// EN: Global toast notification that reads the current message from the UI store and styles it by variant.
+// ES: Notificación toast global que lee el mensaje actual del store de UI y lo estiliza según la variante.
+
 import { useUIStore } from "@/stores/uiStore";
 
+// EN: Picks accent color, background and icon based on the message content (error/success/neutral).
+// ES: Elige color de acento, fondo e icono según el contenido del mensaje (error/éxito/neutral).
 function variantOf(msg: string): { accent: string; bg: string; icon: string | null } {
   const m = msg.toLowerCase();
   if (msg.includes("❌") || m.includes("error") || m.includes("insuficient") || m.includes("sin créditos") || m.includes("necesitas")) {
@@ -13,6 +18,8 @@ function variantOf(msg: string): { accent: string; bg: string; icon: string | nu
   return { accent: "var(--color-accent)", bg: "#1a1a14", icon: null };
 }
 
+// EN: Toast component that displays the active UI-store message as a floating banner.
+// ES: Componente toast que muestra el mensaje activo del store de UI como banner flotante.
 export default function Toast() {
   const toastMessage = useUIStore((s) => s.toastMessage);
   const v = variantOf(toastMessage ?? "");

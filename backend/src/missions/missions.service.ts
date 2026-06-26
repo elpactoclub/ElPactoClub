@@ -1,3 +1,5 @@
+// EN: Missions service: tracks progress, completes missions, resets weekly ones and seeds defaults.
+// ES: Servicio de misiones: sigue el progreso, completa misiones, reinicia las semanales y siembra las predeterminadas.
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -5,6 +7,8 @@ import { Mission } from './mission.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
+// EN: Default mission definitions seeded into the database.
+// ES: Definiciones de misiones predeterminadas sembradas en la base de datos.
 export const MISSION_DEFINITIONS: Array<Omit<Mission, 'current' | 'isComplete' | 'updatedAt'>> = [
   {
     code: 'weekly_votes_500',
@@ -40,6 +44,8 @@ export const MISSION_DEFINITIONS: Array<Omit<Mission, 'current' | 'isComplete' |
   },
 ];
 
+// EN: Injectable missions service with the mission repository and notifications.
+// ES: Servicio de misiones inyectable con el repositorio de misiones y notificaciones.
 @Injectable()
 export class MissionsService {
   constructor(
@@ -47,10 +53,14 @@ export class MissionsService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  // EN: Lists active missions ordered by code.
+  // ES: Lista las misiones activas ordenadas por código.
   listActive() {
     return this.repo.find({ where: { isActive: true }, order: { code: 'ASC' } });
   }
 
+  // EN: Increments a mission's progress (capped at target) and notifies all on completion.
+  // ES: Incrementa el progreso de una misión (limitado al objetivo) y notifica a todos al completarse.
   async increment(code: string, by = 1): Promise<Mission | null> {
     const mission = await this.repo.findOne({ where: { code } });
     if (!mission || !mission.isActive) return null;
@@ -75,6 +85,8 @@ export class MissionsService {
     return this.repo.findOne({ where: { code } });
   }
 
+  // EN: Cron job resetting weekly missions every Monday and notifying the community.
+  // ES: Tarea cron que reinicia las misiones semanales cada lunes y avisa a la comunidad.
   // Reset weekly missions every Monday at 00:00 UTC
   @Cron(CronExpression.EVERY_WEEK)
   async resetWeeklyMissions(): Promise<void> {
@@ -90,6 +102,8 @@ export class MissionsService {
     );
   }
 
+  // EN: Inserts any missing default missions into the database.
+  // ES: Inserta en la base de datos las misiones predeterminadas que falten.
   async seedDefinitions() {
     for (const def of MISSION_DEFINITIONS) {
       const existing = await this.repo.findOne({ where: { code: def.code } });

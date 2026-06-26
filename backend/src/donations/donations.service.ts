@@ -1,3 +1,5 @@
+// EN: Donations service: records credit donations, grants XP/badges and advances missions.
+// ES: Servicio de donaciones: registra donaciones de créditos, otorga XP/insignias y avanza misiones.
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,6 +8,8 @@ import { UsersService } from '../users/users.service';
 import { BadgesService } from '../badges/badges.service';
 import { MissionsService } from '../missions/missions.service';
 
+// EN: Injectable donations service with the donation repository and gamification services.
+// ES: Servicio de donaciones inyectable con el repositorio de donaciones y servicios de gamificación.
 @Injectable()
 export class DonationsService {
   constructor(
@@ -15,6 +19,8 @@ export class DonationsService {
     private readonly missions: MissionsService,
   ) {}
 
+  // EN: Records a donation: spends credits, awards XP/badges, advances missions, grants global-impact badge.
+  // ES: Registra una donación: gasta créditos, otorga XP/insignias, avanza misiones y concede la insignia de impacto global.
   async create(userId: string, projectId: ProjectId, amount: number) {
     if (amount <= 0) throw new Error('Amount must be positive');
 
@@ -43,6 +49,8 @@ export class DonationsService {
     return donation;
   }
 
+  // EN: Returns donation totals and distinct supporter counts grouped by project.
+  // ES: Devuelve los totales de donaciones y el número de donantes distintos agrupados por proyecto.
   totalsByProject() {
     return this.repo
       .createQueryBuilder('d')
@@ -53,6 +61,8 @@ export class DonationsService {
       .getRawMany();
   }
 
+  // EN: Lists a user's donations, newest first.
+  // ES: Lista las donaciones de un usuario, las más recientes primero.
   myDonations(userId: string) {
     return this.repo.find({ where: { userId }, order: { createdAt: 'DESC' } });
   }

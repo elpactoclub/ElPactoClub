@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Admin events page for creating, editing, approving/rejecting events and viewing/managing inscribed attendees with CSV export.
+// ES: Página de eventos del admin para crear, editar, aprobar/rechazar eventos y ver/gestionar inscritos con exportación CSV.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 
+// EN: Downscales an image file to fit within maxPx and returns a JPEG data URL for upload.
+// ES: Reduce una imagen para caber en maxPx y devuelve una data URL JPEG para su subida.
 function resizeImageToBase64(file: File, maxPx = 800): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -81,10 +86,14 @@ const EMPTY_FORM = {
   polls: [] as EventPoll[],
 };
 
+// EN: Returns the Authorization header object with the current JWT token.
+// ES: Devuelve el objeto de cabecera Authorization con el token JWT actual.
 function authHeader() {
   return { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}` };
 }
 
+// EN: Skeleton table row shown while event data is loading.
+// ES: Fila de tabla esqueleto mostrada mientras se cargan los datos de eventos.
 function SkeletonRow() {
   return (
     <tr>
@@ -97,10 +106,14 @@ function SkeletonRow() {
   );
 }
 
+// EN: Formats an ISO date string into a short Spanish locale date label.
+// ES: Formatea una cadena de fecha ISO en una etiqueta de fecha corta en español.
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+// EN: Admin events page component loading approved and pending events, handling CRUD, attendee management and CSV export.
+// ES: Componente de página de eventos del admin que carga eventos aprobados y pendientes, gestiona CRUD, asistentes y exportación CSV.
 export default function EventsPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [events, setEvents] = useState<AdminEvent[]>([]);

@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Creator messages page showing the creator's DM inbox with fans and allowing replies from within the creator panel.
+// ES: Página de mensajes del creador que muestra el buzón de DMs con fans y permite responder desde el panel del creador.
+
 import { useEffect, useState, useCallback } from "react";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
@@ -47,6 +50,8 @@ function authHeader() {
   return { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}` };
 }
 
+// EN: Creator messages page component managing conversations list and individual thread views with send functionality.
+// ES: Componente de página de mensajes del creador que gestiona la lista de conversaciones y vistas de hilos individuales con funcionalidad de envío.
 export default function CreatorMessagesPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);

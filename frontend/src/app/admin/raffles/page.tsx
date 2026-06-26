@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin raffles page for creating and managing club giveaways: prizes, credit costs, draw dates and winner selection.
+// ES: Página de sorteos del admin para crear y gestionar sorteos del club: premios, costes en créditos, fechas de sorteo y selección de ganadores.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -80,6 +83,8 @@ function SkeletonCard() {
 
 const EMPTY_FORM = { title: "", description: "", prizeImageUrl: "", prizeValue: 0, ticketCost: 75, xpReward: 1, month: "", drawDate: "", audience: "all" };
 
+// EN: Raffles admin page component listing active and past giveaways with create/edit/draw-winner/delete actions.
+// ES: Componente de página de sorteos del admin que lista sorteos activos y pasados con acciones de crear/editar/sortear ganador/eliminar.
 export default function RafflesPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [raffles, setRaffles] = useState<AdminRaffle[]>([]);

@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin pricing page for adjusting Stripe subscription/credit pack prices and internal credit costs in real time.
+// ES: Página de precios del admin para ajustar en tiempo real los precios de suscripción/packs de créditos de Stripe y los costes internos de créditos.
+
 import { useEffect, useState, useCallback } from "react";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
@@ -36,6 +39,8 @@ function authHeaders() {
   return { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}`, "Content-Type": "application/json" };
 }
 
+// EN: Pricing admin page component loading settings, grouping them by section and saving changes to the backend.
+// ES: Componente de página de precios del admin que carga ajustes, los agrupa por sección y guarda los cambios en el backend.
 export default function PricingPage() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});

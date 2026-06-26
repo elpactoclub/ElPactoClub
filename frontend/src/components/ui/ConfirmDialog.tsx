@@ -1,7 +1,12 @@
 "use client";
 
+// EN: Modal confirmation dialog with confirm/cancel actions, keyboard shortcuts and optional danger styling.
+// ES: Diálogo modal de confirmación con acciones confirmar/cancelar, atajos de teclado y estilo de peligro opcional.
+
 import { useEffect } from "react";
 
+// EN: Props controlling the confirm dialog's text, labels, callbacks and danger mode.
+// ES: Props que controlan el texto, etiquetas, callbacks y modo de peligro del diálogo de confirmación.
 export interface ConfirmDialogProps {
   title?: string;
   message: string;
@@ -13,6 +18,8 @@ export interface ConfirmDialogProps {
   onCancel?: () => void;
 }
 
+// EN: Renders an overlay confirmation dialog; Enter confirms and Escape cancels.
+// ES: Renderiza un diálogo de confirmación superpuesto; Enter confirma y Escape cancela.
 export default function ConfirmDialog({
   title,
   message,

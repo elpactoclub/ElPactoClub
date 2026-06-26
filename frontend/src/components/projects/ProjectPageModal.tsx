@@ -1,12 +1,19 @@
 "use client";
 
+// EN: Full-screen project page modal with info, community chat and voting tabs, plus credit-based donations.
+// ES: Modal de página de proyecto a pantalla completa con pestañas de info, chat de comunidad y votación, además de donaciones con créditos.
+
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 
+// EN: The active tab within the project page.
+// ES: La pestaña activa dentro de la página del proyecto.
 type ProjectTab = "info" | "chat" | "votar";
 
+// EN: Shape of a chat message in the project channel.
+// ES: Forma de un mensaje de chat en el canal del proyecto.
 interface ChatMsg {
   id: string;
   userId: string;
@@ -17,6 +24,8 @@ interface ChatMsg {
   createdAt: string;
 }
 
+// EN: Shape of a votable decision with its options and tallied results.
+// ES: Forma de una decisión votable con sus opciones y resultados contabilizados.
 interface VoteOption {
   id: string;
   title: string;
@@ -26,6 +35,8 @@ interface VoteOption {
   xpReward: number;
 }
 
+// EN: Project page modal component handling tabs, chat, voting and donations for the active project.
+// ES: Componente de modal de página de proyecto que gestiona pestañas, chat, votación y donaciones del proyecto activo.
 export default function ProjectPageModal() {
   const { isProjectPageOpen, activeProject, closeProjectPage, showToast, openAuth, setTab } = useUIStore();
   const { isAuthenticated, addXP } = useUserStore();

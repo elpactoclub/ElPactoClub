@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin posts page for browsing, moderating and deleting community feed posts with optional image support.
+// ES: Página de posts del admin para explorar, moderar y eliminar publicaciones del feed de la comunidad con soporte opcional de imágenes.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -50,6 +53,8 @@ const TYPE_COLOR: Record<string, string> = {
   image: "#22C55E",
 };
 
+// EN: Posts admin page component displaying all community posts with delete and moderation controls.
+// ES: Componente de página de posts del admin que muestra todas las publicaciones de la comunidad con controles de eliminación y moderación.
 export default function PostsPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [posts, setPosts] = useState<AdminPost[]>([]);

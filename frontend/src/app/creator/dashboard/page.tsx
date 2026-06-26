@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Creator dashboard page showing post stats, recent posts summary and quick-action links to the creator's other sections.
+// ES: Página de dashboard del creador que muestra estadísticas de posts, resumen de publicaciones recientes y accesos rápidos a las otras secciones del creador.
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -64,6 +67,8 @@ function StatCard({ label, value, sub, icon, color }: { label: string; value: nu
 const TYPE_COLOR: Record<string, string> = { text: "#60A5FA", poll: "#F0E040", image: "#22C55E", challenge: "#F59E0B" };
 const TYPE_LABEL: Record<string, string> = { text: "Texto", poll: "Encuesta", image: "Imagen", challenge: "Reto" };
 
+// EN: Creator dashboard component fetching stats and recent posts, displaying totals and average likes per post.
+// ES: Componente de dashboard del creador que obtiene estadísticas y posts recientes, mostrando totales y media de likes por post.
 export default function CreatorDashboardPage() {
   const [stats, setStats] = useState<CreatorStats | null>(null);
   const [me, setMe] = useState<MeProfile | null>(null);

@@ -1,3 +1,6 @@
+// EN: Root Next.js layout defining fonts, metadata, PWA viewport settings and the HTML shell for the entire app.
+// ES: Layout raíz de Next.js que define fuentes, metadatos, configuración de viewport PWA y el shell HTML para toda la aplicación.
+
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Bebas_Neue } from "next/font/google";
 import "./globals.css";
@@ -35,6 +38,8 @@ export const viewport: Viewport = {
   themeColor: "#0A0A0A",
 };
 
+// EN: Root layout component that wraps all pages with global fonts, CSS variables and the base HTML structure.
+// ES: Componente de layout raíz que envuelve todas las páginas con fuentes globales, variables CSS y la estructura HTML base.
 export default function RootLayout({
   children,
 }: Readonly<{

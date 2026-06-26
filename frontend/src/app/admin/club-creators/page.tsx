@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin club-creators page for managing creator profiles, their per-message DM cost and uploaded photos.
+// ES: Página de creadores del club del admin para gestionar perfiles de creadores, su coste por mensaje DM y fotos subidas.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -49,6 +52,8 @@ function authHeader() {
 
 const EMPTY_FORM = { userId: "", photoUrl: "", displayOrder: 0, isActive: true };
 
+// EN: Club creators admin page component loading creators, handling image upload and CRUD via modal form.
+// ES: Componente de página de creadores del club del admin que carga creadores, gestiona la subida de imágenes y CRUD mediante formulario modal.
 export default function ClubCreatorsPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [cards, setCards] = useState<ClubCreatorCard[]>([]);

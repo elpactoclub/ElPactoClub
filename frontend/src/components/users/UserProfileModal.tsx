@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Modal showing another user's public profile with follow/block actions, stats and their posts/liked tabs.
+// ES: Modal que muestra el perfil público de otro usuario con acciones de seguir/bloquear, estadísticas y pestañas de publicaciones/me gusta.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 
+// EN: Shape of a user's public profile returned by the backend.
+// ES: Forma del perfil público de un usuario devuelto por el backend.
 interface UserProfile {
   id: string;
   name: string;
@@ -21,6 +26,8 @@ interface UserProfile {
   isBlocked: boolean;
 }
 
+// EN: Shape of a post shown in the profile's posts/liked lists.
+// ES: Forma de una publicación mostrada en las listas de publicaciones/me gusta del perfil.
 interface ProfilePost {
   id: string;
   authorId: string;
@@ -40,6 +47,8 @@ const LEVEL_COLOR: Record<string, string> = {
   Leyenda: "#F0E040",
 };
 
+// EN: Formats an ISO timestamp into a compact relative "time ago" label.
+// ES: Formatea una marca de tiempo ISO en una etiqueta compacta de "hace X".
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -50,6 +59,8 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
+// EN: User profile modal component that loads a profile, its posts, and handles follow/block/DM/delete.
+// ES: Componente de modal de perfil de usuario que carga un perfil, sus publicaciones y gestiona seguir/bloquear/DM/eliminar.
 export default function UserProfileModal() {
   const { userProfileId, closeUserProfile, openAuth, showToast, openDMWithUser, openViewPost } = useUIStore();
   const { isAuthenticated, id: myId, role: myRole } = useUserStore();

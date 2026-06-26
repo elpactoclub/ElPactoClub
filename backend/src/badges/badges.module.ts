@@ -1,3 +1,5 @@
+// EN: Badges module: wires the badges controller, service and entities.
+// ES: Módulo de insignias: conecta el controlador, servicio y entidades de insignias.
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Badge, UserBadge } from './badge.entity';
@@ -5,6 +7,8 @@ import { BadgesService } from './badges.service';
 import { BadgesController } from './badges.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 
+// EN: Badges feature module declaration.
+// ES: Declaración del módulo de la funcionalidad de insignias.
 @Module({
   imports: [TypeOrmModule.forFeature([Badge, UserBadge]), NotificationsModule],
   providers: [BadgesService],

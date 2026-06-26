@@ -1,11 +1,16 @@
 "use client";
 
+// EN: Direct-messaging modal with a conversation list and real-time chat threads (typing indicators, credit-charged creator chats).
+// ES: Modal de mensajería directa con lista de conversaciones e hilos de chat en tiempo real (indicadores de escritura, chats con creadores cobrados en créditos).
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 import { getSocket } from "@/services/socket";
 
+// EN: A single DM conversation entry (partner info and last-message preview).
+// ES: Una entrada individual de conversación DM (info del interlocutor y vista previa del último mensaje).
 interface Conversation {
   partnerId: string;
   name: string;
@@ -19,6 +24,8 @@ interface Conversation {
   costPerMsg?: number;
 }
 
+// EN: A single message within an open conversation thread.
+// ES: Un mensaje individual dentro de un hilo de conversación abierto.
 interface ThreadMsg {
   id: string;
   content: string;
@@ -27,15 +34,21 @@ interface ThreadMsg {
 }
 
 const COLORS = ["#22C55E", "#60A5FA", "#A78BFA", "#F472B6", "#F59E0B", "#34D399"];
+// EN: Deterministically derives an avatar color from an id via a simple hash.
+// ES: Deriva de forma determinista un color de avatar a partir de un id mediante un hash simple.
 function colorFor(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
   return COLORS[Math.abs(h) % COLORS.length];
 }
+// EN: Builds a two-letter initials string from a display name.
+// ES: Construye una cadena de iniciales de dos letras a partir de un nombre.
 function initials(name: string) {
   const parts = name.trim().split(/\s+/);
   return (parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "");
 }
+// EN: Formats an ISO timestamp into a compact relative "time ago" label.
+// ES: Formatea una marca de tiempo ISO en una etiqueta compacta de "hace X".
 function timeAgo(iso?: string) {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -47,6 +60,8 @@ function timeAgo(iso?: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
+// EN: DM modal component managing conversations, socket events, typing state and message sending.
+// ES: Componente de modal DM que gestiona conversaciones, eventos de socket, estado de escritura y envío de mensajes.
 export default function DMModal() {
   const { isDMOpen, closeDM, showToast, setTab, dmOpenWithCreator, dmOpenWithUser } = useUIStore();
   const { isAuthenticated, credits } = useUserStore();

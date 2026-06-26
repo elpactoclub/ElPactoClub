@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Desktop left sidebar with logo, stats, main nav, quick actions and a profile/login footer.
+// ES: Barra lateral izquierda de escritorio con logo, estadísticas, navegación principal, acciones rápidas y pie de perfil/inicio de sesión.
+
 import { useEffect, useState } from "react";
 import { useUserStore } from "@/stores/userStore";
 import { useUIStore } from "@/stores/uiStore";
 import { api } from "@/services/api";
 
+// EN: Static list of main navigation tabs (id, icon, label).
+// ES: Lista estática de las pestañas de navegación principales (id, icono, etiqueta).
 const tabs = [
   { id: "home" as const, icon: "🏠", label: "Inicio" },
   { id: "comunidad" as const, icon: "💬", label: "Comunidad" },
@@ -13,6 +18,8 @@ const tabs = [
   { id: "about" as const, icon: "⚡", label: "El Pacto" },
 ];
 
+// EN: Desktop sidebar component handling tab navigation, unread DM polling and auth-loading skeletons.
+// ES: Componente de barra lateral de escritorio que gestiona la navegación por pestañas, el sondeo de DMs sin leer y los esqueletos de carga de sesión.
 export default function DesktopSidebar() {
   const { xp, credits, isAuthenticated, token, name, avatar, city, level } = useUserStore();
   const { openAuth } = useUIStore();

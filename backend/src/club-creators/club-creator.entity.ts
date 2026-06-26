@@ -1,5 +1,9 @@
+// EN: TypeORM entity for club creator showcase cards (links a creator user to an editorial card).
+// ES: Entidad TypeORM de tarjetas destacadas de creadores del club (vincula un usuario creador a una tarjeta editorial).
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
+// EN: Club creator card record with cached name, photo and display order.
+// ES: Registro de tarjeta de creador del club con nombre en caché, foto y orden de visualización.
 @Entity('club_creators')
 export class ClubCreator {
   @PrimaryGeneratedColumn('uuid')

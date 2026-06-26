@@ -1,3 +1,5 @@
+// EN: Users service: account CRUD, gamification (XP/credits/streaks), referrals, follows and blocks.
+// ES: Servicio de usuarios: CRUD de cuentas, gamificación (XP/créditos/rachas), referidos, seguidos y bloqueos.
 import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,6 +21,8 @@ const LEVEL_THRESHOLDS: Record<UserLevel, number> = {
   Leyenda: 5000,
 };
 
+// EN: Maps a total XP value to the corresponding user level.
+// ES: Convierte un total de XP en el nivel de usuario correspondiente.
 function computeLevel(xp: number): UserLevel {
   if (xp >= LEVEL_THRESHOLDS.Leyenda) return 'Leyenda';
   if (xp >= LEVEL_THRESHOLDS.MVP) return 'MVP';
@@ -26,12 +30,16 @@ function computeLevel(xp: number): UserLevel {
   return 'Rookie';
 }
 
+// EN: Builds a unique-ish referral code from the user's name plus a random number.
+// ES: Genera un código de referido (casi único) a partir del nombre del usuario y un número aleatorio.
 function generateReferralCode(name: string): string {
   const prefix = name.slice(0, 3).toUpperCase().replace(/\s/g, '');
   const num = Math.floor(Math.random() * 9000 + 1000);
   return `PACTO-${prefix}${num}`;
 }
 
+// EN: Provides all user-related business logic and persistence.
+// ES: Provee toda la lógica de negocio y persistencia relacionada con usuarios.
 @Injectable()
 export class UsersService {
   constructor(
@@ -47,6 +55,8 @@ export class UsersService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  // EN: Creates a user (hashing the password), assigns welcome credits and onboarding badges.
+  // ES: Crea un usuario (hasheando la contraseña), asigna créditos de bienvenida e insignias iniciales.
   async create(dto: CreateUserDto): Promise<User> {
     const existing = await this.usersRepo.findOne({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already registered');
@@ -79,16 +89,22 @@ export class UsersService {
     return saved;
   }
 
+  // EN: Finds a user by email, or null if none exists.
+  // ES: Busca un usuario por email, o null si no existe.
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepo.findOne({ where: { email } });
   }
 
+  // EN: Finds a user by id, throwing NotFound if missing.
+  // ES: Busca un usuario por id, lanzando NotFound si no existe.
   async findById(id: string): Promise<User> {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
+  // EN: Returns a user's public-safe fields only (no sensitive data).
+  // ES: Devuelve solo los campos públicos de un usuario (sin datos sensibles).
   async findByIdPublic(id: string) {
     const user = await this.usersRepo.findOne({
       where: { id },
@@ -98,11 +114,15 @@ export class UsersService {
     return user;
   }
 
+  // EN: Updates editable profile fields and returns the refreshed user.
+  // ES: Actualiza los campos editables del perfil y devuelve el usuario actualizado.
   async update(id: string, dto: UpdateUserDto): Promise<User> {
     await this.usersRepo.update(id, dto);
     return this.findById(id);
   }
 
+  // EN: Updates the user's own email and/or password, verifying the current password first.
+  // ES: Actualiza el email y/o la contraseña del propio usuario, verificando antes la contraseña actual.
   /** Cambiar email y/o contraseña del propio usuario (verifica la contraseña actual). */
   async updateCredentials(
     id: string,
@@ -135,6 +155,8 @@ export class UsersService {
     return this.findById(id);
   }
 
+  // EN: Monthly cron that grants 2 free credits to all non-socio fans (Fan Libre plan).
+  // ES: Cron mensual que otorga 2 créditos gratis a todos los fans no socios (plan Fan Libre).
   /** Plan Fan Libre: 2 créditos cada mes para los fans (los socios reciben 200 al pagar). */
   @Cron(CronExpression.EVERY_1ST_DAY_OF_MONTH_AT_MIDNIGHT)
   async grantMonthlyFreeCredits() {
@@ -142,6 +164,8 @@ export class UsersService {
     console.log(`🎁 +2 créditos mensuales (Fan Libre) a ${result.affected ?? 0} fans`);
   }
 
+  // EN: Adds XP (applying any active multiplier), recomputes level and awards season badges.
+  // ES: Añade XP (aplicando el multiplicador activo), recalcula el nivel y otorga insignias de temporada.
   async addXP(userId: string, amount: number): Promise<User> {
     const user = await this.findById(userId);
     // Apply active XP multiplier
@@ -164,15 +188,21 @@ export class UsersService {
     return this.findById(userId);
   }
 
+  // EN: Records that the user claimed their daily reward now.
+  // ES: Registra que el usuario ha reclamado su recompensa diaria ahora.
   async markDailyClaimed(userId: string): Promise<void> {
     await this.usersRepo.update(userId, { dailyRewardClaimedAt: new Date() });
   }
 
+  // EN: Sets a temporary XP multiplier that expires after the given hours.
+  // ES: Fija un multiplicador de XP temporal que expira tras las horas indicadas.
   async setXPMultiplier(userId: string, multiplier: number, hours: number): Promise<void> {
     const expiresAt = new Date(Date.now() + hours * 3600 * 1000);
     await this.usersRepo.update(userId, { xpMultiplier: multiplier, xpMultiplierExpiresAt: expiresAt });
   }
 
+  // EN: Records a weekly activity bit (vote/spin/chat) and awards the "perfect week" badge.
+  // ES: Registra un bit de actividad semanal (votar/girar/chatear) y otorga la insignia de "semana perfecta".
   async updateWeekActivity(userId: string, bit: number): Promise<void> {
     const now = new Date();
     const year = now.getFullYear();
@@ -188,12 +218,16 @@ export class UsersService {
     }
   }
 
+  // EN: Adds the given amount of credits to the user's balance.
+  // ES: Suma la cantidad indicada de créditos al saldo del usuario.
   async addCredits(userId: string, amount: number): Promise<User> {
     const user = await this.findById(userId);
     await this.usersRepo.update(userId, { credits: user.credits + amount });
     return this.findById(userId);
   }
 
+  // EN: Deducts credits from the user, rejecting if the balance is insufficient.
+  // ES: Descuenta créditos al usuario, rechazando si el saldo es insuficiente.
   async spendCredits(userId: string, amount: number): Promise<User> {
     const user = await this.findById(userId);
     if (user.credits < amount) throw new ConflictException('Insufficient credits');
@@ -201,6 +235,8 @@ export class UsersService {
     return this.findById(userId);
   }
 
+  // EN: Grants the daily reward (credits + XP) with streak bonuses and streak badges.
+  // ES: Otorga la recompensa diaria (créditos + XP) con bonus de racha e insignias por racha.
   async claimDailyReward(userId: string): Promise<{ credits: number; xp: number }> {
     const user = await this.findById(userId);
     const today = new Date();
@@ -248,6 +284,8 @@ export class UsersService {
     return { credits: totalCredits, xp: xpGain };
   }
 
+  // EN: Promotes a user to socio (idempotent), assigns socio number, credits and referral bonuses.
+  // ES: Asciende a un usuario a socio (idempotente), asigna número de socio, créditos y bonus de referidos.
   async becomeSocio(userId: string): Promise<User> {
     const user = await this.findById(userId);
     if (user.isSocio) return user; // idempotente
@@ -297,6 +335,8 @@ export class UsersService {
 
   private readonly visitorSessions = new Map<string, Date>();
 
+  // EN: Updates the user's online flag and last-seen timestamp.
+  // ES: Actualiza el indicador de conexión del usuario y la marca de última actividad.
   async updateOnlineStatus(userId: string, isOnline: boolean): Promise<void> {
     await this.usersRepo.update(userId, {
       isOnline,
@@ -304,10 +344,14 @@ export class UsersService {
     });
   }
 
+  // EN: Records an anonymous visitor heartbeat keyed by session id.
+  // ES: Registra un latido de visitante anónimo indexado por id de sesión.
   visitorPing(sessionId: string): void {
     this.visitorSessions.set(sessionId, new Date());
   }
 
+  // EN: Counts visitors active in the last 5 minutes, pruning stale sessions.
+  // ES: Cuenta los visitantes activos en los últimos 5 minutos, eliminando sesiones caducadas.
   async getOnlineCount(): Promise<{ count: number }> {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
     for (const [id, ts] of this.visitorSessions) {
@@ -316,11 +360,15 @@ export class UsersService {
     return { count: this.visitorSessions.size };
   }
 
+  // EN: Returns the total number of registered users.
+  // ES: Devuelve el número total de usuarios registrados.
   async getFansCount(): Promise<{ count: number }> {
     const count = await this.usersRepo.count();
     return { count };
   }
 
+  // EN: Returns fan counts grouped by country, ordered by most fans first.
+  // ES: Devuelve el número de fans agrupados por país, ordenados de mayor a menor.
   /** Fan counts grouped by country (for the "fans por país" map), most fans first. */
   async getFansByCountry(): Promise<{ country: string; count: number }[]> {
     const rows = await this.usersRepo
@@ -334,6 +382,8 @@ export class UsersService {
     return rows.map((r) => ({ country: r.country, count: Number(r.count) }));
   }
 
+  // EN: Returns the top users ordered by XP (public fields only).
+  // ES: Devuelve los mejores usuarios ordenados por XP (solo campos públicos).
   async getLeaderboard(limit = 50): Promise<User[]> {
     return this.usersRepo.find({
       order: { xp: 'DESC' },
@@ -342,6 +392,8 @@ export class UsersService {
     });
   }
 
+  // EN: Computes the user's global rank by counting users with more XP.
+  // ES: Calcula el ranking global del usuario contando los usuarios con más XP.
   async getRank(userId: string): Promise<number> {
     const user = await this.findById(userId);
     const count = await this.usersRepo
@@ -351,6 +403,8 @@ export class UsersService {
     return count + 1;
   }
 
+  // EN: Sets a user's role by email (admin operation).
+  // ES: Asigna el rol de un usuario por email (operación de administrador).
   async setUserRole(email: string, role: 'admin' | 'creator' | 'fan'): Promise<{ ok: boolean; message: string }> {
     const user = await this.findByEmail(email);
     if (!user) return { ok: false, message: 'User not found' };
@@ -358,12 +412,16 @@ export class UsersService {
     return { ok: true, message: `User ${email} is now ${role}` };
   }
 
+  // EN: Deletes a user by email (admin operation).
+  // ES: Elimina un usuario por email (operación de administrador).
   async deleteByEmail(email: string): Promise<{ ok: boolean; message: string }> {
     const result = await this.usersRepo.delete({ email });
     if (result.affected === 0) return { ok: false, message: 'User not found' };
     return { ok: true, message: `User ${email} deleted` };
   }
 
+  // EN: Returns the user's vote count for the last 7 days and their share of all votes.
+  // ES: Devuelve el número de votos del usuario en los últimos 7 días y su porcentaje del total.
   async getWeeklyVoteStats(userId: string): Promise<{ votes: number; clubPct: string }> {
     const since = new Date();
     since.setDate(since.getDate() - 7);
@@ -380,6 +438,8 @@ export class UsersService {
     return { votes: userVotes, clubPct };
   }
 
+  // EN: Searches users by name, filtering out blocked users and flagging which ones are followed.
+  // ES: Busca usuarios por nombre, filtrando los bloqueados y marcando a cuáles ya sigue el solicitante.
   async searchUsers(q: string, requesterId?: string) {
     if (!q || q.trim().length < 2) return [];
     const users = await this.usersRepo.find({
@@ -399,6 +459,8 @@ export class UsersService {
       .map((u) => ({ ...u, isFollowing: followedIds.has(u.id) }));
   }
 
+  // EN: Returns a user's public profile with follower/following counts and follow/block state.
+  // ES: Devuelve el perfil público de un usuario con contadores de seguidores/seguidos y estado de seguir/bloquear.
   async getPublicProfile(id: string, requesterId?: string) {
     const user = await this.usersRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
@@ -416,10 +478,14 @@ export class UsersService {
     return { ...rest, followersCount, followingCount, isFollowing, isBlocked };
   }
 
+  // EN: Returns the user's recent activity (their notifications).
+  // ES: Devuelve la actividad reciente del usuario (sus notificaciones).
   async getActivity(userId: string) {
     return this.notifications.listForUser(userId);
   }
 
+  // EN: Returns the public summaries of users who follow the given user.
+  // ES: Devuelve los resúmenes públicos de los usuarios que siguen al usuario dado.
   async getFollowers(userId: string) {
     const rows = await this.followsRepo.find({ where: { followedId: userId } });
     if (!rows.length) return [];
@@ -428,6 +494,8 @@ export class UsersService {
     return users.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar, level: u.level, xp: u.xp, city: u.city, isSocio: u.isSocio, role: u.role }));
   }
 
+  // EN: Returns the public summaries of users the given user follows.
+  // ES: Devuelve los resúmenes públicos de los usuarios a los que sigue el usuario dado.
   async getFollowing(userId: string) {
     const rows = await this.followsRepo.find({ where: { followerId: userId } });
     if (!rows.length) return [];
@@ -436,6 +504,8 @@ export class UsersService {
     return users.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar, level: u.level, xp: u.xp, city: u.city, isSocio: u.isSocio, role: u.role }));
   }
 
+  // EN: Creates a follow relationship (notifying the followee) and returns the new follower count.
+  // ES: Crea una relación de seguimiento (notificando al seguido) y devuelve el nuevo número de seguidores.
   async follow(followerId: string, followedId: string) {
     if (followerId === followedId) throw new BadRequestException('No puedes seguirte a ti mismo');
     const existing = await this.followsRepo.findOne({ where: { followerId, followedId } });
@@ -448,6 +518,8 @@ export class UsersService {
     return { following: true, followersCount: count };
   }
 
+  // EN: Removes a follow relationship and returns the updated follower count.
+  // ES: Elimina una relación de seguimiento y devuelve el número de seguidores actualizado.
   async unfollow(followerId: string, followedId: string) {
     await this.followsRepo.delete({ followerId, followedId });
     const count = await this.followsRepo.count({ where: { followedId } });
@@ -455,17 +527,23 @@ export class UsersService {
   }
 
   // ─── BLOCKS ──────────────────────────────────────────────────────────────
+  // EN: Returns the ids of users the given user follows.
+  // ES: Devuelve los ids de los usuarios a los que sigue el usuario dado.
   async getFollowingIds(userId: string): Promise<string[]> {
     const rows = await this.followsRepo.find({ where: { followerId: userId } });
     return rows.map((r) => r.followedId);
   }
 
+  // EN: Returns the ids of users this user has blocked.
+  // ES: Devuelve los ids de los usuarios que este usuario ha bloqueado.
   /** IDs the user has blocked. */
   async getBlockedIds(userId: string): Promise<string[]> {
     const rows = await this.blocksRepo.find({ where: { blockerId: userId } });
     return rows.map((r) => r.blockedId);
   }
 
+  // EN: Returns ids of users blocked in either direction relative to this user (hidden both ways).
+  // ES: Devuelve los ids de usuarios bloqueados en cualquier dirección respecto a este usuario (ocultos en ambos sentidos).
   /** IDs of users in either direction of a block with this user (hide both ways). */
   async getMutualBlockIds(userId: string): Promise<string[]> {
     const rows = await this.blocksRepo.find({
@@ -476,6 +554,8 @@ export class UsersService {
     return [...ids];
   }
 
+  // EN: Blocks a user and removes any follow relationship between the two in both directions.
+  // ES: Bloquea a un usuario y elimina cualquier relación de seguimiento entre ambos en las dos direcciones.
   async blockUser(blockerId: string, blockedId: string) {
     if (blockerId === blockedId) throw new BadRequestException('No puedes bloquearte a ti mismo');
     const existing = await this.blocksRepo.findOne({ where: { blockerId, blockedId } });
@@ -486,11 +566,15 @@ export class UsersService {
     return { blocked: true };
   }
 
+  // EN: Removes a block between the two users.
+  // ES: Elimina el bloqueo entre los dos usuarios.
   async unblockUser(blockerId: string, blockedId: string) {
     await this.blocksRepo.delete({ blockerId, blockedId });
     return { blocked: false };
   }
 
+  // EN: Returns the public summaries of users this user has blocked.
+  // ES: Devuelve los resúmenes públicos de los usuarios que este usuario ha bloqueado.
   async getBlockedUsers(userId: string) {
     const ids = await this.getBlockedIds(userId);
     if (!ids.length) return [];

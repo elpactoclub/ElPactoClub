@@ -1,3 +1,5 @@
+// EN: Business logic for gamification: casting/settling votes and bets, raffle entries and the daily roulette, with credit/XP/badge/mission side effects.
+// ES: Lógica de negocio de gamificación: emitir/liquidar votaciones y apuestas, participar en sorteos y la ruleta diaria, con efectos en créditos/XP/insignias/misiones.
 import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull } from 'typeorm';
@@ -16,6 +18,8 @@ const TYPE_CASHBACK: Record<VotationType, number> = {
   apuesta: 0,
 };
 
+// EN: Service exposing all gamification operations backed by the votes, raffles and entries repositories.
+// ES: Servicio que expone todas las operaciones de gamificación apoyándose en los repositorios de votaciones, sorteos y participaciones.
 @Injectable()
 export class GamificationService {
   constructor(
@@ -30,6 +34,8 @@ export class GamificationService {
   ) {}
 
   // ─── VOTES ──────────────────────────────────────────────────────────────
+  // EN: Returns all active votes, annotating each with the user's previously selected option if any.
+  // ES: Devuelve todas las votaciones activas, anotando cada una con la opción que el usuario ya eligió, si la hay.
   async getActiveVotes(userId?: string): Promise<(Vote & { myVote: string | null })[]> {
     const votes = await this.votesRepo.find({ where: { isActive: true }, order: { createdAt: 'DESC' } });
     if (!userId) return votes.map((v) => ({ ...v, myVote: null }));
@@ -38,6 +44,8 @@ export class GamificationService {
     return votes.map((v) => ({ ...v, myVote: myVoteMap.get(v.id) ?? null }));
   }
 
+  // EN: Casts a user's vote, charging credits/awarding XP and cashback, updating tallies, badges and missions.
+  // ES: Emite el voto de un usuario, cobrando créditos/otorgando XP y cashback, actualizando recuentos, insignias y misiones.
   async castVote(userId: string, voteId: string, selectedOption: string): Promise<Vote> {
     const vote = await this.votesRepo.findOne({ where: { id: voteId } });
     if (!vote) throw new NotFoundException('Vote not found');
@@ -81,10 +89,14 @@ export class GamificationService {
     return this.votesRepo.findOne({ where: { id: voteId } }) as Promise<Vote>;
   }
 
+  // EN: Returns all votes a given user has cast.
+  // ES: Devuelve todos los votos que un usuario ha emitido.
   getUserVotes(userId: string): Promise<UserVote[]> {
     return this.userVotesRepo.find({ where: { userId } });
   }
 
+  // EN: Settles an 'apuesta' bet, paying winners (doubled if >=60% picked correctly) and closing the vote.
+  // ES: Liquida una apuesta, pagando a los ganadores (doblado si >=60% acertó) y cerrando la votación.
   async settleBet(voteId: string, correctOption: string): Promise<Vote> {
     const vote = await this.votesRepo.findOne({ where: { id: voteId } });
     if (!vote) throw new NotFoundException('Vote not found');
@@ -122,6 +134,8 @@ export class GamificationService {
   }
 
   // ─── RAFFLES ────────────────────────────────────────────────────────────
+  // EN: Returns active raffles (or the latest finalized one), annotated with entry state and winner names.
+  // ES: Devuelve los sorteos activos (o el último finalizado), anotados con el estado de participación y los nombres de ganadores.
   async getActiveRaffles(userId?: string) {
     // Active raffles take priority; if there are none, keep showing the most
     // recent finalized one (with its winner) until the admin activates another.
@@ -149,6 +163,8 @@ export class GamificationService {
     }));
   }
 
+  // EN: Enters a user into a raffle after audience checks, charging credits/XP and awarding the first-entry badge.
+  // ES: Inscribe a un usuario en un sorteo tras comprobar la audiencia, cobrando créditos/XP y otorgando la insignia de primera participación.
   async enterRaffle(userId: string, raffleId: string): Promise<RaffleEntry> {
     const raffle = await this.rafflesRepo.findOne({ where: { id: raffleId } });
     if (!raffle) throw new NotFoundException('Raffle not found');
@@ -187,6 +203,8 @@ export class GamificationService {
   }
 
   // ─── DAILY ROULETTE ─────────────────────────────────────────────────────
+  // EN: Spins the once-per-day roulette, granting a random credit/XP/multiplier prize and marking the daily reward as claimed.
+  // ES: Gira la ruleta diaria (una vez al día), otorgando un premio aleatorio de créditos/XP/multiplicador y marcando la recompensa diaria como reclamada.
   async spinRoulette(userId: string): Promise<{ prize: string; credits: number; xp: number }> {
     const user = await this.usersService.findById(userId);
     const today = new Date();

@@ -1,10 +1,15 @@
 "use client";
 
+// EN: Full-page notifications screen listing the user's alerts with read/mark-all-read and a locked preview when logged out.
+// ES: Pantalla de notificaciones a página completa que lista las alertas del usuario con leer/marcar-todo y una vista bloqueada al no haber sesión.
+
 import { useState, useEffect } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 
+// EN: Shape of a single notification record from the backend.
+// ES: Forma de un registro individual de notificación del backend.
 interface Notification {
   id: string;
   type: "post_creator" | "new_vote" | "bet_result" | "badge_unlock" | "mission_complete";
@@ -29,6 +34,8 @@ const STATIC_NOTIFS: Notification[] = [
   { id: "4", type: "badge_unlock", title: "Badge desbloqueado 👑",       readAt: "past", createdAt: new Date(Date.now() - 86400000).toISOString() },
 ];
 
+// EN: Formats an ISO timestamp into a short relative "time ago" label in Spanish.
+// ES: Formatea una marca de tiempo ISO en una etiqueta corta de "hace X" en español.
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -38,6 +45,8 @@ function timeAgo(iso: string) {
   return "Ayer";
 }
 
+// EN: Notifications screen component that loads, displays and marks notifications as read.
+// ES: Componente de la pantalla de notificaciones que carga, muestra y marca notificaciones como leídas.
 export default function NotificationsScreen() {
   const { showToast, setNotifUnreadCount } = useUIStore();
   const { isAuthenticated } = useUserStore();

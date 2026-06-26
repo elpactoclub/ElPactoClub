@@ -1,3 +1,5 @@
+// EN: Admin REST controller exposing protected endpoints for users, events, votes, raffles, store, projects and settings.
+// ES: Controlador REST admin que expone endpoints protegidos de usuarios, eventos, votaciones, sorteos, tienda, proyectos y ajustes.
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -6,18 +8,24 @@ import { AdminService } from './admin.service';
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { CreateEventAdminDto, UpdateEventAdminDto } from './dto/event-admin.dto';
 
+// EN: Controller guarded by JWT auth and role checks; all routes are under the /admin prefix.
+// ES: Controlador protegido por autenticación JWT y comprobación de roles; todas las rutas bajo el prefijo /admin.
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
   // ─── Dashboard ────────────────────────────────────────────────────────
+  // EN: Returns global dashboard statistics (users, events, votes, missions, posts).
+  // ES: Devuelve estadísticas globales del panel (usuarios, eventos, votaciones, misiones, posts).
   @Get('stats')
   @Roles('admin', 'creator')
   stats() {
     return this.admin.getStats();
   }
 
+  // EN: Returns the requesting creator's own content stats (posts, likes).
+  // ES: Devuelve las estadísticas de contenido del propio creador (posts, likes).
   @Get('my-stats')
   @Roles('admin', 'creator')
   myStats(@Req() req: any) {
@@ -25,6 +33,8 @@ export class AdminController {
   }
 
   // ─── Users ────────────────────────────────────────────────────────────
+  // EN: Lists users with pagination, optional text search and role/socio filter.
+  // ES: Lista usuarios con paginación, búsqueda de texto opcional y filtro por rol/socio.
   @Get('users')
   @Roles('admin')
   listUsers(
@@ -36,30 +46,40 @@ export class AdminController {
     return this.admin.listUsers(parseInt(page, 10), parseInt(limit, 10), search, filter);
   }
 
+  // EN: Bulk-updates XP for all users by adding to or setting a fixed amount.
+  // ES: Actualiza en masa el XP de todos los usuarios sumando o fijando una cantidad.
   @Patch('users/bulk-xp')
   @Roles('admin')
   bulkUpdateXP(@Body() body: { mode: 'add' | 'set'; amount: number }) {
     return this.admin.bulkUpdateXP(body.mode, body.amount);
   }
 
+  // EN: Creates a new user with optional admin overrides (role, credits, XP).
+  // ES: Crea un usuario nuevo con anulaciones opcionales de admin (rol, créditos, XP).
   @Post('users')
   @Roles('admin')
   createUser(@Body() dto: any) {
     return this.admin.createUser(dto);
   }
 
+  // EN: Returns a single user by id (without the password field).
+  // ES: Devuelve un único usuario por id (sin el campo de contraseña).
   @Get('users/:id')
   @Roles('admin')
   getUser(@Param('id') id: string) {
     return this.admin.getUser(id);
   }
 
+  // EN: Updates a user's profile, role, credits, XP or password by id.
+  // ES: Actualiza el perfil, rol, créditos, XP o contraseña de un usuario por id.
   @Patch('users/:id')
   @Roles('admin')
   updateUser(@Param('id') id: string, @Body() dto: UpdateUserAdminDto) {
     return this.admin.updateUser(id, dto);
   }
 
+  // EN: Deletes a user by id.
+  // ES: Elimina un usuario por id.
   @Delete('users/:id')
   @Roles('admin')
   deleteUser(@Param('id') id: string) {
@@ -67,54 +87,72 @@ export class AdminController {
   }
 
   // ─── Events (admin + creator) ─────────────────────────────────────────
+  // EN: Lists all events with their real attendee counts.
+  // ES: Lista todos los eventos con su conteo real de asistentes.
   @Get('events')
   @Roles('admin', 'creator')
   listEvents() {
     return this.admin.listEvents();
   }
 
+  // EN: Lists events awaiting approval (status pending).
+  // ES: Lista eventos pendientes de aprobación (estado pending).
   @Get('events/pending')
   @Roles('admin')
   getPendingEvents() {
     return this.admin.getPendingEvents();
   }
 
+  // EN: Returns a single event by id.
+  // ES: Devuelve un único evento por id.
   @Get('events/:id')
   @Roles('admin', 'creator')
   getEvent(@Param('id') id: string) {
     return this.admin.getEvent(id);
   }
 
+  // EN: Creates a new event (auto-approved).
+  // ES: Crea un evento nuevo (auto-aprobado).
   @Post('events')
   @Roles('admin')
   createEvent(@Body() dto: CreateEventAdminDto) {
     return this.admin.createEvent(dto);
   }
 
+  // EN: Approves a pending event.
+  // ES: Aprueba un evento pendiente.
   @Patch('events/:id/approve')
   @Roles('admin')
   approveEvent(@Param('id') id: string) {
     return this.admin.approveEvent(id);
   }
 
+  // EN: Rejects a pending event.
+  // ES: Rechaza un evento pendiente.
   @Patch('events/:id/reject')
   @Roles('admin')
   rejectEvent(@Param('id') id: string) {
     return this.admin.rejectEvent(id);
   }
 
+  // EN: Updates an event's fields by id.
+  // ES: Actualiza los campos de un evento por id.
   @Patch('events/:id')
   @Roles('admin', 'creator')
   updateEvent(@Param('id') id: string, @Body() dto: UpdateEventAdminDto) {
     return this.admin.updateEvent(id, dto);
   }
 
+  // EN: Deletes an event by id.
+  // ES: Elimina un evento por id.
   @Delete('events/:id')
   @Roles('admin')
   deleteEvent(@Param('id') id: string) {
     return this.admin.deleteEvent(id);
   }
 
+  // EN: Removes an attendee from an event and refunds their credits.
+  // ES: Quita a un asistente de un evento y le reembolsa sus créditos.
   @Delete('events/:id/attendees/:userId')
   @Roles('admin')
   removeAttendee(@Param('id') id: string, @Param('userId') userId: string) {
@@ -122,6 +160,8 @@ export class AdminController {
   }
 
   // ─── Votes (historial UserVotes) ─────────────────────────────────────
+  // EN: Lists the history of cast user votes.
+  // ES: Lista el historial de votos emitidos por los usuarios.
   @Get('votes')
   @Roles('admin')
   listVotes() {
@@ -129,30 +169,40 @@ export class AdminController {
   }
 
   // ─── Vote objects (gestión) ───────────────────────────────────────────
+  // EN: Lists votation objects (the votes themselves).
+  // ES: Lista los objetos de votación (las votaciones en sí).
   @Get('vote-objects')
   @Roles('admin')
   listVoteObjects() {
     return this.admin.listVoteObjects();
   }
 
+  // EN: Creates a new votation.
+  // ES: Crea una nueva votación.
   @Post('vote-objects')
   @Roles('admin')
   createVoteObject(@Body() dto: any) {
     return this.admin.createVoteObject(dto);
   }
 
+  // EN: Updates a votation's fields by id.
+  // ES: Actualiza los campos de una votación por id.
   @Patch('vote-objects/:id')
   @Roles('admin')
   updateVoteObject(@Param('id') id: string, @Body() dto: any) {
     return this.admin.updateVoteObject(id, dto);
   }
 
+  // EN: Settles a votation by marking the correct option and closing it.
+  // ES: Resuelve una votación marcando la opción correcta y cerrándola.
   @Patch('vote-objects/:id/settle')
   @Roles('admin')
   settleVote(@Param('id') id: string, @Body() body: { correctOption: string }) {
     return this.admin.settleVote(id, body.correctOption);
   }
 
+  // EN: Deletes a votation and its associated user votes.
+  // ES: Elimina una votación y sus votos de usuario asociados.
   @Delete('vote-objects/:id')
   @Roles('admin')
   deleteVoteObject(@Param('id') id: string) {

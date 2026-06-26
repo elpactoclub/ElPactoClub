@@ -1,3 +1,5 @@
+// EN: Auth module wiring JWT/Passport, the auth controller and the auth service.
+// ES: Módulo de autenticación que conecta JWT/Passport, el controlador y el servicio de auth.
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -30,4 +32,6 @@ import { UsersModule } from '../users/users.module';
   providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
+// EN: NestJS module bundling authentication features.
+// ES: Módulo NestJS que agrupa las funcionalidades de autenticación.
 export class AuthModule {}

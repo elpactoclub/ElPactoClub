@@ -1,12 +1,19 @@
 "use client";
 
+// EN: Modal for composing a new community post (text/poll/challenge) with optional image upload.
+// ES: Modal para crear una nueva publicación de comunidad (texto/encuesta/reto) con subida de imagen opcional.
+
 import { useRef, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 
+// EN: The kind of post being composed.
+// ES: El tipo de publicación que se está creando.
 type PostType = "text" | "poll" | "challenge";
 
+// EN: Post composer modal component handling type selection, image upload, poll options and submission.
+// ES: Componente de modal del editor de publicaciones que gestiona la selección de tipo, subida de imagen, opciones de encuesta y envío.
 export default function PostModal() {
   const { isPostModalOpen, closePostModal, showToast, refreshPosts } = useUIStore();
   const { isAuthenticated, name, avatar, addXP } = useUserStore();

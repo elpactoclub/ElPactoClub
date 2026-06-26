@@ -1,3 +1,5 @@
+// EN: Admin service: business logic for the admin panel (stats, users, events, votes, raffles, store, projects, creators, notifications).
+// ES: Servicio de admin: lógica del panel de administración (estadísticas, usuarios, eventos, votaciones, sorteos, tienda, proyectos, creadores, notificaciones).
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
@@ -18,6 +20,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
 import { CreateEventAdminDto, UpdateEventAdminDto } from './dto/event-admin.dto';
 
+// EN: Injectable admin service aggregating repositories and helper services.
+// ES: Servicio de admin inyectable que agrupa repositorios y servicios auxiliares.
 @Injectable()
 export class AdminService {
   constructor(
@@ -39,6 +43,8 @@ export class AdminService {
     private readonly dm: DmService,
   ) {}
 
+  // EN: Sends a direct message broadcast to all or selected users.
+  // ES: Envía un mensaje directo a todos o a usuarios seleccionados.
   /** Envía un DM (bandeja de mensajes) a todos o a usuarios elegidos. */
   sendAdminDm(senderId: string, content: string, userIds?: string[]) {
     return this.dm.broadcast(senderId, content, userIds);
@@ -47,6 +53,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // DASHBOARD STATS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Returns dashboard counters (users, socios, creators, online, events, votes, etc.).
+  // ES: Devuelve los contadores del panel (usuarios, socios, creadores, en línea, eventos, votos, etc.).
   async getStats() {
     const [totalUsers, totalEvents, totalVotes, totalMissions, totalPosts] = await Promise.all([
       this.users.count(),
@@ -82,6 +90,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // USERS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists users with pagination, search and role/socio filters.
+  // ES: Lista usuarios con paginación, búsqueda y filtros por rol/socio.
   async listUsers(page = 1, limit = 30, search?: string, filter?: string) {
     const qb = this.users.createQueryBuilder('u').orderBy('u.createdAt', 'DESC');
     const conditions: string[] = [];
@@ -107,12 +117,16 @@ export class AdminService {
     };
   }
 
+  // EN: Fetches a single user by id (without password).
+  // ES: Obtiene un usuario por id (sin la contraseña).
   async getUser(id: string) {
     const u = await this.users.findOne({ where: { id } });
     if (!u) throw new NotFoundException('User not found');
     return this.publicUser(u);
   }
 
+  // EN: Creates a user and applies admin overrides (role, socio, credits, xp/level).
+  // ES: Crea un usuario y aplica ajustes de admin (rol, socio, créditos, xp/nivel).
   async createUser(dto: {
     email: string; password: string; name?: string; role?: string;
     city?: string; country?: string; isSocio?: boolean; credits?: number; xp?: number;
@@ -144,6 +158,8 @@ export class AdminService {
     return this.getUser(created.id);
   }
 
+  // EN: Updates a user, re-hashing password and recomputing level when xp changes.
+  // ES: Actualiza un usuario, rehasheando la contraseña y recalculando el nivel si cambia el xp.
   async updateUser(id: string, dto: UpdateUserAdminDto) {
     const u = await this.users.findOne({ where: { id } });
     if (!u) throw new NotFoundException('User not found');
@@ -172,12 +188,16 @@ export class AdminService {
     return this.publicUser(u);
   }
 
+  // EN: Deletes a user by id.
+  // ES: Elimina un usuario por id.
   async deleteUser(id: string) {
     const result = await this.users.delete(id);
     if (!result.affected) throw new NotFoundException('User not found');
     return { ok: true };
   }
 
+  // EN: Adds or sets xp for all users in bulk, recomputing levels.
+  // ES: Suma o fija el xp de todos los usuarios en bloque, recalculando niveles.
   async bulkUpdateXP(mode: 'add' | 'set', amount: number) {
     const allUsers = await this.users.find({ select: ['id', 'xp'] });
     const updates = allUsers.map((u) => {
@@ -189,6 +209,8 @@ export class AdminService {
     return { ok: true, affected: allUsers.length };
   }
 
+  // EN: Strips the password field to return a public-safe user object.
+  // ES: Quita el campo contraseña para devolver un usuario seguro para exponer.
   private publicUser(u: User) {
     const { password, ...rest } = u;
     return rest;
@@ -197,6 +219,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // EVENTS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists events with real attendee counts computed from attendee rows.
+  // ES: Lista eventos con conteos reales de asistentes calculados desde las filas de asistentes.
   async listEvents() {
     const events = await this.events.find({ order: { date: 'ASC' } });
     if (events.length === 0) return [];
@@ -212,17 +236,23 @@ export class AdminService {
     return events.map((e) => ({ ...e, attendeesCount: countMap.get(e.id) ?? 0 }));
   }
 
+  // EN: Fetches a single event by id.
+  // ES: Obtiene un evento por id.
   async getEvent(id: string) {
     const e = await this.events.findOne({ where: { id } });
     if (!e) throw new NotFoundException('Event not found');
     return e;
   }
 
+  // EN: Creates an event already approved.
+  // ES: Crea un evento ya aprobado.
   createEvent(dto: CreateEventAdminDto) {
     const event = this.events.create({ ...dto, date: new Date(dto.date), status: 'approved' });
     return this.events.save(event);
   }
 
+  // EN: Updates an event, parsing the date if provided.
+  // ES: Actualiza un evento, parseando la fecha si se proporciona.
   async updateEvent(id: string, dto: UpdateEventAdminDto) {
     const e = await this.events.findOne({ where: { id } });
     if (!e) throw new NotFoundException('Event not found');
@@ -230,16 +260,22 @@ export class AdminService {
     return this.events.save(e);
   }
 
+  // EN: Deletes an event by id.
+  // ES: Elimina un evento por id.
   async deleteEvent(id: string) {
     const r = await this.events.delete(id);
     if (!r.affected) throw new NotFoundException('Event not found');
     return { ok: true };
   }
 
+  // EN: Returns events awaiting approval, oldest first.
+  // ES: Devuelve los eventos pendientes de aprobación, los más antiguos primero.
   getPendingEvents() {
     return this.events.find({ where: { status: 'pending' }, order: { createdAt: 'ASC' } });
   }
 
+  // EN: Marks an event as approved.
+  // ES: Marca un evento como aprobado.
   async approveEvent(id: string) {
     const e = await this.events.findOne({ where: { id } });
     if (!e) throw new NotFoundException('Event not found');
@@ -247,6 +283,8 @@ export class AdminService {
     return this.events.save(e);
   }
 
+  // EN: Marks an event as rejected.
+  // ES: Marca un evento como rechazado.
   async rejectEvent(id: string) {
     const e = await this.events.findOne({ where: { id } });
     if (!e) throw new NotFoundException('Event not found');
@@ -257,6 +295,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // VOTES
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists recent user votes enriched with vote title and user info, skipping orphans.
+  // ES: Lista los votos recientes de usuarios con título de votación e info de usuario, omitiendo huérfanos.
   async listVotes() {
     const rows = await this.userVotes.find({ order: { createdAt: 'DESC' }, take: 500 });
     if (rows.length === 0) return [];
@@ -296,6 +336,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // EVENT ATTENDEES (admin: remove with refund)
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Removes an attendee from an event and refunds their credits cost.
+  // ES: Quita a un asistente de un evento y le reembolsa el coste en créditos.
   async removeAttendee(eventId: string, userId: string) {
     const attendee = await this.attendees.findOne({ where: { eventId, userId } });
     if (!attendee) throw new NotFoundException('Attendee not found');
@@ -312,10 +354,14 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // MISSIONS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists all missions.
+  // ES: Lista todas las misiones.
   listMissions() {
     return this.missions.find();
   }
 
+  // EN: Resets a mission's progress to zero and marks it incomplete.
+  // ES: Reinicia el progreso de una misión a cero y la marca como incompleta.
   async resetMission(code: string) {
     const m = await this.missions.findOne({ where: { code } });
     if (!m) throw new NotFoundException('Mission not found');
@@ -324,6 +370,8 @@ export class AdminService {
     return this.missions.save(m);
   }
 
+  // EN: Updates a mission's editable fields.
+  // ES: Actualiza los campos editables de una misión.
   async updateMission(code: string, dto: { title?: string; description?: string; target?: number; reward?: string; isActive?: boolean }) {
     const m = await this.missions.findOne({ where: { code } });
     if (!m) throw new NotFoundException('Mission not found');
@@ -334,6 +382,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // CREATOR STATS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Returns a creator's post stats (totals, average likes, post list).
+  // ES: Devuelve las estadísticas de publicaciones de un creador (totales, media de likes, lista de posts).
   async getCreatorStats(userId: string) {
     const myPosts = await this.posts.find({ where: { authorId: userId }, order: { createdAt: 'DESC' } });
     const totalLikes = myPosts.reduce((sum, p) => sum + (p.likesCount ?? 0), 0);
@@ -358,10 +408,14 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // SETTINGS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Returns all app settings.
+  // ES: Devuelve todos los ajustes de la aplicación.
   getSettings() {
     return this.settings.getAll();
   }
 
+  // EN: Sets a single app setting by key.
+  // ES: Establece un ajuste de la aplicación por clave.
   updateSetting(key: string, value: string) {
     return this.settings.set(key, value);
   }
@@ -369,6 +423,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // POSTS (moderation)
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists recent posts enriched with author name, avatar and email for moderation.
+  // ES: Lista publicaciones recientes con nombre, avatar y email del autor para moderación.
   async listPosts(limit = 50) {
     const postList = await this.posts.find({ order: { createdAt: 'DESC' }, take: limit });
     if (postList.length === 0) return [];
@@ -386,6 +442,8 @@ export class AdminService {
     });
   }
 
+  // EN: Deletes a post by id.
+  // ES: Elimina una publicación por id.
   async deletePost(id: string) {
     const r = await this.posts.delete(id);
     if (!r.affected) throw new NotFoundException('Post not found');
@@ -395,10 +453,14 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // VOTE OBJECTS (create / manage)
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists all votación objects, newest first.
+  // ES: Lista todos los objetos de votación, los más recientes primero.
   listVoteObjects() {
     return this.votes.find({ order: { createdAt: 'DESC' } });
   }
 
+  // EN: Creates a votación with zeroed result counters per option.
+  // ES: Crea una votación con contadores de resultados a cero por opción.
   async createVoteObject(dto: {
     title: string; description?: string; category: VoteCategory; votationType?: VotationType;
     options: string[]; creditsCost?: number; xpReward?: number; closesAt?: string; isActive?: boolean;
@@ -413,6 +475,8 @@ export class AdminService {
     return this.votes.save(vote);
   }
 
+  // EN: Updates a votación, preserving existing counts for options that remain.
+  // ES: Actualiza una votación, conservando los conteos de las opciones que permanecen.
   async updateVoteObject(id: string, dto: Partial<{
     title: string; description: string; category: VoteCategory; votationType: VotationType;
     options: string[]; creditsCost: number; xpReward: number; closesAt: string;
@@ -430,12 +494,16 @@ export class AdminService {
     return this.votes.save(vote);
   }
 
+  // EN: Deletes a votación and its associated user votes.
+  // ES: Elimina una votación y los votos de usuario asociados.
   async deleteVoteObject(id: string) {
     await this.votes.delete(id);
     await this.userVotes.delete({ voteId: id });
     return { ok: true };
   }
 
+  // EN: Settles a votación by setting the correct option and closing it.
+  // ES: Liquida una votación fijando la opción correcta y cerrándola.
   async settleVote(id: string, correctOption: string) {
     const vote = await this.votes.findOneBy({ id });
     if (!vote) throw new NotFoundException('Votación no encontrada');
@@ -448,6 +516,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // RAFFLES
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists raffles with resolved winner name and email.
+  // ES: Lista sorteos con el nombre y email del ganador resueltos.
   async listRaffles() {
     const raffles = await this.raffles.find({ order: { createdAt: 'DESC' } });
     const results = await Promise.all(raffles.map(async (r) => {
@@ -457,6 +527,8 @@ export class AdminService {
     return results;
   }
 
+  // EN: Lists a raffle's participants with their user info.
+  // ES: Lista los participantes de un sorteo con su info de usuario.
   /** Participants of a raffle with their info (name, email, tickets, date). */
   async listRaffleEntries(raffleId: string) {
     const entries = await this.raffleEntries.find({ where: { raffleId }, order: { createdAt: 'ASC' } });
@@ -479,6 +551,8 @@ export class AdminService {
     });
   }
 
+  // EN: Creates a raffle.
+  // ES: Crea un sorteo.
   async createRaffle(dto: {
     title: string; description?: string; prizeValue: number;
     ticketCost?: number; xpReward?: number; month?: string;
@@ -488,6 +562,8 @@ export class AdminService {
     return this.raffles.save(raffle);
   }
 
+  // EN: Updates a raffle.
+  // ES: Actualiza un sorteo.
   async updateRaffle(id: string, dto: Partial<{
     title: string; description: string; prizeValue: number;
     ticketCost: number; xpReward: number; isActive: boolean; month: string;
@@ -499,6 +575,8 @@ export class AdminService {
     return this.raffles.save(raffle);
   }
 
+  // EN: Draws a raffle winner weighted by tickets and notifies them.
+  // ES: Sortea un ganador ponderado por tickets y le notifica.
   async drawRaffle(id: string) {
     const raffle = await this.raffles.findOneBy({ id });
     if (!raffle) throw new NotFoundException('Sorteo no encontrado');
@@ -513,6 +591,8 @@ export class AdminService {
     return { winnerId, winnerName: winner?.name ?? '—', winnerEmail: winner?.email ?? '—' };
   }
 
+  // EN: Deletes a raffle and its entries.
+  // ES: Elimina un sorteo y sus participaciones.
   async deleteRaffle(id: string) {
     await this.raffleEntries.delete({ raffleId: id });
     await this.raffles.delete(id);
@@ -522,10 +602,14 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // STORE BENEFITS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists all store benefits ordered by display order.
+  // ES: Lista todos los beneficios de la tienda ordenados por orden de visualización.
   listStoreBenefits() {
     return this.storeBenefits.find({ order: { displayOrder: 'ASC', createdAt: 'ASC' } });
   }
 
+  // EN: Creates a store benefit.
+  // ES: Crea un beneficio de la tienda.
   createStoreBenefit(dto: {
     name: string; description?: string; discount?: string; emoji?: string;
     imageUrl?: string; color?: string; link?: string; displayOrder?: number; isActive?: boolean;
@@ -534,6 +618,8 @@ export class AdminService {
     return this.storeBenefits.save(benefit);
   }
 
+  // EN: Updates a store benefit.
+  // ES: Actualiza un beneficio de la tienda.
   async updateStoreBenefit(id: string, dto: Partial<{
     name: string; description: string; discount: string; emoji: string;
     imageUrl: string; color: string; link: string; displayOrder: number; isActive: boolean;
@@ -544,6 +630,8 @@ export class AdminService {
     return this.storeBenefits.save(benefit);
   }
 
+  // EN: Deletes a store benefit.
+  // ES: Elimina un beneficio de la tienda.
   async deleteStoreBenefit(id: string) {
     await this.storeBenefits.delete(id);
     return { ok: true };
@@ -552,10 +640,14 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // IMPACT PROJECTS
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists all impact projects ordered by display order.
+  // ES: Lista todos los proyectos de impacto ordenados por orden de visualización.
   listProjects() {
     return this.projects.find({ order: { displayOrder: 'ASC', createdAt: 'ASC' } });
   }
 
+  // EN: Converts text into a URL-safe slug (lowercased, accents stripped).
+  // ES: Convierte un texto en un slug apto para URL (en minúsculas, sin acentos).
   private slugify(text: string): string {
     const cleaned = (text || 'proyecto')
       .toLowerCase()
@@ -566,6 +658,8 @@ export class AdminService {
     return cleaned || 'proyecto';
   }
 
+  // EN: Creates an impact project ensuring a unique slug.
+  // ES: Crea un proyecto de impacto garantizando un slug único.
   async createProject(dto: {
     title: string; slug?: string; emoji?: string; subtitle?: string; summary?: string;
     description?: string; color?: string; badgeLabel?: string; displayOrder?: number; isActive?: boolean;
@@ -580,6 +674,8 @@ export class AdminService {
     return this.projects.save(project);
   }
 
+  // EN: Updates an impact project, keeping the slug immutable.
+  // ES: Actualiza un proyecto de impacto, manteniendo el slug inmutable.
   async updateProject(id: string, dto: Partial<{
     title: string; emoji: string; subtitle: string; summary: string;
     description: string; color: string; badgeLabel: string; displayOrder: number; isActive: boolean;
@@ -594,6 +690,8 @@ export class AdminService {
     return this.projects.save(project);
   }
 
+  // EN: Deletes an impact project.
+  // ES: Elimina un proyecto de impacto.
   async deleteProject(id: string) {
     await this.projects.delete(id);
     return { ok: true };
@@ -602,6 +700,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // CLUB CREATORS (showcase cards in "El Pacto")
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists creator-role users available to feature as club creators.
+  // ES: Lista usuarios con rol creador disponibles para destacar como creadores del club.
   /** Creator-role accounts available to feature as club creators. */
   async listCreatorUsers() {
     const users = await this.users.find({
@@ -612,6 +712,8 @@ export class AdminService {
     return users;
   }
 
+  // EN: Lists club creator cards enriched with the linked user's current name and avatar.
+  // ES: Lista las tarjetas de creadores del club con el nombre y avatar actuales del usuario vinculado.
   async listClubCreators() {
     const cards = await this.clubCreators.find({ order: { displayOrder: 'ASC', createdAt: 'ASC' } });
     if (cards.length === 0) return [];
@@ -624,12 +726,16 @@ export class AdminService {
     }));
   }
 
+  // EN: Creates a club creator card, defaulting the name to the user's name.
+  // ES: Crea una tarjeta de creador del club, usando por defecto el nombre del usuario.
   async createClubCreator(dto: { userId: string; name?: string; photoUrl?: string; displayOrder?: number; isActive?: boolean }) {
     const user = await this.users.findOne({ where: { id: dto.userId } });
     const card = this.clubCreators.create({ ...dto, name: dto.name ?? user?.name });
     return this.clubCreators.save(card);
   }
 
+  // EN: Updates a club creator card.
+  // ES: Actualiza una tarjeta de creador del club.
   async updateClubCreator(id: string, dto: Partial<{ userId: string; name: string; photoUrl: string; displayOrder: number; isActive: boolean }>) {
     const card = await this.clubCreators.findOneBy({ id });
     if (!card) throw new NotFoundException('Creador no encontrado');
@@ -637,6 +743,8 @@ export class AdminService {
     return this.clubCreators.save(card);
   }
 
+  // EN: Deletes a club creator card.
+  // ES: Elimina una tarjeta de creador del club.
   async deleteClubCreator(id: string) {
     await this.clubCreators.delete(id);
     return { ok: true };
@@ -645,6 +753,8 @@ export class AdminService {
   // ──────────────────────────────────────────────────────────────────────
   // NOTIFICATIONS (broadcast)
   // ──────────────────────────────────────────────────────────────────────
+  // EN: Broadcasts a notification to all users.
+  // ES: Difunde una notificación a todos los usuarios.
   async broadcastNotification(title: string, body: string) {
     await this.notifications.notifyAll('admin_broadcast', title, body, {});
     return { ok: true };

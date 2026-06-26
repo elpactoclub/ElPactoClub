@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Community screen with three tabs: social Feed (posts/stories/polls), real-time Chat and club Voting decisions.
+// ES: Pantalla de comunidad con tres pestañas: Feed social (publicaciones/historias/encuestas), Chat en tiempo real y decisiones de Votación del club.
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
@@ -61,6 +64,8 @@ interface ApiComment {
   createdAt: string;
 }
 
+// EN: Formats an ISO timestamp into a compact relative "time ago" label in Spanish.
+// ES: Formatea una marca de tiempo ISO en una etiqueta compacta de "hace X" en español.
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -71,6 +76,8 @@ function timeAgo(iso: string) {
   return `Hace ${Math.floor(h / 24)}d`;
 }
 
+// EN: Renders a post author's avatar, falling back from uploaded image to seed photo to emoji/initial.
+// ES: Renderiza el avatar del autor de una publicación, con fallback de imagen subida a foto seed a emoji/inicial.
 function PostAvatar({ name, role, avatar, size = 44 }: { name: string; role: string; avatar?: string; size?: number }) {
   const isImg = avatar?.startsWith("http") || avatar?.startsWith("data:");
   const color = CREATOR_COLOR[name] ?? (role === "creator" ? "#A78BFA" : "#888");
@@ -87,6 +94,8 @@ function PostAvatar({ name, role, avatar, size = 44 }: { name: string; role: str
   );
 }
 
+// EN: Social feed tab rendering stories bar, post composer, posts list with polls/reactions/comments and real-time updates.
+// ES: Pestaña de feed social que renderiza la barra de historias, el compositor de posts, la lista de publicaciones con encuestas/reacciones/comentarios y actualizaciones en tiempo real.
 function FeedTab() {
   const { showToast, openPostModal, openAuth, postsRefreshKey, openUserProfile } = useUIStore();
   const { avatar, liked, toggleLike, isAuthenticated, role, name: myName } = useUserStore();
@@ -828,6 +837,8 @@ function FeedTab() {
 // ==========================================
 // CHAT TAB
 // ==========================================
+// EN: Available channel ids and display labels for the community chat.
+// ES: IDs de canales disponibles y etiquetas de visualización para el chat de la comunidad.
 const CHANNELS = [
   { id: "general"      as const, label: "#General"           },
   { id: "noticias"     as const, label: "#MVP'S TOUR 3x3-BCN"},
@@ -852,6 +863,8 @@ const AUTHOR_COLORS: Record<string, string> = {
   "Elvis Ude":      "#A78BFA",
 };
 
+// EN: Returns a deterministic accent color for a chat message author based on name or role.
+// ES: Devuelve un color de acento determinista para el autor de un mensaje de chat basado en nombre o rol.
 function getAuthorColor(name: string | undefined, role: string) {
   if (name && AUTHOR_COLORS[name]) return AUTHOR_COLORS[name];
   if (role === "creator") return "#A78BFA";
@@ -860,6 +873,8 @@ function getAuthorColor(name: string | undefined, role: string) {
   return palette[seed % palette.length];
 }
 
+// EN: Real-time multi-channel chat tab with channel switching, quick emoji reactions, optimistic sends and delete.
+// ES: Pestaña de chat multicanal en tiempo real con cambio de canal, reacciones rápidas de emoji, envíos optimistas y eliminar.
 function ChatTab() {
   const { addXP, name: myName, id: myId, avatar: myAvatar, role, isAuthenticated } = useUserStore();
   const { showToast, openAuth } = useUIStore();
@@ -1080,6 +1095,8 @@ function ChatTab() {
 // ==========================================
 // VOTE TAB
 // ==========================================
+// EN: Union type of the different vote/poll formats offered by the club.
+// ES: Tipo unión de los diferentes formatos de voto/encuesta ofrecidos por el club.
 type VoteType = "encuesta" | "pregunta" | "votacion" | "apuesta";
 
 interface VoteDecision {
@@ -1101,6 +1118,8 @@ interface VoteDecision {
   myVote?: string | null;
 }
 
+// EN: Returns label color and cost badge JSX for a given vote type.
+// ES: Devuelve el color de etiqueta y el JSX del badge de coste para un tipo de voto dado.
 function getCategoryStyle(type?: VoteType): { labelColor: string; costDisplay: React.ReactNode } {
   if (type === "pregunta") return {
     labelColor: "#22C55E",
@@ -1120,6 +1139,8 @@ function getCategoryStyle(type?: VoteType): { labelColor: string; costDisplay: R
   };
 }
 
+// EN: Club voting tab listing active decisions; handles casting votes with optimistic UI updates.
+// ES: Pestaña de votación del club que lista las decisiones activas; gestiona el envío de votos con actualizaciones de UI optimistas.
 function VoteTab() {
   const { showToast, openAuth, setTab } = useUIStore();
   const { spendCredits, addXP, voted, setVoted, isAuthenticated } = useUserStore();
@@ -1291,6 +1312,8 @@ function VoteTab() {
 // ==========================================
 // COMMUNITY SCREEN
 // ==========================================
+// EN: Community screen root component with Feed/Chat/Vote tabs, online counter and user search shortcut.
+// ES: Componente raíz de la pantalla de comunidad con pestañas Feed/Chat/Votar, contador de conectados y acceso rápido a búsqueda de usuarios.
 export default function CommunityScreen() {
   const { communityTab, setCommunityTab, openUserSearch } = useUIStore();
   const onlineCount = useOnlineCount();

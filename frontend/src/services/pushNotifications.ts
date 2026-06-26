@@ -1,5 +1,10 @@
+// EN: Service that registers the browser for Web Push notifications using a VAPID key fetched from the backend.
+// ES: Servicio que registra el navegador para notificaciones Web Push usando una clave VAPID obtenida del backend.
+
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/api/v1`;
 
+// EN: Converts a URL-safe base64 string to an ArrayBuffer suitable for the Push API applicationServerKey.
+// ES: Convierte una cadena base64 URL-safe en un ArrayBuffer apto para applicationServerKey de la Push API.
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -10,6 +15,8 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   return buf;
 }
 
+// EN: Registers the service worker, fetches the VAPID key, requests permission and sends the subscription to the server.
+// ES: Registra el service worker, obtiene la clave VAPID, solicita permiso y envía la suscripción al servidor.
 export async function registerPush(token: string): Promise<void> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
 

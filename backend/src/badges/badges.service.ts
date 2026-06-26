@@ -1,9 +1,13 @@
+// EN: Badges service: badge catalog, per-user badge listing, awarding and seeding defaults.
+// ES: Servicio de insignias: catálogo, listado de insignias por usuario, concesión y siembra de predeterminadas.
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Badge, UserBadge } from './badge.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
+// EN: Default badge definitions seeded into the database.
+// ES: Definiciones de insignias predeterminadas sembradas en la base de datos.
 export const BADGE_DEFINITIONS: Array<Omit<Badge, never>> = [
   { code: 'primer_pacto', name: 'Primer Pacto', emoji: '🏀', description: 'Tu primer voto registrado', isSecret: false, sortOrder: 1 },
   { code: 'socializador', name: 'Socializador', emoji: '💬', description: '10 mensajes en el chat', isSecret: false, sortOrder: 2 },
@@ -22,6 +26,8 @@ export const BADGE_DEFINITIONS: Array<Omit<Badge, never>> = [
   { code: 'temporada_verano_2026', name: 'Badge de Verano 2026', emoji: '⭐', description: 'Consiguiste 1.000 XP durante la Temporada Verano 2026', isSecret: false, sortOrder: 15 },
 ];
 
+// EN: Injectable badges service with badge/user-badge repositories and notifications.
+// ES: Servicio de insignias inyectable con repositorios de insignia/insignia-usuario y notificaciones.
 @Injectable()
 export class BadgesService {
   constructor(
@@ -30,19 +36,27 @@ export class BadgesService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  // EN: Returns the full badge catalog ordered by sort order.
+  // ES: Devuelve el catálogo completo de insignias ordenado por orden de clasificación.
   catalog() {
     return this.badgeRepo.find({ order: { sortOrder: 'ASC' } });
   }
 
+  // EN: Lists the badges unlocked by a user.
+  // ES: Lista las insignias desbloqueadas por un usuario.
   listForUser(userId: string) {
     return this.userBadgeRepo.find({ where: { userId } });
   }
 
+  // EN: Returns whether a user already has a given badge.
+  // ES: Indica si un usuario ya tiene una insignia dada.
   async hasBadge(userId: string, badgeCode: string): Promise<boolean> {
     const existing = await this.userBadgeRepo.findOne({ where: { userId, badgeCode } });
     return !!existing;
   }
 
+  // EN: Awards a badge to a user (if not already owned) and notifies them.
+  // ES: Concede una insignia a un usuario (si aún no la tiene) y le notifica.
   async award(userId: string, badgeCode: string): Promise<boolean> {
     if (await this.hasBadge(userId, badgeCode)) return false;
 
@@ -60,6 +74,8 @@ export class BadgesService {
     return true;
   }
 
+  // EN: Inserts any missing default badges into the database.
+  // ES: Inserta en la base de datos las insignias predeterminadas que falten.
   async seedDefinitions() {
     for (const def of BADGE_DEFINITIONS) {
       const existing = await this.badgeRepo.findOne({ where: { code: def.code } });

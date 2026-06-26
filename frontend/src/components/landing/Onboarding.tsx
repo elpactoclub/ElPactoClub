@@ -1,8 +1,13 @@
 "use client";
 
+// EN: Multi-step onboarding flow introducing the club, credits and the level system to new users.
+// ES: Flujo de onboarding de varios pasos que presenta el club, los créditos y el sistema de niveles a usuarios nuevos.
+
 import { useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 
+// EN: Static content for each onboarding step (visuals, copy, features/levels).
+// ES: Contenido estático de cada paso del onboarding (visuales, texto, features/niveles).
 const steps = [
   {
     borderColor: "#22C55E",
@@ -49,11 +54,15 @@ const steps = [
   },
 ];
 
+// EN: Onboarding component that paginates through the intro steps with responsive desktop/mobile layouts.
+// ES: Componente de onboarding que pagina los pasos de introducción con diseños responsivos de escritorio/móvil.
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const { finishOnboarding, skipOnboarding } = useUIStore();
   const current = steps[step];
 
+  // EN: Pagination dots indicating the current onboarding step.
+  // ES: Puntos de paginación que indican el paso actual del onboarding.
   const Dots = () => (
     <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
       {steps.map((_, i) => (
@@ -71,6 +80,8 @@ export default function Onboarding() {
     </div>
   );
 
+  // EN: Renders the current step's avatar, title and description/features/levels.
+  // ES: Renderiza el avatar, título y descripción/features/niveles del paso actual.
   const StepContent = () => (
     <div key={step} className="animate-step-in" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
       {/* Avatar */}
@@ -157,6 +168,8 @@ export default function Onboarding() {
     </div>
   );
 
+  // EN: Navigation buttons (next/back/skip/finish) adapting to the current step.
+  // ES: Botones de navegación (siguiente/atrás/saltar/finalizar) que se adaptan al paso actual.
   const Buttons = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {step < steps.length - 1 ? (

@@ -1,7 +1,12 @@
 "use client";
 
+// EN: Zustand store managing all UI state: active tab, open modals, toast messages and notification counts.
+// ES: Store de Zustand que gestiona todo el estado de la interfaz: pestaña activa, modales abiertos, mensajes toast y contadores de notificaciones.
+
 import { create } from "zustand";
 
+// EN: Data shape for an active social project used across the project page modal.
+// ES: Forma de datos de un proyecto social activo utilizada en el modal de página de proyecto.
 export interface ProjectData {
   id: string;
   slug: string;
@@ -18,6 +23,8 @@ export interface ProjectData {
 type ActiveTab = "home" | "comunidad" | "eventos" | "store" | "about" | "notifications" | "messages" | "profile";
 type CommunityTab = "feed" | "chat" | "votar";
 
+// EN: Full shape of the UI store: all modal flags, tab state, toast queue and their corresponding action methods.
+// ES: Forma completa del store de UI: todos los flags de modales, estado de pestañas, cola de toasts y sus métodos de acción correspondientes.
 interface UIState {
   activeTab: ActiveTab;
   communityTab: CommunityTab;
@@ -106,6 +113,8 @@ interface UIState {
 const savedTab = typeof window !== "undefined" ? (localStorage.getItem("ep_active_tab") as ActiveTab | null) : null;
 const savedCommunityTab = typeof window !== "undefined" ? (localStorage.getItem("ep_community_tab") as CommunityTab | null) : null;
 
+// EN: The main UI Zustand store exported for consumption throughout the app.
+// ES: El store de Zustand de UI principal exportado para su uso en toda la aplicación.
 export const useUIStore = create<UIState>((set, get) => ({
   activeTab: savedTab ?? "home",
   communityTab: savedCommunityTab ?? "feed",

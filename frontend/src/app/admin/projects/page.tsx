@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin projects page for creating and managing social projects that fans can donate credits to and vote on.
+// ES: Página de proyectos del admin para crear y gestionar proyectos sociales a los que los fans pueden donar créditos y votar.
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -47,6 +50,8 @@ function authHeader() {
 
 const EMPTY_FORM = { title: "", emoji: "🌍", imageUrl: "", subtitle: "", summary: "", description: "", color: "#F59E0B", badgeLabel: "", displayOrder: 0, isActive: true };
 
+// EN: Projects admin page component managing social projects with CRUD operations and image upload.
+// ES: Componente de página de proyectos del admin que gestiona proyectos sociales con operaciones CRUD y subida de imágenes.
 export default function ProjectsPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [projects, setProjects] = useState<Project[]>([]);

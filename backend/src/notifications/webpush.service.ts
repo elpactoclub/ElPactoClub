@@ -1,9 +1,13 @@
+// EN: Web Push service: manages VAPID setup, subscriptions and sending push notifications via web-push.
+// ES: Servicio Web Push: gestiona la configuración VAPID, las suscripciones y el envío de notificaciones push con web-push.
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PushSubscription } from './push-subscription.entity';
 import * as webpush from 'web-push';
 
+// EN: Injectable Web Push service; enabled only when VAPID keys are configured.
+// ES: Servicio Web Push inyectable; habilitado solo cuando hay claves VAPID configuradas.
 @Injectable()
 export class WebPushService {
   private readonly logger = new Logger(WebPushService.name);
@@ -22,6 +26,8 @@ export class WebPushService {
     }
   }
 
+  // EN: Saves or updates a user's push subscription, keyed by endpoint.
+  // ES: Guarda o actualiza la suscripción push de un usuario, indexada por endpoint.
   async subscribe(userId: string, sub: { endpoint: string; keys: { p256dh: string; auth: string } }) {
     const existing = await this.subsRepo.findOne({ where: { endpoint: sub.endpoint } });
     if (existing) {
@@ -31,22 +37,30 @@ export class WebPushService {
     }
   }
 
+  // EN: Removes a push subscription by endpoint.
+  // ES: Elimina una suscripción push por endpoint.
   async unsubscribe(endpoint: string) {
     await this.subsRepo.delete({ endpoint });
   }
 
+  // EN: Sends a push notification to all of a single user's subscriptions.
+  // ES: Envía una notificación push a todas las suscripciones de un usuario.
   async sendToUser(userId: string, title: string, body: string, data?: object) {
     if (!this.enabled) return;
     const subs = await this.subsRepo.find({ where: { userId } });
     await Promise.all(subs.map((s) => this.send(s, title, body, data)));
   }
 
+  // EN: Sends a push notification to every stored subscription (best-effort).
+  // ES: Envía una notificación push a todas las suscripciones almacenadas (best-effort).
   async sendToAll(title: string, body: string, data?: object) {
     if (!this.enabled) return;
     const subs = await this.subsRepo.find();
     await Promise.allSettled(subs.map((s) => this.send(s, title, body, data)));
   }
 
+  // EN: Sends one push notification, deleting the subscription if it has expired (410/404).
+  // ES: Envía una notificación push, eliminando la suscripción si ha caducado (410/404).
   private async send(sub: PushSubscription, title: string, body: string, data?: object) {
     try {
       await webpush.sendNotification(
@@ -63,6 +77,8 @@ export class WebPushService {
     }
   }
 
+  // EN: Returns the public VAPID key for the client to subscribe with.
+  // ES: Devuelve la clave pública VAPID para que el cliente se suscriba.
   getPublicKey() {
     return process.env.VAPID_PUBLIC_KEY ?? null;
   }

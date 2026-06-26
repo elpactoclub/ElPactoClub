@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Root app layout that renders nav, the active screen, all global modals, and runs session/presence pings.
+// ES: Layout raíz de la app que renderiza la navegación, la pantalla activa, todos los modales globales y ejecuta pings de sesión/presencia.
+
 import { useEffect, useMemo, useRef } from "react";
 import { registerPush } from "@/services/pushNotifications";
 import TopNav from "./TopNav";
@@ -33,6 +36,8 @@ import { useUIStore } from "@/stores/uiStore";
 import { useUserStore } from "@/stores/userStore";
 import { api } from "@/services/api";
 
+// EN: Maps each tab id to the screen component it renders.
+// ES: Mapea cada id de pestaña al componente de pantalla que renderiza.
 const screens: Record<string, React.ComponentType> = {
   home: HomeScreen,
   comunidad: CommunityScreen,
@@ -44,6 +49,8 @@ const screens: Record<string, React.ComponentType> = {
   profile: ProfileScreen,
 };
 
+// EN: Top-level shell component wiring navigation, the current screen and visitor/user presence pings.
+// ES: Componente shell de nivel superior que conecta la navegación, la pantalla actual y los pings de presencia de visitante/usuario.
 export default function AppShell() {
   const activeTab = useUIStore((s) => s.activeTab);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);

@@ -1,5 +1,9 @@
+// EN: TypeORM entity and type for in-app notifications (type, title, body, payload, read state).
+// ES: Entidad TypeORM y tipo para notificaciones en la app (tipo, título, cuerpo, payload, estado de lectura).
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
+// EN: Union of supported notification types.
+// ES: Unión de los tipos de notificación soportados.
 export type NotificationType =
   | 'post_creator'
   | 'new_vote'
@@ -10,6 +14,8 @@ export type NotificationType =
   | 'raffle_win'
   | 'admin_broadcast';
 
+// EN: Notification record belonging to a user.
+// ES: Registro de notificación perteneciente a un usuario.
 @Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn('uuid')

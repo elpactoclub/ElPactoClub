@@ -1,8 +1,15 @@
 "use client";
 
+// EN: Full-screen Instagram-style story viewer that auto-advances slides across multiple authors with tap/keyboard navigation.
+// ES: Visor de historias a pantalla completa estilo Instagram que avanza automáticamente entre las diapositivas de varios autores con navegación táctil/teclado.
+
 import { useEffect, useRef, useState } from "react";
 
+// EN: A single story slide (background, text and optional emoji/image).
+// ES: Una sola diapositiva de historia (fondo, texto y emoji/imagen opcional).
 interface Slide { bg: string; text: string; emoji?: string; imageUrl?: string }
+// EN: An author whose story is being viewed, including own-story metadata.
+// ES: Un autor cuya historia se está viendo, incluyendo metadatos de la historia propia.
 export interface StoryAuthor {
   id?: string;
   name: string;
@@ -30,6 +37,8 @@ const STORY_CONTENT: Record<string, Slide[]> = {
 
 const GENERIC_SLIDE: Slide = { bg: "linear-gradient(160deg,#141414,#1f1f1f)", text: "ha compartido una historia 📸", emoji: "✨" };
 
+// EN: Returns the slides for an author: their uploaded story if any, else seeded/generic mock content.
+// ES: Devuelve las diapositivas de un autor: su historia subida si la hay, si no contenido simulado predefinido/genérico.
 function slidesFor(author: StoryAuthor): Slide[] {
   if (author.storyImageUrl) {
     return [{ bg: "#000", text: author.caption ?? "", imageUrl: author.storyImageUrl }];
@@ -39,6 +48,8 @@ function slidesFor(author: StoryAuthor): Slide[] {
 
 const DURATION = 5000; // ms per slide
 
+// EN: Props for the story viewer: authors list, starting index and lifecycle callbacks.
+// ES: Props del visor de historias: lista de autores, índice inicial y callbacks de ciclo de vida.
 interface StoryViewerProps {
   authors: StoryAuthor[];
   startIndex: number;
@@ -47,6 +58,8 @@ interface StoryViewerProps {
   onDeleteStory?: (storyId: string) => void;
 }
 
+// EN: Story viewer component handling slide timing, navigation, pause-on-hold and view/delete callbacks.
+// ES: Componente del visor de historias que gestiona el tiempo de las diapositivas, la navegación, la pausa al mantener pulsado y los callbacks de visto/eliminar.
 export default function StoryViewer({ authors, startIndex, onClose, onViewed, onDeleteStory }: StoryViewerProps) {
   const [sIdx, setSIdx] = useState(Math.max(0, startIndex));
   const [slideIdx, setSlideIdx] = useState(0);
@@ -121,6 +134,8 @@ export default function StoryViewer({ authors, startIndex, onClose, onViewed, on
   const hasPhoto = !!author.photo && (author.photo.startsWith("http") || author.photo.startsWith("data:") || author.photo.startsWith("/"));
   const emoji = author.avatar && !author.avatar.startsWith("http") && !author.avatar.startsWith("data:") ? author.avatar : author.name[0];
 
+  // EN: Renders the author's avatar (photo or emoji fallback) at the given size.
+  // ES: Renderiza el avatar del autor (foto o emoji de respaldo) al tamaño dado.
   const Avatar = ({ size }: { size: number }) => (
     hasPhoto ? (
       // eslint-disable-next-line @next/next/no-img-element

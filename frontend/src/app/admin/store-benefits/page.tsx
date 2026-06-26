@@ -1,5 +1,8 @@
 "use client";
 
+// EN: Admin store-benefits page for managing the perks catalog shown to members (images, titles, descriptions, credit costs).
+// ES: Página de beneficios de la tienda del admin para gestionar el catálogo de ventajas mostrado a los socios (imágenes, títulos, descripciones, costes en créditos).
+
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
@@ -46,6 +49,8 @@ function authHeader() {
 
 const EMPTY_FORM = { name: "", description: "", discount: "", emoji: "🏀", imageUrl: "", color: "#F0E040", link: "", displayOrder: 0, isActive: true };
 
+// EN: Store benefits page component rendering the benefits table and a modal form for create/edit operations.
+// ES: Componente de página de beneficios de la tienda que renderiza la tabla de beneficios y un formulario modal para operaciones de crear/editar.
 export default function StoreBenefitsPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
   const [benefits, setBenefits] = useState<Benefit[]>([]);

@@ -1,3 +1,5 @@
+// EN: NestJS module wiring the community feature (posts, comments, messages, stories) with its deps.
+// ES: Módulo NestJS que conecta la funcionalidad de comunidad (posts, comentarios, mensajes, historias) con sus dependencias.
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Post, Message, PostComment } from './post.entity';
@@ -11,6 +13,8 @@ import { UsersModule } from '../users/users.module';
 import { TigrisModule } from '../tigris/tigris.module';
 import { GatewayModule } from '../gateway/gateway.module';
 
+// EN: Registers entities, services and controller for the community module.
+// ES: Registra entidades, servicios y controlador del módulo de comunidad.
 @Module({
   imports: [
     TypeOrmModule.forFeature([Post, Message, PostComment, Story, User]),
@@ -23,4 +27,6 @@ import { GatewayModule } from '../gateway/gateway.module';
   providers: [CommunityService],
   controllers: [CommunityController],
 })
+// EN: Community feature module.
+// ES: Módulo de la funcionalidad de comunidad.
 export class CommunityModule {}
