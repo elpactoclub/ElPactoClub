@@ -66,12 +66,12 @@ export default function Landing() {
               Club Nativo Digital
             </div>
 
-            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(44px, 5.5vw, 76px)", lineHeight: 1.0, letterSpacing: 1 }}>
-              VIENES POR<br />
-              EL BASKET,<br />
-              <span style={{ color: "var(--color-accent)" }}>TE QUEDAS<br />POR LO QUE<br />PASA.</span>
+            <p style={{ fontSize: 13, color: "#888", lineHeight: 1.5, marginBottom: 8 }}>
+              VIENES POR EL BASKET, TE QUEDAS POR LO QUE PASA.
+            </p>
+            <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(36px, 4.5vw, 60px)", lineHeight: 1.05, letterSpacing: 1 }}>
+              VOTA.<br />HABLA.<br /><span style={{ color: "var(--color-accent)" }}>SUBE.</span>
             </h1>
-
             <p style={{ fontSize: 14, color: "#777", lineHeight: 1.7, maxWidth: 380 }}>
               Vota decisiones del club, habla con los jugadores,<br />sube en el ranking de fans.
             </p>
@@ -185,12 +185,10 @@ export default function Landing() {
             Club Nativo Digital
           </div>
 
-          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 38, lineHeight: 1.02, letterSpacing: 0.5, margin: 0 }}>
-            VIENES POR<br />
-            EL BASKET,<br />
-            <span style={{ color: "var(--color-accent)" }}>TE QUEDAS<br />POR LO QUE<br />PASA.</span>
+          <p style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>VIENES POR EL BASKET, TE QUEDAS POR LO QUE PASA.</p>
+          <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 36, lineHeight: 1.02, letterSpacing: 0.5, margin: 0 }}>
+            VOTA.<br />HABLA.<br /><span style={{ color: "var(--color-accent)" }}>SUBE.</span>
           </h1>
-
           <p style={{ fontSize: 12, color: "#666", lineHeight: 1.6, margin: 0 }}>
             Vota decisiones del club, habla con los jugadores, sube en el ranking de fans.
           </p>

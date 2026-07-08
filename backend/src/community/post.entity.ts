@@ -96,6 +96,9 @@ export class Message {
   @Column({ nullable: true })
   replyToId: string;
 
+  @Column({ type: 'timestamptz', nullable: true, default: null })
+  deletedAt: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

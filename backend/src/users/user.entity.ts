@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 export type UserLevel = 'Rookie' | 'Starter' | 'MVP' | 'Leyenda';
-export type UserRole = 'fan' | 'socio' | 'creator' | 'admin';
+export type UserRole = 'fan' | 'socio' | 'creator' | 'admin' | 'moderador';
 
 // EN: Database model representing a registered fan/user.
 // ES: Modelo de base de datos que representa a un fan/usuario registrado.
@@ -37,7 +37,7 @@ export class User {
   @Column({ default: 'España' })
   country: string;
 
-  @Column({ type: 'enum', enum: ['fan', 'socio', 'creator', 'admin'], default: 'fan' })
+  @Column({ type: 'enum', enum: ['fan', 'socio', 'creator', 'admin', 'moderador'], default: 'fan' })
   role: UserRole;
 
   // Gamification

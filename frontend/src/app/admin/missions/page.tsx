@@ -55,6 +55,9 @@ export default function MissionsPage() {
   const [draft, setDraft] = useState<Partial<Mission>>({});
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createDraft, setCreateDraft] = useState({ code: "", title: "", description: "", target: 100, reward: "", isActive: true });
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -106,6 +109,25 @@ export default function MissionsPage() {
     }
   }
 
+  async function createMission() {
+    if (!createDraft.code.trim() || !createDraft.title.trim()) return;
+    setCreating(true);
+    try {
+      const r = await fetch(`${API}/admin/missions`, {
+        method: "POST",
+        headers: authHeader(),
+        body: JSON.stringify(createDraft),
+      });
+      if (r.ok) {
+        setShowCreate(false);
+        setCreateDraft({ code: "", title: "", description: "", target: 100, reward: "", isActive: true });
+        load();
+      }
+    } finally {
+      setCreating(false);
+    }
+  }
+
   async function resetMission(code: string, title: string) {
     const ok = await confirm({ title: "Reiniciar misión", message: `¿Reiniciar el progreso de "${title}"?`, detail: "El contador volverá a 0. Esta acción no se puede deshacer.", confirmLabel: "Reiniciar", danger: true });
     if (!ok) return;
@@ -121,9 +143,12 @@ export default function MissionsPage() {
   return (
     <div style={{ maxWidth: 900 }}>
       {ConfirmUI}
-      <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 22, letterSpacing: 2, marginBottom: 20 }}>
-        MISIONES <span style={{ color: "#777", fontSize: 15, fontFamily: "var(--font-sans)", fontWeight: 400, letterSpacing: 0 }}>({missions.length})</span>
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 22, letterSpacing: 2, margin: 0 }}>
+          MISIONES <span style={{ color: "#777", fontSize: 15, fontFamily: "var(--font-sans)", fontWeight: 400, letterSpacing: 0 }}>({missions.length})</span>
+        </h1>
+        <button onClick={() => setShowCreate(true)} className="admin-btn-primary">+ Nueva misión</button>
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {loading ? (
@@ -264,6 +289,48 @@ export default function MissionsPage() {
           );
         })}
       </div>
+
+      {showCreate && (
+        <div className="admin-modal-overlay" onClick={(ev) => ev.target === ev.currentTarget && setShowCreate(false)}>
+          <div className="admin-modal">
+            <h2>NUEVA MISIÓN</h2>
+            <div>
+              <label className="admin-label">Código único (sin espacios, ej: chat_100_dia)</label>
+              <input
+                value={createDraft.code}
+                onChange={(e) => setCreateDraft(d => ({ ...d, code: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
+                className="admin-input" placeholder="codigo_mision"
+              />
+            </div>
+            <div>
+              <label className="admin-label">Título</label>
+              <input value={createDraft.title} onChange={(e) => setCreateDraft(d => ({ ...d, title: e.target.value }))} className="admin-input" placeholder="Título de la misión" />
+            </div>
+            <div>
+              <label className="admin-label">Descripción</label>
+              <textarea value={createDraft.description} onChange={(e) => setCreateDraft(d => ({ ...d, description: e.target.value }))} className="admin-input" rows={2} style={{ resize: "vertical" }} />
+            </div>
+            <div>
+              <label className="admin-label">Objetivo (número)</label>
+              <input type="number" value={createDraft.target} onChange={(e) => setCreateDraft(d => ({ ...d, target: Number(e.target.value) }))} className="admin-input" />
+            </div>
+            <div>
+              <label className="admin-label">Recompensa</label>
+              <input value={createDraft.reward} onChange={(e) => setCreateDraft(d => ({ ...d, reward: e.target.value }))} className="admin-input" placeholder="Descripción de la recompensa" />
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#ddd", cursor: "pointer" }}>
+              <input type="checkbox" checked={createDraft.isActive} onChange={(e) => setCreateDraft(d => ({ ...d, isActive: e.target.checked }))} style={{ accentColor: "#F0E040" }} />
+              Activa desde el inicio
+            </label>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={createMission} disabled={creating || !createDraft.code.trim() || !createDraft.title.trim()} className="admin-btn-primary" style={{ flex: 1 }}>
+                {creating ? "Creando..." : "Crear misión"}
+              </button>
+              <button onClick={() => setShowCreate(false)} className="admin-btn-ghost" style={{ flex: 1 }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

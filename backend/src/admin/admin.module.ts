@@ -15,6 +15,8 @@ import { SettingsModule } from '../settings/settings.module';
 import { UsersModule } from '../users/users.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { DmModule } from '../dm/dm.module';
+import { BadgesModule } from '../badges/badges.module';
+import { Badge, UserBadge } from '../badges/badge.entity';
 import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 
@@ -22,11 +24,12 @@ import { AdminController } from './admin.controller';
 // ES: Módulo de funcionalidad admin que agrupa todas las capacidades de administración.
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Event, EventAttendee, Vote, UserVote, Raffle, RaffleEntry, Mission, Post, StoreBenefit, Project, ClubCreator]),
+    TypeOrmModule.forFeature([User, Event, EventAttendee, Vote, UserVote, Raffle, RaffleEntry, Mission, Post, StoreBenefit, Project, ClubCreator, Badge, UserBadge]),
     SettingsModule,
     UsersModule,
     NotificationsModule,
     DmModule,
+    BadgesModule,
   ],
   controllers: [AdminController],
   providers: [AdminService],

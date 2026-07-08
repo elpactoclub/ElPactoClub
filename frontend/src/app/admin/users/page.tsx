@@ -13,7 +13,7 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: "fan" | "socio" | "creator" | "admin";
+  role: "fan" | "socio" | "creator" | "admin" | "moderador";
   isSocio: boolean;
   credits: number;
   xp: number;
@@ -21,7 +21,7 @@ interface User {
   createdAt: string;
 }
 
-const ROLE_LABELS: Record<string, string> = { fan: "Cliente", socio: "Cliente", creator: "Creador", admin: "Admin" };
+const ROLE_LABELS: Record<string, string> = { fan: "Cliente", socio: "Cliente", creator: "Creador", admin: "Admin", moderador: "Moderador" };
 
 
 function authHeader() {
@@ -61,6 +61,10 @@ export default function UsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ email: "", password: "", name: "", role: "fan", city: "Barcelona", country: "España", isSocio: false });
   const [creating, setCreating] = useState(false);
+  const [badgesUser, setBadgesUser] = useState<User | null>(null);
+  const [userBadges, setUserBadges] = useState<string[]>([]);
+  const [badgeCatalog, setBadgeCatalog] = useState<{ code: string; name: string; emoji: string; description: string }[]>([]);
+  const [badgesLoading, setBadgesLoading] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -185,9 +189,37 @@ export default function UsersPage() {
     load();
   }
 
+  async function openBadges(u: User) {
+    setBadgesUser(u);
+    setBadgesLoading(true);
+    try {
+      const [catalog, owned] = await Promise.all([
+        fetch(`${API}/admin/badges/catalog`, { headers: authHeader() }).then(r => r.json()),
+        fetch(`${API}/admin/users/${u.id}/badges`, { headers: authHeader() }).then(r => r.json()),
+      ]);
+      setBadgeCatalog(Array.isArray(catalog) ? catalog : []);
+      setUserBadges(Array.isArray(owned) ? owned.map((b: { badgeCode: string }) => b.badgeCode) : []);
+    } finally {
+      setBadgesLoading(false);
+    }
+  }
+
+  async function toggleBadge(badgeCode: string) {
+    if (!badgesUser) return;
+    const hasIt = userBadges.includes(badgeCode);
+    if (hasIt) {
+      await fetch(`${API}/admin/users/${badgesUser.id}/badges/${badgeCode}`, { method: "DELETE", headers: authHeader() });
+      setUserBadges(prev => prev.filter(c => c !== badgeCode));
+    } else {
+      await fetch(`${API}/admin/users/${badgesUser.id}/badges/${badgeCode}`, { method: "POST", headers: authHeader() });
+      setUserBadges(prev => [...prev, badgeCode]);
+    }
+  }
+
   const roleBadge = (u: User) => {
     if (u.role === "admin") return "admin-badge-red";
     if (u.role === "creator") return "admin-badge-purple";
+    if (u.role === "moderador") return "admin-badge-blue";
     if (u.isSocio) return "admin-badge-yellow";
     return "admin-badge-gray";
   };
@@ -250,6 +282,7 @@ export default function UsersPage() {
                 <td data-label="Ciudad" className="muted">{u.city ?? "—"}</td>
                 <td data-label="" className="actions">
                   <button onClick={() => openEdit(u)} className="admin-btn-edit">Editar</button>
+                  <button onClick={() => openBadges(u)} className="admin-btn-ghost" style={{ fontSize: 11 }}>Insignias</button>
                   <button onClick={() => deleteUser(u.id, u.name)} className="admin-btn-delete">Eliminar</button>
                 </td>
               </tr>
@@ -288,6 +321,7 @@ export default function UsersPage() {
               <select value={editForm.role === "socio" ? "fan" : (editForm.role ?? "fan")} onChange={(e) => setEditForm({ ...editForm, role: e.target.value as User["role"] })} className="admin-input">
                 <option value="fan">Cliente</option>
                 <option value="creator">Creador</option>
+                <option value="moderador">Moderador</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
@@ -299,6 +333,47 @@ export default function UsersPage() {
               <button onClick={saveEdit} disabled={saving} className="admin-btn-primary" style={{ flex: 1 }}>{saving ? "Guardando..." : "Guardar"}</button>
               <button onClick={() => setEditUser(null)} className="admin-btn-ghost" style={{ flex: 1 }}>Cancelar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Badges modal */}
+      {badgesUser && (
+        <div className="admin-modal-overlay" onClick={(ev) => ev.target === ev.currentTarget && setBadgesUser(null)}>
+          <div className="admin-modal" style={{ maxWidth: 520 }}>
+            <div>
+              <h2>INSIGNIAS — {badgesUser.name}</h2>
+              <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Haz clic para añadir o quitar insignias</p>
+            </div>
+            {badgesLoading ? (
+              <div style={{ color: "#666", textAlign: "center", padding: 20 }}>Cargando...</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {badgeCatalog.map(b => {
+                  const owned = userBadges.includes(b.code);
+                  return (
+                    <button
+                      key={b.code}
+                      onClick={() => toggleBadge(b.code)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                        borderRadius: 10, border: `1px solid ${owned ? "rgba(240,224,64,0.4)" : "rgba(255,255,255,0.08)"}`,
+                        background: owned ? "rgba(240,224,64,0.08)" : "#141414",
+                        cursor: "pointer", textAlign: "left",
+                      }}
+                    >
+                      <span style={{ fontSize: 22 }}>{b.emoji}</span>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: owned ? "#F0E040" : "#ccc" }}>{b.name}</div>
+                        <div style={{ fontSize: 10, color: "#666", marginTop: 1 }}>{b.description}</div>
+                      </div>
+                      {owned && <span style={{ marginLeft: "auto", fontSize: 10, color: "#F0E040" }}>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <button onClick={() => setBadgesUser(null)} className="admin-btn-ghost" style={{ width: "100%" }}>Cerrar</button>
           </div>
         </div>
       )}
@@ -346,6 +421,7 @@ export default function UsersPage() {
               <select value={createForm.role} onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })} className="admin-input">
                 <option value="fan">Cliente</option>
                 <option value="creator">Creador</option>
+                <option value="moderador">Moderador</option>
                 <option value="admin">Admin</option>
               </select>
             </div>

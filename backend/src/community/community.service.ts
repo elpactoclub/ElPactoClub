@@ -3,7 +3,7 @@
 import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, MoreThan, Repository } from 'typeorm';
+import { In, IsNull, LessThan, MoreThan, Repository } from 'typeorm';
 import { Post, Message, PostComment } from './post.entity';
 import { Story } from './story.entity';
 import { User } from '../users/user.entity';
@@ -189,12 +189,12 @@ export class CommunityService {
     return { liked: !wasLiked, likesCount: newCount };
   }
 
-  // EN: Deletes a comment if the requester is its author or an admin.
-  // ES: Borra un comentario si quien lo pide es su autor o un admin.
+  // EN: Deletes a comment if the requester is its author, an admin or a moderador.
+  // ES: Borra un comentario si quien lo pide es su autor, un admin o un moderador.
   async deleteComment(commentId: string, userId: string, role: string) {
     const comment = await this.commentRepo.findOneBy({ id: commentId });
     if (!comment) throw new NotFoundException('Comentario no encontrado');
-    if (comment.userId !== userId && role !== 'admin') {
+    if (comment.userId !== userId && role !== 'admin' && role !== 'moderador') {
       throw new ForbiddenException('No tienes permiso para eliminar este comentario');
     }
     await this.commentRepo.remove(comment);
@@ -352,7 +352,7 @@ export class CommunityService {
   async deletePost(postId: string, userId: string, userRole: string) {
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post) throw new NotFoundException('Post no encontrado');
-    if (post.authorId !== userId && userRole !== 'admin') {
+    if (post.authorId !== userId && userRole !== 'admin' && userRole !== 'moderador') {
       throw new ForbiddenException('No tienes permiso para eliminar este post');
     }
     await this.postRepo.remove(post);
@@ -412,7 +412,7 @@ export class CommunityService {
 
   async getMessages(channel: string) {
     const messages = await this.messageRepo.find({
-      where: { channel },
+      where: { channel, deletedAt: IsNull() },
       order: { createdAt: 'ASC' },
       take: 50,
     });
@@ -461,12 +461,12 @@ export class CommunityService {
   async deleteMessage(messageId: string, userId: string, role: string) {
     const msg = await this.messageRepo.findOneBy({ id: messageId });
     if (!msg) throw new NotFoundException('Mensaje no encontrado');
-    // El autor puede borrar el suyo; admin y creator pueden borrar cualquiera (moderación)
-    if (msg.userId !== userId && role !== 'admin' && role !== 'creator') {
+    // El autor puede borrar el suyo; admin, creator y moderador pueden borrar cualquiera (moderación)
+    if (msg.userId !== userId && role !== 'admin' && role !== 'creator' && role !== 'moderador') {
       throw new ForbiddenException('No tienes permiso para eliminar este mensaje');
     }
     const { channel } = msg;
-    await this.messageRepo.remove(msg);
+    await this.messageRepo.update(messageId, { deletedAt: new Date() });
     this.gateway?.emitDeletedMessage(channel, messageId);
     return { ok: true };
   }

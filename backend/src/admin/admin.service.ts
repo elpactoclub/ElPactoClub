@@ -13,6 +13,8 @@ import { Post } from '../community/post.entity';
 import { StoreBenefit } from '../store/store-benefit.entity';
 import { Project } from '../projects/project.entity';
 import { ClubCreator } from '../club-creators/club-creator.entity';
+import { Badge, UserBadge } from '../badges/badge.entity';
+import { BadgesService } from '../badges/badges.service';
 import { SettingsService } from '../settings/settings.service';
 import { DmService } from '../dm/dm.service';
 import { UsersService } from '../users/users.service';
@@ -37,10 +39,12 @@ export class AdminService {
     @InjectRepository(StoreBenefit) private readonly storeBenefits: Repository<StoreBenefit>,
     @InjectRepository(Project) private readonly projects: Repository<Project>,
     @InjectRepository(ClubCreator) private readonly clubCreators: Repository<ClubCreator>,
+    @InjectRepository(UserBadge) private readonly userBadgeRepo: Repository<UserBadge>,
     private readonly settings: SettingsService,
     private readonly usersService: UsersService,
     private readonly notifications: NotificationsService,
     private readonly dm: DmService,
+    private readonly badges: BadgesService,
   ) {}
 
   // EN: Sends a direct message broadcast to all or selected users.
@@ -377,6 +381,51 @@ export class AdminService {
     if (!m) throw new NotFoundException('Mission not found');
     Object.assign(m, dto);
     return this.missions.save(m);
+  }
+
+  // EN: Creates a new mission; throws if the code already exists.
+  // ES: Crea una misión nueva; lanza error si el código ya existe.
+  async createMission(dto: { code: string; title: string; description?: string; target: number; reward?: string; isActive?: boolean }) {
+    const existing = await this.missions.findOne({ where: { code: dto.code } });
+    if (existing) throw new BadRequestException('Ya existe una misión con ese código');
+    return this.missions.save({
+      code: dto.code,
+      title: dto.title,
+      description: dto.description,
+      target: dto.target,
+      reward: dto.reward,
+      isActive: dto.isActive ?? true,
+      current: 0,
+      isComplete: false,
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // BADGES (admin management)
+  // ──────────────────────────────────────────────────────────────────────
+  // EN: Returns the full badge catalog.
+  // ES: Devuelve el catálogo completo de insignias.
+  getBadgeCatalog() {
+    return this.badges.catalog();
+  }
+
+  // EN: Returns the badges unlocked by a specific user.
+  // ES: Devuelve las insignias desbloqueadas por un usuario concreto.
+  getUserBadges(userId: string) {
+    return this.badges.listForUser(userId);
+  }
+
+  // EN: Awards a badge to a user.
+  // ES: Concede una insignia a un usuario.
+  awardBadge(userId: string, badgeCode: string) {
+    return this.badges.award(userId, badgeCode);
+  }
+
+  // EN: Revokes a badge from a user by deleting the user_badge record.
+  // ES: Revoca una insignia de un usuario eliminando el registro user_badge.
+  async revokeBadge(userId: string, badgeCode: string): Promise<{ ok: boolean }> {
+    await this.userBadgeRepo.delete({ userId, badgeCode });
+    return { ok: true };
   }
 
   // ──────────────────────────────────────────────────────────────────────

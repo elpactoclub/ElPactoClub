@@ -363,6 +363,37 @@ export class AdminController {
     return this.admin.updateMission(code, dto);
   }
 
+  @Post('missions')
+  @Roles('admin')
+  createMission(@Body() dto: { code: string; title: string; description?: string; target: number; reward?: string; isActive?: boolean }) {
+    return this.admin.createMission(dto);
+  }
+
+  // ─── Badges ───────────────────────────────────────────────────────────
+  @Get('badges/catalog')
+  @Roles('admin')
+  getBadgeCatalog() {
+    return this.admin.getBadgeCatalog();
+  }
+
+  @Get('users/:id/badges')
+  @Roles('admin')
+  getUserBadges(@Param('id') id: string) {
+    return this.admin.getUserBadges(id);
+  }
+
+  @Post('users/:id/badges/:code')
+  @Roles('admin')
+  awardBadge(@Param('id') id: string, @Param('code') code: string) {
+    return this.admin.awardBadge(id, code);
+  }
+
+  @Delete('users/:id/badges/:code')
+  @Roles('admin')
+  revokeBadge(@Param('id') id: string, @Param('code') code: string) {
+    return this.admin.revokeBadge(id, code);
+  }
+
   // ─── Settings ─────────────────────────────────────────────────────────
   @Get('settings')
   @Roles('admin')
