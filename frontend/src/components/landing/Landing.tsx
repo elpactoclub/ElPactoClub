@@ -66,14 +66,12 @@ export default function Landing() {
               Club Nativo Digital
             </div>
 
-            <p style={{ fontSize: 13, color: "#888", lineHeight: 1.5, marginBottom: 8 }}>
-              VIENES POR EL BASKET, TE QUEDAS POR LO QUE PASA.
-            </p>
             <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(36px, 4.5vw, 60px)", lineHeight: 1.05, letterSpacing: 1 }}>
-              VOTA.<br />HABLA.<br /><span style={{ color: "var(--color-accent)" }}>SUBE.</span>
+              VOTA DECISIONES<br />DEL CLUB,<br />
+              <span style={{ color: "var(--color-accent)" }}>HABLA CON<br />LOS JUGADORES,<br />SUBE EN EL<br />RANKING.</span>
             </h1>
-            <p style={{ fontSize: 14, color: "#777", lineHeight: 1.7, maxWidth: 380 }}>
-              Vota decisiones del club, habla con los jugadores,<br />sube en el ranking de fans.
+            <p style={{ fontSize: 13, color: "#666", lineHeight: 1.6, maxWidth: 380, marginTop: 4 }}>
+              Vienes por el basket, te quedas por lo que pasa.
             </p>
 
             {/* Avatares */}
@@ -185,12 +183,12 @@ export default function Landing() {
             Club Nativo Digital
           </div>
 
-          <p style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>VIENES POR EL BASKET, TE QUEDAS POR LO QUE PASA.</p>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 36, lineHeight: 1.02, letterSpacing: 0.5, margin: 0 }}>
-            VOTA.<br />HABLA.<br /><span style={{ color: "var(--color-accent)" }}>SUBE.</span>
+            VOTA DECISIONES<br />DEL CLUB,<br />
+            <span style={{ color: "var(--color-accent)" }}>HABLA CON<br />LOS JUGADORES,<br />SUBE EN EL<br />RANKING.</span>
           </h1>
-          <p style={{ fontSize: 12, color: "#666", lineHeight: 1.6, margin: 0 }}>
-            Vota decisiones del club, habla con los jugadores, sube en el ranking de fans.
+          <p style={{ fontSize: 12, color: "#666", lineHeight: 1.6, margin: "4px 0 0" }}>
+            Vienes por el basket, te quedas por lo que pasa.
           </p>
 
           {/* Avatares */}
