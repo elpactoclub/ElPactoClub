@@ -20,6 +20,8 @@ interface Mission {
   reward?: string;
   isActive: boolean;
   isComplete: boolean;
+  scope?: 'global' | 'individual';
+  trigger?: string;
 }
 
 function authHeader() {
@@ -56,7 +58,7 @@ export default function MissionsPage() {
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [createDraft, setCreateDraft] = useState({ code: "", title: "", description: "", target: 100, reward: "", isActive: true });
+  const [createDraft, setCreateDraft] = useState({ code: "", title: "", description: "", target: 100, reward: "", isActive: true, scope: "global" as "global" | "individual", trigger: "manual" });
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(() => {
@@ -120,7 +122,7 @@ export default function MissionsPage() {
       });
       if (r.ok) {
         setShowCreate(false);
-        setCreateDraft({ code: "", title: "", description: "", target: 100, reward: "", isActive: true });
+        setCreateDraft({ code: "", title: "", description: "", target: 100, reward: "", isActive: true, scope: "global", trigger: "manual" });
         load();
       }
     } finally {
@@ -243,6 +245,14 @@ export default function MissionsPage() {
                         {!m.isActive && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: "rgba(100,100,100,0.15)", color: "#888", fontWeight: 700 }}>Pausada</span>}
                       </div>
                       <div style={{ fontFamily: "monospace", fontSize: 11, color: "#555" }}>{m.code}</div>
+                      <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                        <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: "rgba(255,255,255,0.06)", color: "#888" }}>
+                          {m.scope === 'individual' ? '👤 Individual' : '🌍 Global'}
+                        </span>
+                        <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 4, background: "rgba(255,255,255,0.06)", color: "#888" }}>
+                          {m.trigger === 'manual' || !m.trigger ? '⚙ Manual' : `⚡ Auto: ${m.trigger}`}
+                        </span>
+                      </div>
                     </div>
                     <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
                       <button
@@ -301,6 +311,33 @@ export default function MissionsPage() {
                 onChange={(e) => setCreateDraft(d => ({ ...d, code: e.target.value.toLowerCase().replace(/\s+/g, '_') }))}
                 className="admin-input" placeholder="codigo_mision"
               />
+            </div>
+            <div>
+              <label className="admin-label">Tipo de misión</label>
+              <div style={{ display: "flex", gap: 8 }}>
+                {([["global", "🌍 Global (toda la comunidad)"], ["individual", "👤 Individual (por usuario)"]] as const).map(([v, label]) => (
+                  <button key={v} type="button" onClick={() => setCreateDraft(d => ({ ...d, scope: v }))}
+                    style={{ flex: 1, padding: "10px", borderRadius: 9, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      border: createDraft.scope === v ? "none" : "1px solid rgba(255,255,255,0.12)",
+                      background: createDraft.scope === v ? "var(--color-accent)" : "transparent",
+                      color: createDraft.scope === v ? "#000" : "#aaa" }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="admin-label">Se activa cuando...</label>
+              <select value={createDraft.trigger} onChange={e => setCreateDraft(d => ({ ...d, trigger: e.target.value }))}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 9, background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", fontSize: 13, outline: "none", cursor: "pointer" }}>
+                <option value="manual">Manual (se incrementa desde el admin)</option>
+                <option value="chat_message">Mensaje de chat enviado</option>
+                <option value="post">Post publicado</option>
+                <option value="comment">Comentario añadido</option>
+                <option value="vote">Votación participada</option>
+                <option value="poll_vote">Encuesta votada</option>
+                <option value="daily_reward">Recompensa diaria reclamada</option>
+              </select>
             </div>
             <div>
               <label className="admin-label">Título</label>

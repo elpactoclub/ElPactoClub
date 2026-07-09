@@ -358,14 +358,14 @@ export class AdminController {
   @Roles('admin')
   updateMission(
     @Param('code') code: string,
-    @Body() dto: { title?: string; description?: string; target?: number; reward?: string; isActive?: boolean },
+    @Body() dto: { title?: string; description?: string; target?: number; reward?: string; isActive?: boolean; scope?: 'global' | 'individual'; trigger?: string },
   ) {
     return this.admin.updateMission(code, dto);
   }
 
   @Post('missions')
   @Roles('admin')
-  createMission(@Body() dto: { code: string; title: string; description?: string; target: number; reward?: string; isActive?: boolean }) {
+  createMission(@Body() dto: { code: string; title: string; description?: string; target: number; reward?: string; isActive?: boolean; scope?: 'global' | 'individual'; trigger?: string }) {
     return this.admin.createMission(dto);
   }
 

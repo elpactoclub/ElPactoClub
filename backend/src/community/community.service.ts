@@ -11,6 +11,7 @@ import { BadgesService } from '../badges/badges.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { AppGateway } from '../gateway/app.gateway';
+import { MissionsService } from '../missions/missions.service';
 
 // EN: Service holding all community operations against the post/message/comment/story repositories.
 // ES: Servicio con todas las operaciones de comunidad sobre los repositorios de post/mensaje/comentario/historia.
@@ -26,6 +27,7 @@ export class CommunityService {
     private readonly notifications: NotificationsService,
     private readonly users: UsersService,
     @Optional() private readonly gateway?: AppGateway,
+    @Optional() private readonly missionsService?: MissionsService,
   ) {}
 
   // EN: Returns the personalized feed (creators/admins + followed users + own posts, minus blocked).
@@ -162,6 +164,13 @@ export class CommunityService {
     const saved = await this.commentRepo.save(this.commentRepo.create({ postId, userId, content }));
 
     const author = await this.userRepo.findOne({ where: { id: userId } });
+
+    // EN: Fire mission triggers for comment actions.
+    // ES: Disparar misiones cuyo trigger es comment.
+    if (this.missionsService) {
+      const commentMissions = await this.missionsService.findActiveByTrigger('comment');
+      for (const m of commentMissions) await this.missionsService.incrementForUser(m.code, userId);
+    }
 
     return {
       id: saved.id,
@@ -346,6 +355,13 @@ export class CommunityService {
       );
     }
 
+    // EN: Fire mission triggers for post actions.
+    // ES: Disparar misiones cuyo trigger es post.
+    if (this.missionsService) {
+      const postMissions = await this.missionsService.findActiveByTrigger('post');
+      for (const m of postMissions) await this.missionsService.incrementForUser(m.code, authorId);
+    }
+
     return saved;
   }
 
@@ -454,6 +470,13 @@ export class CommunityService {
       authorAvatar: user?.avatar ?? '🏀',
       authorRole: user?.role ?? 'fan',
     });
+
+    // EN: Fire mission triggers for chat_message actions.
+    // ES: Disparar misiones cuyo trigger es chat_message.
+    if (this.missionsService) {
+      const chatMissions = await this.missionsService.findActiveByTrigger('chat_message');
+      for (const m of chatMissions) await this.missionsService.incrementForUser(m.code, userId);
+    }
 
     return saved;
   }

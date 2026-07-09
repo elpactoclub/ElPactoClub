@@ -80,8 +80,13 @@ export class GamificationService {
       await this.badges.award(userId, 'primer_pacto');
     }
 
-    // Mission: increment weekly votes counter
+    // Mission: increment weekly votes counter (global legacy mission)
     await this.missions.increment('weekly_votes_500', 1);
+
+    // EN: Fire mission triggers for vote actions.
+    // ES: Disparar misiones cuyo trigger es vote.
+    const voteMissions = await this.missions.findActiveByTrigger('vote');
+    for (const m of voteMissions) await this.missions.incrementForUser(m.code, userId);
 
     // Weekly activity bit 1 = voted
     await this.usersService.updateWeekActivity(userId, 1);

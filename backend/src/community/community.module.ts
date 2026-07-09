@@ -12,6 +12,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { UsersModule } from '../users/users.module';
 import { TigrisModule } from '../tigris/tigris.module';
 import { GatewayModule } from '../gateway/gateway.module';
+import { MissionsModule } from '../missions/missions.module';
 
 // EN: Registers entities, services and controller for the community module.
 // ES: Registra entidades, servicios y controlador del módulo de comunidad.
@@ -23,6 +24,7 @@ import { GatewayModule } from '../gateway/gateway.module';
     UsersModule,
     TigrisModule,
     GatewayModule,
+    MissionsModule,
   ],
   providers: [CommunityService],
   controllers: [CommunityController],

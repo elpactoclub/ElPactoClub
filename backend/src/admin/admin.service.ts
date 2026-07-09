@@ -376,9 +376,9 @@ export class AdminService {
     return this.missions.save(m);
   }
 
-  // EN: Updates a mission's editable fields.
-  // ES: Actualiza los campos editables de una misión.
-  async updateMission(code: string, dto: { title?: string; description?: string; target?: number; reward?: string; isActive?: boolean }) {
+  // EN: Updates a mission's editable fields including scope and trigger.
+  // ES: Actualiza los campos editables de una misión, incluyendo alcance y disparador.
+  async updateMission(code: string, dto: { title?: string; description?: string; target?: number; reward?: string; isActive?: boolean; scope?: 'global' | 'individual'; trigger?: string }) {
     const m = await this.missions.findOne({ where: { code } });
     if (!m) throw new NotFoundException('Mission not found');
     Object.assign(m, dto);
@@ -387,7 +387,7 @@ export class AdminService {
 
   // EN: Creates a new mission; throws if the code already exists.
   // ES: Crea una misión nueva; lanza error si el código ya existe.
-  async createMission(dto: { code: string; title: string; description?: string; target: number; reward?: string; isActive?: boolean }) {
+  async createMission(dto: { code: string; title: string; description?: string; target: number; reward?: string; isActive?: boolean; scope?: 'global' | 'individual'; trigger?: string }) {
     const existing = await this.missions.findOne({ where: { code: dto.code } });
     if (existing) throw new BadRequestException('Ya existe una misión con ese código');
     return this.missions.save({
@@ -397,6 +397,8 @@ export class AdminService {
       target: dto.target,
       reward: dto.reward,
       isActive: dto.isActive ?? true,
+      scope: dto.scope ?? 'global',
+      trigger: dto.trigger ?? 'manual',
       current: 0,
       isComplete: false,
     });

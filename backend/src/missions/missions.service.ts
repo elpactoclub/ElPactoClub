@@ -4,6 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Mission } from './mission.entity';
+import { UserMissionProgress } from './user-mission-progress.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -50,6 +51,7 @@ export const MISSION_DEFINITIONS: Array<Omit<Mission, 'current' | 'isComplete' |
 export class MissionsService {
   constructor(
     @InjectRepository(Mission) private readonly repo: Repository<Mission>,
+    @InjectRepository(UserMissionProgress) private readonly progressRepo: Repository<UserMissionProgress>,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -83,6 +85,41 @@ export class MissionsService {
     }
 
     return this.repo.findOne({ where: { code } });
+  }
+
+  // EN: Returns active missions that match a given trigger type.
+  // ES: Devuelve misiones activas que coincidan con un tipo de disparador dado.
+  findActiveByTrigger(trigger: string) {
+    return this.repo.find({ where: { isActive: true, trigger: trigger as any } });
+  }
+
+  // EN: Increments progress for a user on a mission; routes to global or individual logic based on scope.
+  // ES: Incrementa el progreso de un usuario en una misión; enruta a lógica global o individual según el alcance.
+  async incrementForUser(code: string, userId: string, by = 1): Promise<void> {
+    const mission = await this.repo.findOne({ where: { code, isActive: true } });
+    if (!mission) return;
+
+    if (mission.scope === 'global') {
+      await this.increment(code, by);
+      return;
+    }
+
+    // EN: Individual-scope: track progress per user row.
+    // ES: Alcance individual: seguir el progreso por fila de usuario.
+    let prog = await this.progressRepo.findOne({ where: { userId, missionCode: code } });
+    if (!prog) {
+      prog = this.progressRepo.create({ userId, missionCode: code, current: 0, isComplete: false });
+    }
+    if (prog.isComplete) return;
+    prog.current = Math.min(prog.current + by, mission.target);
+    prog.isComplete = prog.current >= mission.target;
+    await this.progressRepo.save(prog);
+  }
+
+  // EN: Returns all individual mission progress rows for a user.
+  // ES: Devuelve todas las filas de progreso de misiones individuales para un usuario.
+  async getUserProgress(userId: string): Promise<UserMissionProgress[]> {
+    return this.progressRepo.find({ where: { userId } });
   }
 
   // EN: Cron job resetting weekly missions every Monday and notifying the community.
