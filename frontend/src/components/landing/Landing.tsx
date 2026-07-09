@@ -70,7 +70,7 @@ export default function Landing() {
               VOTA DECISIONES<br />DEL CLUB,<br />
               <span style={{ color: "var(--color-accent)" }}>HABLA CON<br />LOS JUGADORES,<br />SUBE EN EL<br />RANKING.</span>
             </h1>
-            <p style={{ fontSize: 13, color: "#666", lineHeight: 1.6, maxWidth: 380, marginTop: 4 }}>
+            <p style={{ fontSize: 14, color: "#777", lineHeight: 1.7, maxWidth: 380 }}>
               Vienes por el basket, te quedas por lo que pasa.
             </p>
 
@@ -140,7 +140,7 @@ export default function Landing() {
               { src: "/imagenes/herson.jpg",  pos: "center top"    },
               { src: "/imagenes/elvis.jpg",   pos: "center top"    },
               { src: "/imagenes/violeta.jpg", pos: "center top"    },
-              { src: "/imagenes/edugil.jpg",  pos: "center 30%"    },
+              { src: "/imagenes/edugilnew.jpg",  pos: "center 30%"    },
             ].map(({ src, pos }, i) => (
               <div
                 key={i}
