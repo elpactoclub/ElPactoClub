@@ -323,7 +323,7 @@ function FormContent({
                 onChange={(e) => setRememberMe(e.target.checked)}
                 style={{ accentColor: "var(--color-accent)", width: 14, height: 14 }}
               />
-              Recordar sesión (30 días)
+              Recordar sesión
             </label>
           )}
 
