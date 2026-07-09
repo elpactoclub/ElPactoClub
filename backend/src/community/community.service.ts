@@ -131,7 +131,7 @@ export class CommunityService {
   // ES: Lista de comentarios de un post con datos de autor y si el usuario les dio like.
   async getComments(postId: string, userId?: string) {
     const comments = await this.commentRepo.find({
-      where: { postId },
+      where: { postId, deletedAt: IsNull() },
       order: { createdAt: 'ASC' },
       take: 200,
     });
@@ -197,7 +197,7 @@ export class CommunityService {
     if (comment.userId !== userId && role !== 'admin' && role !== 'moderador') {
       throw new ForbiddenException('No tienes permiso para eliminar este comentario');
     }
-    await this.commentRepo.remove(comment);
+    await this.commentRepo.update(commentId, { deletedAt: new Date() });
     return { ok: true };
   }
 
@@ -355,7 +355,7 @@ export class CommunityService {
     if (post.authorId !== userId && userRole !== 'admin' && userRole !== 'moderador') {
       throw new ForbiddenException('No tienes permiso para eliminar este post');
     }
-    await this.postRepo.remove(post);
+    await this.postRepo.update(postId, { deletedAt: new Date(), isVisible: false });
     return { ok: true };
   }
 

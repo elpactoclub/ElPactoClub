@@ -47,6 +47,9 @@ export class Post {
   @Column({ nullable: true })
   imageUrl: string;
 
+  @Column({ type: 'timestamptz', nullable: true, default: null })
+  deletedAt: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }
@@ -72,6 +75,9 @@ export class PostComment {
 
   @Column({ type: 'jsonb', default: [] })
   likedBy: string[];
+
+  @Column({ type: 'timestamptz', nullable: true, default: null })
+  deletedAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

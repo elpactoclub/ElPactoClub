@@ -9,7 +9,7 @@ import { Event, EventAttendee } from '../events/event.entity';
 import { Vote, UserVote, VoteCategory, VotationType } from '../gamification/vote.entity';
 import { Raffle, RaffleEntry } from '../gamification/raffle.entity';
 import { Mission } from '../missions/mission.entity';
-import { Post, Message } from '../community/post.entity';
+import { Post, Message, PostComment } from '../community/post.entity';
 import { StoreBenefit } from '../store/store-benefit.entity';
 import { Project } from '../projects/project.entity';
 import { ClubCreator } from '../club-creators/club-creator.entity';
@@ -36,6 +36,7 @@ export class AdminService {
     @InjectRepository(RaffleEntry) private readonly raffleEntries: Repository<RaffleEntry>,
     @InjectRepository(Mission) private readonly missions: Repository<Mission>,
     @InjectRepository(Post) private readonly posts: Repository<Post>,
+    @InjectRepository(PostComment) private readonly comments: Repository<PostComment>,
     @InjectRepository(Message) private readonly messages: Repository<Message>,
     @InjectRepository(StoreBenefit) private readonly storeBenefits: Repository<StoreBenefit>,
     @InjectRepository(Project) private readonly projects: Repository<Project>,
@@ -526,6 +527,56 @@ export class AdminService {
   // ES: Restaura un mensaje borrado suavemente limpiando su timestamp deletedAt.
   async restoreMessage(messageId: string) {
     await this.messages.update(messageId, { deletedAt: null });
+    return { ok: true };
+  }
+
+  // EN: Lists soft-deleted posts, enriched with author info.
+  // ES: Lista los posts borrados suavemente, con info del autor.
+  async getDeletedPosts() {
+    const posts = await this.posts.createQueryBuilder('p')
+      .where('p.deletedAt IS NOT NULL')
+      .orderBy('p.deletedAt', 'DESC')
+      .take(100)
+      .getMany();
+    const userIds = [...new Set(posts.map(p => p.authorId))];
+    const users = userIds.length ? await this.users.find({ where: { id: In(userIds) } }) : [];
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    return posts.map(p => ({
+      ...p,
+      authorName: userMap[p.authorId]?.name ?? 'Fan',
+      authorEmail: userMap[p.authorId]?.email ?? '',
+    }));
+  }
+
+  // EN: Restores a soft-deleted post making it visible again.
+  // ES: Restaura un post borrado haciéndolo visible de nuevo.
+  async restorePost(postId: string) {
+    await this.posts.update(postId, { deletedAt: null, isVisible: true });
+    return { ok: true };
+  }
+
+  // EN: Lists soft-deleted comments, enriched with author info.
+  // ES: Lista los comentarios borrados suavemente, con info del autor.
+  async getDeletedComments() {
+    const comments = await this.comments.createQueryBuilder('c')
+      .where('c.deletedAt IS NOT NULL')
+      .orderBy('c.deletedAt', 'DESC')
+      .take(100)
+      .getMany();
+    const userIds = [...new Set(comments.map(c => c.userId))];
+    const users = userIds.length ? await this.users.find({ where: { id: In(userIds) } }) : [];
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    return comments.map(c => ({
+      ...c,
+      authorName: userMap[c.userId]?.name ?? 'Fan',
+      authorEmail: userMap[c.userId]?.email ?? '',
+    }));
+  }
+
+  // EN: Restores a soft-deleted comment.
+  // ES: Restaura un comentario borrado suavemente.
+  async restoreComment(commentId: string) {
+    await this.comments.update(commentId, { deletedAt: null });
     return { ok: true };
   }
 

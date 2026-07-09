@@ -436,4 +436,30 @@ export class AdminController {
   restoreMessage(@Param('id') id: string) {
     return this.admin.restoreMessage(id);
   }
+
+  // ─── Deleted posts (moderation) ──────────────────────────────────────
+  @Get('deleted-posts')
+  @Roles('admin')
+  getDeletedPosts() {
+    return this.admin.getDeletedPosts();
+  }
+
+  @Patch('deleted-posts/:id/restore')
+  @Roles('admin')
+  restorePost(@Param('id') id: string) {
+    return this.admin.restorePost(id);
+  }
+
+  // ─── Deleted comments (moderation) ───────────────────────────────────
+  @Get('deleted-comments')
+  @Roles('admin')
+  getDeletedComments() {
+    return this.admin.getDeletedComments();
+  }
+
+  @Patch('deleted-comments/:id/restore')
+  @Roles('admin')
+  restoreComment(@Param('id') id: string) {
+    return this.admin.restoreComment(id);
+  }
 }
