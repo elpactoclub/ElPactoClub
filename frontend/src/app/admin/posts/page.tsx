@@ -8,6 +8,8 @@ import { useConfirm } from "@/hooks/useConfirm";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
 
+type ActiveTab = "posts" | "deleted-posts" | "deleted-comments";
+
 interface AdminPost {
   id: string;
   authorId: string;
@@ -57,12 +59,19 @@ const TYPE_COLOR: Record<string, string> = {
 // ES: Componente de página de posts del admin que muestra todas las publicaciones de la comunidad con controles de eliminación y moderación.
 export default function PostsPage() {
   const { confirm, alert, ConfirmUI } = useConfirm();
+  const [activeTab, setActiveTab] = useState<ActiveTab>("posts");
   const [posts, setPosts] = useState<AdminPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [closing, setClosing] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [authorSearch, setAuthorSearch] = useState("");
+
+  // Deleted items state
+  const [deletedPosts, setDeletedPosts] = useState<any[]>([]);
+  const [deletedComments, setDeletedComments] = useState<any[]>([]);
+  const [deletedPostsLoading, setDeletedPostsLoading] = useState(false);
+  const [deletedCommentsLoading, setDeletedCommentsLoading] = useState(false);
   // Create post
   const [showCreate, setShowCreate] = useState(false);
   const [newType, setNewType] = useState<"text" | "image" | "poll">("text");
@@ -82,6 +91,30 @@ export default function PostsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    if (activeTab === "deleted-posts") {
+      setDeletedPostsLoading(true);
+      fetch(`${API}/admin/deleted-posts`, { headers: authHeader() })
+        .then(r => r.json()).then(d => setDeletedPosts(Array.isArray(d) ? d : []))
+        .finally(() => setDeletedPostsLoading(false));
+    } else if (activeTab === "deleted-comments") {
+      setDeletedCommentsLoading(true);
+      fetch(`${API}/admin/deleted-comments`, { headers: authHeader() })
+        .then(r => r.json()).then(d => setDeletedComments(Array.isArray(d) ? d : []))
+        .finally(() => setDeletedCommentsLoading(false));
+    }
+  }, [activeTab]);
+
+  async function restorePost(id: string) {
+    await fetch(`${API}/admin/deleted-posts/${id}/restore`, { method: "PATCH", headers: authHeader() });
+    setDeletedPosts(p => p.filter(m => m.id !== id));
+  }
+
+  async function restoreComment(id: string) {
+    await fetch(`${API}/admin/deleted-comments/${id}/restore`, { method: "PATCH", headers: authHeader() });
+    setDeletedComments(p => p.filter(m => m.id !== id));
+  }
 
   async function deletePost(id: string, preview: string) {
     const ok = await confirm({ title: "Eliminar post", message: "¿Seguro que quieres eliminar este post?", detail: `"${preview}"`, confirmLabel: "Eliminar", danger: true });
@@ -154,10 +187,66 @@ export default function PostsPage() {
     return true;
   });
 
+  const tabBtn = (key: ActiveTab, label: string) => (
+    <button
+      onClick={() => setActiveTab(key)}
+      style={{ padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: activeTab === key ? "#F0E040" : "rgba(255,255,255,0.06)", color: activeTab === key ? "#000" : "#888" }}
+    >
+      {label}
+    </button>
+  );
+
+  const deletedRow = (item: any, onRestore: (id: string) => void) => (
+    <div key={item.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{item.authorName}</span>
+          <span style={{ fontSize: 10, color: "#555" }}>{item.authorEmail}</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#aaa", lineHeight: 1.5, marginBottom: 6 }}>{(item.content ?? "").slice(0, 200)}{(item.content ?? "").length > 200 ? "…" : ""}</div>
+        <div style={{ fontSize: 10, color: "#555" }}>Borrado: {new Date(item.deletedAt).toLocaleString("es")}</div>
+      </div>
+      <button onClick={() => onRestore(item.id)} style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22C55E", cursor: "pointer", flexShrink: 0 }}>
+        Restaurar
+      </button>
+    </div>
+  );
+
   return (
     <div style={{ maxWidth: 900 }}>
       {ConfirmUI}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+
+      {/* Tab switcher */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {tabBtn("posts", "📝 Posts")}
+        {tabBtn("deleted-posts", "🗑 Posts Borrados")}
+        {tabBtn("deleted-comments", "🗨 Comentarios Borrados")}
+      </div>
+
+      {/* ── Deleted posts panel ── */}
+      {activeTab === "deleted-posts" && (
+        <div style={{ maxHeight: 600, overflowY: "auto", paddingRight: 4 }}>
+          {deletedPostsLoading ? (
+            <div style={{ color: "#666", textAlign: "center", padding: 40 }}>Cargando...</div>
+          ) : deletedPosts.length === 0 ? (
+            <div style={{ color: "#555", textAlign: "center", padding: 40 }}>No hay posts borrados</div>
+          ) : deletedPosts.map(p => deletedRow(p, restorePost))}
+        </div>
+      )}
+
+      {/* ── Deleted comments panel ── */}
+      {activeTab === "deleted-comments" && (
+        <div style={{ maxHeight: 600, overflowY: "auto", paddingRight: 4 }}>
+          {deletedCommentsLoading ? (
+            <div style={{ color: "#666", textAlign: "center", padding: 40 }}>Cargando...</div>
+          ) : deletedComments.length === 0 ? (
+            <div style={{ color: "#555", textAlign: "center", padding: 40 }}>No hay comentarios borrados</div>
+          ) : deletedComments.map(c => deletedRow(c, restoreComment))}
+        </div>
+      )}
+
+      {/* ── Posts panel ── */}
+      {activeTab === "posts" && <><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 22, letterSpacing: 2, margin: 0 }}>
           POSTS <span style={{ color: "#777", fontSize: 15, fontFamily: "var(--font-sans)", fontWeight: 400, letterSpacing: 0 }}>({filtered.length})</span>
         </h1>
@@ -269,7 +358,7 @@ export default function PostsPage() {
       )}
 
       {/* Create post modal */}
-      {showCreate && (
+      {activeTab === "posts" && showCreate && (
         <div className="admin-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowCreate(false)}>
           <div className="admin-modal" style={{ maxWidth: 480 }}>
             <div>
@@ -340,6 +429,7 @@ export default function PostsPage() {
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }

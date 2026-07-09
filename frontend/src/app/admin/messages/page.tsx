@@ -1,7 +1,7 @@
 "use client";
 
-// EN: Admin messages page — DM broadcast, deleted chat messages, deleted posts and deleted comments.
-// ES: Página de mensajes del admin — DM broadcast, mensajes de chat borrados, posts borrados y comentarios borrados.
+// EN: Admin messages page — DM broadcast and deleted chat messages.
+// ES: Página de mensajes del admin — DM broadcast y mensajes de chat borrados.
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -14,45 +14,11 @@ function authHeader() {
   return { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}` };
 }
 
-// EN: Reusable scrollable list of deleted items with a restore button per row.
-// ES: Lista desplazable reutilizable de elementos borrados con botón de restaurar por fila.
-function DeletedList({ items, loading, emptyMsg, renderMeta, onRestore }: {
-  items: any[];
-  loading: boolean;
-  emptyMsg: string;
-  renderMeta: (item: any) => React.ReactNode;
-  onRestore: (id: string) => void;
-}) {
-  return (
-    <div style={{ maxHeight: 520, overflowY: "auto", paddingRight: 4 }}>
-      {loading ? (
-        <div style={{ color: "#666", textAlign: "center", padding: 40 }}>Cargando...</div>
-      ) : items.length === 0 ? (
-        <div style={{ color: "#555", textAlign: "center", padding: 40 }}>{emptyMsg}</div>
-      ) : items.map((item) => (
-        <div key={item.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {renderMeta(item)}
-            <div style={{ fontSize: 13, color: "#aaa", lineHeight: 1.5, marginBottom: 6 }}>{item.content}</div>
-            <div style={{ fontSize: 10, color: "#555" }}>Borrado: {new Date(item.deletedAt).toLocaleString("es")}</div>
-          </div>
-          <button
-            onClick={() => onRestore(item.id)}
-            style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22C55E", cursor: "pointer", flexShrink: 0 }}
-          >
-            Restaurar
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // EN: Admin messages page component.
 // ES: Componente de página de mensajes del admin.
 export default function AdminMessagesPage() {
   const { alert, ConfirmUI } = useConfirm();
-  const [activeTab, setActiveTab] = useState<"dm" | "msgs" | "posts" | "comments">("dm");
+  const [activeTab, setActiveTab] = useState<"dm" | "msgs">("dm");
 
   // DM state
   const [mode, setMode] = useState<"all" | "select">("all");
@@ -64,53 +30,28 @@ export default function AdminMessagesPage() {
   const [selected, setSelected] = useState<Record<string, string>>({});
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Deleted items state
+  // Deleted messages state
   const [deletedMsgs, setDeletedMsgs] = useState<any[]>([]);
-  const [deletedPosts, setDeletedPosts] = useState<any[]>([]);
-  const [deletedComments, setDeletedComments] = useState<any[]>([]);
   const [msgsLoading, setMsgsLoading] = useState(false);
-  const [postsLoading, setPostsLoading] = useState(false);
-  const [commentsLoading, setCommentsLoading] = useState(false);
   const [channelFilter, setChannelFilter] = useState("");
 
-  async function loadDeleted(tab: string) {
-    if (tab === "msgs") {
-      setMsgsLoading(true);
-      try {
-        const url = channelFilter ? `${API}/admin/deleted-messages?channel=${encodeURIComponent(channelFilter)}` : `${API}/admin/deleted-messages`;
-        const d = await fetch(url, { headers: authHeader() }).then(r => r.json());
-        setDeletedMsgs(Array.isArray(d) ? d : []);
-      } finally { setMsgsLoading(false); }
-    } else if (tab === "posts") {
-      setPostsLoading(true);
-      try {
-        const d = await fetch(`${API}/admin/deleted-posts`, { headers: authHeader() }).then(r => r.json());
-        setDeletedPosts(Array.isArray(d) ? d : []);
-      } finally { setPostsLoading(false); }
-    } else if (tab === "comments") {
-      setCommentsLoading(true);
-      try {
-        const d = await fetch(`${API}/admin/deleted-comments`, { headers: authHeader() }).then(r => r.json());
-        setDeletedComments(Array.isArray(d) ? d : []);
-      } finally { setCommentsLoading(false); }
-    }
+  async function loadDeletedMsgs() {
+    setMsgsLoading(true);
+    try {
+      const url = channelFilter ? `${API}/admin/deleted-messages?channel=${encodeURIComponent(channelFilter)}` : `${API}/admin/deleted-messages`;
+      const d = await fetch(url, { headers: authHeader() }).then(r => r.json());
+      setDeletedMsgs(Array.isArray(d) ? d : []);
+    } finally { setMsgsLoading(false); }
   }
 
   useEffect(() => {
-    if (activeTab !== "dm") loadDeleted(activeTab);
+    if (activeTab === "msgs") loadDeletedMsgs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  async function restore(type: "msgs" | "posts" | "comments", id: string) {
-    const endpoints: Record<string, string> = {
-      msgs: `${API}/admin/deleted-messages/${id}/restore`,
-      posts: `${API}/admin/deleted-posts/${id}/restore`,
-      comments: `${API}/admin/deleted-comments/${id}/restore`,
-    };
-    await fetch(endpoints[type], { method: "PATCH", headers: authHeader() });
-    if (type === "msgs") setDeletedMsgs(p => p.filter(m => m.id !== id));
-    if (type === "posts") setDeletedPosts(p => p.filter(m => m.id !== id));
-    if (type === "comments") setDeletedComments(p => p.filter(m => m.id !== id));
+  async function restoreMsg(id: string) {
+    await fetch(`${API}/admin/deleted-messages/${id}/restore`, { method: "PATCH", headers: authHeader() });
+    setDeletedMsgs(p => p.filter(m => m.id !== id));
   }
 
   const runSearch = useCallback((q: string) => {
@@ -157,66 +98,46 @@ export default function AdminMessagesPage() {
     </button>
   );
 
-  const authorMeta = (item: any) => (
-    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{item.authorName}</span>
-      <span style={{ fontSize: 10, color: "#555" }}>{item.authorEmail}</span>
-    </div>
-  );
-
   return (
     <div className="admin-page">
       {ConfirmUI}
       <div className="admin-header"><h1 className="admin-title">MENSAJES</h1></div>
 
       {/* Tab switcher */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {tabBtn("dm", "📨 Mensaje Directo")}
         {tabBtn("msgs", "💬 Chats Borrados")}
-        {tabBtn("posts", "📝 Posts Borrados")}
-        {tabBtn("comments", "🗨 Comentarios Borrados")}
       </div>
 
-      {/* ── Deleted messages ── */}
+      {/* ── Deleted chat messages ── */}
       {activeTab === "msgs" && (
         <div style={{ maxWidth: 720 }}>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             <input value={channelFilter} onChange={e => setChannelFilter(e.target.value)} placeholder="Filtrar por canal (ej: general)" style={{ flex: 1, background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#fff", outline: "none" }} />
-            <button onClick={() => loadDeleted("msgs")} style={{ padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#ccc", cursor: "pointer" }}>Filtrar</button>
+            <button onClick={loadDeletedMsgs} style={{ padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#ccc", cursor: "pointer" }}>Filtrar</button>
           </div>
-          <DeletedList
-            items={deletedMsgs} loading={msgsLoading} emptyMsg="No hay mensajes de chat borrados"
-            renderMeta={(m) => (
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{m.authorName}</span>
-                <span style={{ fontSize: 10, color: "#555" }}>{m.authorEmail}</span>
-                <span style={{ fontSize: 10, color: "var(--color-accent)", background: "rgba(240,224,64,0.08)", padding: "2px 6px", borderRadius: 4 }}>#{m.channel}</span>
+          <div style={{ maxHeight: 520, overflowY: "auto", paddingRight: 4 }}>
+            {msgsLoading ? (
+              <div style={{ color: "#666", textAlign: "center", padding: 40 }}>Cargando...</div>
+            ) : deletedMsgs.length === 0 ? (
+              <div style={{ color: "#555", textAlign: "center", padding: 40 }}>No hay mensajes de chat borrados</div>
+            ) : deletedMsgs.map((m) => (
+              <div key={m.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{m.authorName}</span>
+                    <span style={{ fontSize: 10, color: "#555" }}>{m.authorEmail}</span>
+                    <span style={{ fontSize: 10, color: "var(--color-accent)", background: "rgba(240,224,64,0.08)", padding: "2px 6px", borderRadius: 4 }}>#{m.channel}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: "#aaa", lineHeight: 1.5, marginBottom: 6 }}>{m.content}</div>
+                  <div style={{ fontSize: 10, color: "#555" }}>Borrado: {new Date(m.deletedAt).toLocaleString("es")}</div>
+                </div>
+                <button onClick={() => restoreMsg(m.id)} style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22C55E", cursor: "pointer", flexShrink: 0 }}>
+                  Restaurar
+                </button>
               </div>
-            )}
-            onRestore={(id) => restore("msgs", id)}
-          />
-        </div>
-      )}
-
-      {/* ── Deleted posts ── */}
-      {activeTab === "posts" && (
-        <div style={{ maxWidth: 720 }}>
-          <DeletedList
-            items={deletedPosts} loading={postsLoading} emptyMsg="No hay posts borrados"
-            renderMeta={authorMeta}
-            onRestore={(id) => restore("posts", id)}
-          />
-        </div>
-      )}
-
-      {/* ── Deleted comments ── */}
-      {activeTab === "comments" && (
-        <div style={{ maxWidth: 720 }}>
-          <DeletedList
-            items={deletedComments} loading={commentsLoading} emptyMsg="No hay comentarios borrados"
-            renderMeta={authorMeta}
-            onRestore={(id) => restore("comments", id)}
-          />
+            ))}
+          </div>
         </div>
       )}
 
