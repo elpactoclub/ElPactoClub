@@ -1,9 +1,9 @@
 "use client";
 
-// EN: Admin messages page for sending direct broadcast messages or individual DMs to users from the admin panel.
-// ES: Página de mensajes del admin para enviar mensajes directos broadcast o DMs individuales a usuarios desde el panel de administración.
+// EN: Admin messages page for sending direct broadcast messages or individual DMs to users from the admin panel, and reviewing deleted chat messages.
+// ES: Página de mensajes del admin para enviar mensajes directos broadcast o DMs individuales a usuarios desde el panel de administración, y revisar mensajes de chat borrados.
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 
 const API = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/v1`;
@@ -21,10 +21,11 @@ function authHeader() {
   return { Authorization: `Bearer ${localStorage.getItem("el_pacto_token")}` };
 }
 
-// EN: Admin messages page component for composing and sending direct messages to any user or all users at once.
-// ES: Componente de página de mensajes del admin para redactar y enviar mensajes directos a cualquier usuario o a todos a la vez.
+// EN: Admin messages page component for composing and sending direct messages to any user or all users at once, and reviewing deleted chat messages.
+// ES: Componente de página de mensajes del admin para redactar y enviar mensajes directos a cualquier usuario o a todos a la vez, y revisar mensajes de chat borrados.
 export default function AdminMessagesPage() {
   const { alert, ConfirmUI } = useConfirm();
+  const [activeTab, setActiveTab] = useState<"dm" | "deleted">("dm");
   const [mode, setMode] = useState<"all" | "select">("all");
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
@@ -35,6 +36,35 @@ export default function AdminMessagesPage() {
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<Record<string, string>>({}); // id -> name
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Deleted messages tab state
+  const [deletedMsgs, setDeletedMsgs] = useState<any[]>([]);
+  const [deletedLoading, setDeletedLoading] = useState(false);
+  const [channelFilter, setChannelFilter] = useState("");
+
+  async function loadDeleted() {
+    setDeletedLoading(true);
+    try {
+      const url = channelFilter
+        ? `${API}/admin/deleted-messages?channel=${encodeURIComponent(channelFilter)}`
+        : `${API}/admin/deleted-messages`;
+      const r = await fetch(url, { headers: authHeader() });
+      const d = await r.json();
+      setDeletedMsgs(Array.isArray(d) ? d : []);
+    } finally {
+      setDeletedLoading(false);
+    }
+  }
+
+  async function restoreMsg(id: string) {
+    await fetch(`${API}/admin/deleted-messages/${id}/restore`, { method: "PATCH", headers: authHeader() });
+    setDeletedMsgs(prev => prev.filter(m => m.id !== id));
+  }
+
+  useEffect(() => {
+    if (activeTab === "deleted") loadDeleted();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const runSearch = useCallback((q: string) => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -95,10 +125,61 @@ export default function AdminMessagesPage() {
       {ConfirmUI}
 
       <div className="admin-header">
-        <h1 className="admin-title">MENSAJE DIRECTO</h1>
+        <h1 className="admin-title">MENSAJES</h1>
       </div>
 
-      <div style={{ maxWidth: 620, display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Tab switcher */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        <button onClick={() => setActiveTab("dm")} style={{ padding: "8px 18px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: activeTab === "dm" ? "#F0E040" : "rgba(255,255,255,0.06)", color: activeTab === "dm" ? "#000" : "#888" }}>
+          📨 Mensaje Directo
+        </button>
+        <button onClick={() => { setActiveTab("deleted"); loadDeleted(); }} style={{ padding: "8px 18px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: activeTab === "deleted" ? "#F0E040" : "rgba(255,255,255,0.06)", color: activeTab === "deleted" ? "#000" : "#888" }}>
+          🗑 Mensajes Borrados
+        </button>
+      </div>
+
+      {/* Deleted messages panel */}
+      {activeTab === "deleted" && (
+        <div style={{ maxWidth: 720 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <input
+              value={channelFilter}
+              onChange={e => setChannelFilter(e.target.value)}
+              placeholder="Filtrar por canal (ej: general, event-123)"
+              style={{ flex: 1, background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#fff", outline: "none" }}
+            />
+            <button onClick={loadDeleted} style={{ padding: "8px 16px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "#ccc", cursor: "pointer" }}>
+              Filtrar
+            </button>
+          </div>
+          {deletedLoading ? (
+            <div style={{ color: "#666", textAlign: "center", padding: 40 }}>Cargando...</div>
+          ) : deletedMsgs.length === 0 ? (
+            <div style={{ color: "#555", textAlign: "center", padding: 40 }}>No hay mensajes borrados</div>
+          ) : deletedMsgs.map(m => (
+            <div key={m.id} style={{ background: "#141414", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 14px", marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{m.authorName}</span>
+                  <span style={{ fontSize: 10, color: "#555" }}>{m.authorEmail}</span>
+                  <span style={{ fontSize: 10, color: "var(--color-accent)", background: "rgba(240,224,64,0.08)", padding: "2px 6px", borderRadius: 4 }}>#{m.channel}</span>
+                </div>
+                <div style={{ fontSize: 13, color: "#aaa", lineHeight: 1.5, marginBottom: 6 }}>{m.content}</div>
+                <div style={{ fontSize: 10, color: "#555" }}>Borrado: {new Date(m.deletedAt).toLocaleString("es")}</div>
+              </div>
+              <button
+                onClick={() => restoreMsg(m.id)}
+                style={{ padding: "6px 12px", borderRadius: 7, fontSize: 11, fontWeight: 700, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", color: "#22C55E", cursor: "pointer", flexShrink: 0 }}
+              >
+                Restaurar
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "dm" && (
+        <div style={{ maxWidth: 620, display: "flex", flexDirection: "column", gap: 16 }}>
         <p style={{ fontSize: 13, color: "#888", lineHeight: 1.6, margin: 0 }}>
           Envía un mensaje a la <strong style={{ color: "#fff" }}>bandeja de mensajes</strong> de los usuarios (lo reciben en sus DMs y pueden responderte). Distinto de la &quot;Notificación a todos&quot;, que es solo un aviso 🔔.
         </p>
@@ -184,7 +265,8 @@ export default function AdminMessagesPage() {
         >
           {sending ? "Enviando..." : mode === "all" ? "Enviar a todos" : `Enviar a ${selectedCount || 0} seleccionados`}
         </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

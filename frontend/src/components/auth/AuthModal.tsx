@@ -25,6 +25,7 @@ export default function AuthModal() {
   const [countryInput, setCountryInput]   = useState("España");
   const [cityInput, setCityInput]         = useState("Barcelona");
   const [referredByInput, setReferredByInput] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
   if (!isAuthOpen) return null;
@@ -38,7 +39,7 @@ export default function AuthModal() {
     }
     setLoading(true);
     if (isLogin) {
-      const ok = await login(emailInput, passwordInput);
+      const ok = await login(emailInput, passwordInput, rememberMe);
       if (ok) {
         showToast("¡Sesión iniciada! 🏀");
         closeAuth();
@@ -76,6 +77,7 @@ export default function AuthModal() {
             countryInput={countryInput} setCountryInput={setCountryInput}
             cityInput={cityInput} setCityInput={setCityInput}
             referredByInput={referredByInput} setReferredByInput={setReferredByInput}
+            rememberMe={rememberMe} setRememberMe={setRememberMe}
             onSubmit={handleSubmit} onClose={closeAuth} onToggle={() => setIsLogin(!isLogin)}
           />
         </div>
@@ -104,6 +106,7 @@ export default function AuthModal() {
             countryInput={countryInput} setCountryInput={setCountryInput}
             cityInput={cityInput} setCityInput={setCityInput}
             referredByInput={referredByInput} setReferredByInput={setReferredByInput}
+            rememberMe={rememberMe} setRememberMe={setRememberMe}
             onSubmit={handleSubmit} onClose={closeAuth} onToggle={() => setIsLogin(!isLogin)}
             desktop
           />
@@ -157,6 +160,7 @@ function FormContent({
   countryInput, setCountryInput,
   cityInput, setCityInput,
   referredByInput, setReferredByInput,
+  rememberMe, setRememberMe,
   onSubmit, onClose, onToggle,
   desktop = false,
 }: {
@@ -167,6 +171,7 @@ function FormContent({
   countryInput: string; setCountryInput: (v: string) => void;
   cityInput: string; setCityInput: (v: string) => void;
   referredByInput: string; setReferredByInput: (v: string) => void;
+  rememberMe: boolean; setRememberMe: (v: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
   onToggle: () => void;
@@ -308,6 +313,18 @@ function FormContent({
                 style={inputStyle}
               />
             </Field>
+          )}
+
+          {isLogin && (
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "var(--color-muted)", padding: "2px 0" }}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ accentColor: "var(--color-accent)", width: 14, height: 14 }}
+              />
+              Recordar sesión (30 días)
+            </label>
           )}
 
           <button

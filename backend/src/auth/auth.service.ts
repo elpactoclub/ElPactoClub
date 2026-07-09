@@ -24,9 +24,9 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  // EN: Verifies credentials, marks the user online and returns auth tokens.
-  // ES: Verifica las credenciales, marca al usuario como online y devuelve los tokens.
-  async login(dto: LoginDto) {
+  // EN: Verifies credentials, marks the user online and returns auth tokens. rememberMe=true issues a 30-day token.
+  // ES: Verifica las credenciales, marca al usuario como online y devuelve los tokens. rememberMe=true emite un token de 30 días.
+  async login(dto: LoginDto & { rememberMe?: boolean }) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user || !user.password) throw new UnauthorizedException('Invalid credentials');
 
@@ -34,7 +34,7 @@ export class AuthService {
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
     await this.usersService.updateOnlineStatus(user.id, true);
-    return this.generateTokens(user);
+    return this.generateTokens(user, dto.rememberMe ?? false);
   }
 
   // EN: Resolves the user referenced by a verified JWT payload.
@@ -43,12 +43,12 @@ export class AuthService {
     return this.usersService.findById(payload.sub);
   }
 
-  // EN: Signs a JWT and returns it alongside a safe public user object.
-  // ES: Firma un JWT y lo devuelve junto a un objeto público y seguro del usuario.
-  private generateTokens(user: User) {
+  // EN: Signs a JWT and returns it alongside a safe public user object. Uses 30d expiry when rememberMe is true.
+  // ES: Firma un JWT y lo devuelve junto a un objeto público y seguro del usuario. Usa expiración de 30 días cuando rememberMe es verdadero.
+  private generateTokens(user: User, rememberMe = false) {
     const payload = { sub: user.id, email: user.email, role: user.role };
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, rememberMe ? { expiresIn: '30d' } : {}),
       user: {
         id: user.id,
         name: user.name,

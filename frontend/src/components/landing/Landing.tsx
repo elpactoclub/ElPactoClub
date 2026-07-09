@@ -96,9 +96,8 @@ export default function Landing() {
               {[
                 { val: stats?.fans.toLocaleString("es"), lbl: "Fans activos", c: "var(--color-accent)" },
                 { val: stats ? String(stats.decisions) : undefined, lbl: "Decisiones", c: "var(--color-white)" },
-                { val: socioPrice, lbl: "Al mes", c: "var(--color-green)" },
               ].map((s) => (
-                <div key={s.lbl}>
+                <div key={s.lbl} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, color: s.c, lineHeight: 1, minWidth: 24 }}>
                     {s.val !== undefined ? s.val : <span style={{ display: "inline-block", width: 18, height: 18, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", verticalAlign: "middle" }} />}
                   </div>
@@ -217,9 +216,8 @@ export default function Landing() {
           {[
             { val: stats?.fans.toLocaleString("es"), lbl: "Fans activos", c: "var(--color-accent)" },
             { val: stats ? String(stats.decisions) : undefined, lbl: "Decisiones", c: "var(--color-white)" },
-            { val: socioPrice, lbl: "Al mes", c: "var(--color-green)" },
           ].map((s, i) => (
-            <div key={s.lbl} style={{ flex: 1, padding: "12px 6px", textAlign: "center", borderRight: i < 2 ? "1px solid rgba(255,255,255,0.07)" : "none" }}>
+            <div key={s.lbl} style={{ flex: 1, padding: "12px 6px", textAlign: "center", borderRight: i < 1 ? "1px solid rgba(255,255,255,0.07)" : "none" }}>
               <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, color: s.c, lineHeight: 1, minHeight: 22 }}>
                 {s.val !== undefined ? s.val : <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", verticalAlign: "middle" }} />}
               </div>

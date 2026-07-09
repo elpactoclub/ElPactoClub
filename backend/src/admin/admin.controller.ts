@@ -419,4 +419,21 @@ export class AdminController {
   deletePost(@Param('id') id: string) {
     return this.admin.deletePost(id);
   }
+
+  // ─── Deleted messages (moderation) ───────────────────────────────────
+  // EN: Lists soft-deleted chat messages, optionally filtered by channel.
+  // ES: Lista los mensajes de chat borrados suavemente, filtrables por canal.
+  @Get('deleted-messages')
+  @Roles('admin')
+  getDeletedMessages(@Query('channel') channel?: string) {
+    return this.admin.getDeletedMessages(channel);
+  }
+
+  // EN: Restores a soft-deleted message by id.
+  // ES: Restaura un mensaje borrado suavemente por id.
+  @Patch('deleted-messages/:id/restore')
+  @Roles('admin')
+  restoreMessage(@Param('id') id: string) {
+    return this.admin.restoreMessage(id);
+  }
 }

@@ -9,7 +9,7 @@ import { Event, EventAttendee } from '../events/event.entity';
 import { Vote, UserVote, VoteCategory, VotationType } from '../gamification/vote.entity';
 import { Raffle, RaffleEntry } from '../gamification/raffle.entity';
 import { Mission } from '../missions/mission.entity';
-import { Post } from '../community/post.entity';
+import { Post, Message } from '../community/post.entity';
 import { StoreBenefit } from '../store/store-benefit.entity';
 import { Project } from '../projects/project.entity';
 import { ClubCreator } from '../club-creators/club-creator.entity';
@@ -36,6 +36,7 @@ export class AdminService {
     @InjectRepository(RaffleEntry) private readonly raffleEntries: Repository<RaffleEntry>,
     @InjectRepository(Mission) private readonly missions: Repository<Mission>,
     @InjectRepository(Post) private readonly posts: Repository<Post>,
+    @InjectRepository(Message) private readonly messages: Repository<Message>,
     @InjectRepository(StoreBenefit) private readonly storeBenefits: Repository<StoreBenefit>,
     @InjectRepository(Project) private readonly projects: Repository<Project>,
     @InjectRepository(ClubCreator) private readonly clubCreators: Repository<ClubCreator>,
@@ -496,6 +497,35 @@ export class AdminService {
   async deletePost(id: string) {
     const r = await this.posts.delete(id);
     if (!r.affected) throw new NotFoundException('Post not found');
+    return { ok: true };
+  }
+
+  // ──────────────────────────────────────────────────────────────────────
+  // DELETED MESSAGES (moderation)
+  // ──────────────────────────────────────────────────────────────────────
+  // EN: Lists soft-deleted chat messages (deletedAt IS NOT NULL), enriched with author info.
+  // ES: Lista los mensajes de chat borrados suavemente (deletedAt no nulo), con info del autor.
+  async getDeletedMessages(channel?: string) {
+    const qb = this.messages.createQueryBuilder('m')
+      .where('m.deletedAt IS NOT NULL')
+      .orderBy('m.deletedAt', 'DESC')
+      .take(100);
+    if (channel) qb.andWhere('m.channel = :channel', { channel });
+    const msgs = await qb.getMany();
+    const userIds = [...new Set(msgs.map(m => m.userId))];
+    const users = userIds.length ? await this.users.find({ where: { id: In(userIds) } }) : [];
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    return msgs.map(m => ({
+      ...m,
+      authorName: userMap[m.userId]?.name ?? 'Fan',
+      authorEmail: userMap[m.userId]?.email ?? '',
+    }));
+  }
+
+  // EN: Restores a soft-deleted message by clearing its deletedAt timestamp.
+  // ES: Restaura un mensaje borrado suavemente limpiando su timestamp deletedAt.
+  async restoreMessage(messageId: string) {
+    await this.messages.update(messageId, { deletedAt: null });
     return { ok: true };
   }
 

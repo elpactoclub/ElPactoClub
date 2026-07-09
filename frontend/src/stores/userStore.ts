@@ -63,7 +63,7 @@ interface UserState {
   becomeSocio: () => void;
 
   // API Async Actions
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   registerUser: (email: string, password: string, name: string, country: string, city: string, referredBy?: string) => Promise<boolean>;
   logout: () => void;
   fetchProfile: () => Promise<void>;
@@ -201,9 +201,9 @@ export const useUserStore = create<UserState>((set, get) => ({
     })),
 
   // ─── API ACTIONS ────────────────────────────────────────────────────────
-  login: async (email, password) => {
+  login: async (email, password, rememberMe = false) => {
     try {
-      const res = await api.post("/auth/login", { email, password });
+      const res = await api.post("/auth/login", { email, password, rememberMe });
       const { access_token, user } = res.data;
 
       localStorage.setItem("el_pacto_token", access_token);

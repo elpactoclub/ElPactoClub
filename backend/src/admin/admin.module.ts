@@ -7,7 +7,7 @@ import { Event, EventAttendee } from '../events/event.entity';
 import { Vote, UserVote } from '../gamification/vote.entity';
 import { Raffle, RaffleEntry } from '../gamification/raffle.entity';
 import { Mission } from '../missions/mission.entity';
-import { Post } from '../community/post.entity';
+import { Post, Message } from '../community/post.entity';
 import { StoreBenefit } from '../store/store-benefit.entity';
 import { Project } from '../projects/project.entity';
 import { ClubCreator } from '../club-creators/club-creator.entity';
@@ -24,7 +24,7 @@ import { AdminController } from './admin.controller';
 // ES: Módulo de funcionalidad admin que agrupa todas las capacidades de administración.
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Event, EventAttendee, Vote, UserVote, Raffle, RaffleEntry, Mission, Post, StoreBenefit, Project, ClubCreator, Badge, UserBadge]),
+    TypeOrmModule.forFeature([User, Event, EventAttendee, Vote, UserVote, Raffle, RaffleEntry, Mission, Post, Message, StoreBenefit, Project, ClubCreator, Badge, UserBadge]),
     SettingsModule,
     UsersModule,
     NotificationsModule,
